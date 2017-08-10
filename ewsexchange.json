@@ -5,7 +5,7 @@
     "publisher": "Phantom",
     "type": "email",
     "main_module": "ewsonprem_connector.pyc",
-    "app_version": "1.0.92",
+    "app_version": "1.0.93",
     "utctime_updated": "2017-03-08T02:31:19.000000Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
