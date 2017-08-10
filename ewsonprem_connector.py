@@ -31,7 +31,6 @@
 import phantom.app as phantom
 from phantom.base_connector import BaseConnector
 from phantom.action_result import ActionResult
-from phantom.vault import Vault
 import phantom.utils as ph_utils
 
 # THIS Connector imports
@@ -47,6 +46,7 @@ from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
 from urlparse import urlparse
 import base64
+import inspect
 from datetime import datetime, timedelta
 import re
 import process_email
@@ -54,18 +54,12 @@ import email
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
-os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
+os.sys.path.insert(0, '{}/dependencies/python-ntlm3-master'.format(app_dir))  # noqa
+os.sys.path.insert(0, '{}/dependencies'.format(app_dir))  # noqa
 from requests_ntlm import HttpNtlmAuth  # noqa
 
 
-class RetVal3(tuple):
-    def __new__(cls, val1, val2, val3):
-        return tuple.__new__(RetVal3, (val1, val2, val3))
-
-
-class RetVal2(tuple):
-    def __new__(cls, val1, val2):
-        return tuple.__new__(RetVal2, (val1, val2))
+requests.packages.urllib3.disable_warnings()
 
 
 OFFICE365_APP_ID = "a73f6d32-c9d5-4fec-b024-43876700daa6"
@@ -112,6 +106,43 @@ class EWSOnPremConnector(BaseConnector):
         self._state = {}
 
         self._impersonate = False
+
+    def _load_state(self):
+
+        # get the directory of the class
+        dirpath = os.path.dirname(inspect.getfile(self.__class__))
+        asset_id = self.get_asset_id()
+        self._state_file_path = "{0}/{1}_serialized_data.json".format(dirpath, asset_id)
+
+        self._state = {}
+
+        try:
+            with open(self._state_file_path, 'r') as f:
+                in_json = f.read()
+                self._state = json.loads(in_json)
+        except Exception as e:
+            self.debug_print("In _load_state: Exception: {0}".format(str(e)))
+            pass
+
+        self.debug_print("Loaded state: ", self._state)
+
+        return phantom.APP_SUCCESS
+
+    def _save_state(self):
+
+        self.debug_print("Saving state: ", self._state)
+
+        if (not self._state_file_path):
+            self.debug_print("_state_file_path is None in _save_state")
+            return phantom.APP_SUCCESS
+
+        try:
+            with open(self._state_file_path, 'w+') as f:
+                f.write(json.dumps(self._state))
+        except:
+            pass
+
+        return phantom.APP_SUCCESS
 
     def _get_ping_fed_request_xml(self, config):
 
@@ -324,13 +355,13 @@ class EWSOnPremConnector(BaseConnector):
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
     def finalize(self):
-        self.save_state(self._state)
+        self._save_state()
         return phantom.APP_SUCCESS
 
     def initialize(self):
         """ Called once for every action, all member initializations occur here"""
 
-        self._state = self.load_state()
+        self._load_state()
 
         config = self.get_config()
 
@@ -434,7 +465,7 @@ class EWSOnPremConnector(BaseConnector):
         fault_string = fault_node.get('faultstring', {}).get('#text', 'Not specified')
 
         return result.set_status(phantom.APP_ERROR,
-                'Error occurred, Code: {0} Detail: {1}'.format(fault_code, fault_string))
+                'Error occured, Code: {0} Detail: {1}'.format(fault_code, fault_string))
 
     def _clean_xml(self, input_xml):
 
@@ -798,7 +829,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_data, status_code = self.get_container_info(container_id)
 
         if (phantom.is_fail(ret_val)):
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
+            return (action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
 
         # Keep pylint happy
         resp_data = dict(resp_data)
@@ -807,63 +838,41 @@ class EWSOnPremConnector(BaseConnector):
         email_id = resp_data['source_data_identifier']
 
         if (not email_data):
-            return RetVal3(action_result.set_status(phantom.APP_ERROR,
+            return (action_result.set_status(phantom.APP_ERROR,
                 "Container does not seem to be created by the same app, raw_email data not found."), None, None)
 
-        if ((not email_id.endswith('=')) and (not ph_utils.is_sha1(email_id))):
-            return RetVal3(action_result.set_status(phantom.APP_ERROR,
+        if (not email_id.endswith('=')):
+            return (action_result.set_status(phantom.APP_ERROR,
                 "Container does not seem to be created by the same app, email id not in proper format."), None, None)
 
-        return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
+        return (phantom.APP_SUCCESS, email_data, email_id)
 
-    def _get_email_data_from_vault(self, vault_id, action_result):
-
-        email_data = None
-        email_id = vault_id
-        file_path = None
-
-        try:
-            file_path = Vault.get_file_path(vault_id)
-        except Exception as e:
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
-
-        try:
-            with open(file_path, 'r') as f:
-                email_data = f.read()
-        except Exception as e:
-            return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not read file contents for vault item", e), None, None)
-
-        return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
-
-    def _get_mail_header_dict(self, email_data, action_result):
+    def _get_mail_header_dict(self, email_data):
 
         try:
             mail = email.message_from_string(email_data)
         except:
-            return RetVal2(action_result.set_status(phantom.APP_ERROR, "Unable to create email object from data. Does not seem to be valid email"), None)
+            return {}
 
         headers = mail.__dict__.get('_headers')
 
         if (not headers):
-            return RetVal2(action_result.set_status(phantom.APP_ERROR, "Could not extract header info from email object data. Does not seem to be valid email"), None)
+            return {}
 
         ret_val = {}
         for header in headers:
             ret_val[header[0]] = header[1]
 
-        return RetVal2(phantom.APP_SUCCESS, ret_val)
+        return ret_val
 
     def _handle_email_with_container_id(self, action_result, container_id, ingest_email):
 
         ret_val, email_data, email_id = self._get_email_data_from_container(container_id, action_result)
+
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
 
-        action_result.update_summary({"email_id": email_id})
-
-        ret_val, header_dict = self._get_mail_header_dict(email_data, action_result)
-        if (phantom.is_fail(ret_val)):
-            return action_result.get_status()
+        header_dict = self._get_mail_header_dict(email_data)
 
         action_result.add_data(header_dict)
 
@@ -887,42 +896,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result.update_summary({"container_id": container_id})
 
-        return action_result.set_status(phantom.APP_SUCCESS)
-
-    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email):
-
-        ret_val, email_data, email_id = self._get_email_data_from_vault(vault_id, action_result)
-
-        if (phantom.is_fail(ret_val)):
-            return action_result.get_status()
-
-        ret_val, header_dict = self._get_mail_header_dict(email_data, action_result)
-        if (phantom.is_fail(ret_val)):
-            return action_result.get_status()
-
-        action_result.add_data(header_dict)
-
-        if (not ingest_email):
-            return action_result.set_status(phantom.APP_SUCCESS)
-
-        config = {
-                "extract_attachments": True,
-                "extract_domains": True,
-                "extract_hashes": True,
-                "extract_ips": True,
-                "extract_urls": True }
-
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None)
-
-        if (phantom.is_fail(ret_val)):
-            return action_result.set_status(phantom.APP_ERROR, message)
-
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
-
-        action_result.update_summary({"container_id": container_id})
-
-        return action_result.set_status(phantom.APP_SUCCESS)
+        action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_email(self, param):
 
@@ -933,18 +907,15 @@ class EWSOnPremConnector(BaseConnector):
 
         email_id = param.get(EWSONPREM_JSON_ID)
         container_id = param.get(EWS_JSON_CONTAINER_ID)
-        vault_id = param.get(EWS_JSON_VAULT_ID)
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
 
-        if (not email_id and not container_id and not vault_id):
-            return action_result.set_status(phantom.APP_ERROR, "Please specify id, container_id or vault_id to get the email")
+        if (not email_id and not container_id):
+            return action_result.set_status(phantom.APP_ERROR, "Please specify either id or container_id to get the email")
 
         ingest_email = param.get(EWSONPREM_JSON_INGEST_EMAIL, False)
 
         if (container_id is not None):
             return self._handle_email_with_container_id(action_result, container_id, ingest_email)
-        if (vault_id is not None):
-            return self._handle_email_with_vault_id(action_result, vault_id, ingest_email)
         else:
             data = ews_soap.xml_get_emails_data([email_id])
 
@@ -1454,7 +1425,7 @@ class EWSOnPremConnector(BaseConnector):
         self.save_progress("Got {0} email{1}".format(len(email_ids), '' if (len(email_ids) == 1) else 's'))
 
         for i, email_id in enumerate(email_ids):
-            self.send_progress("Querying email # {0} with id: {1}".format(i + 1, self._pprint_email_id(email_id)))
+            self.send_progress("Querying email # {0} with id: {1}".format(i, self._pprint_email_id(email_id)))
             try:
                 self._process_email_id(email_id)
             except Exception as e:
