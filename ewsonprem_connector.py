@@ -59,9 +59,6 @@ os.sys.path.insert(0, '{}/dependencies'.format(app_dir))  # noqa
 from requests_ntlm import HttpNtlmAuth  # noqa
 
 
-requests.packages.urllib3.disable_warnings()
-
-
 OFFICE365_APP_ID = "a73f6d32-c9d5-4fec-b024-43876700daa6"
 EXCHANGE_ONPREM_APP_ID = "badc5252-4a82-4a6d-bc53-d1e503857124"
 
