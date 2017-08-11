@@ -32,7 +32,7 @@ import magic
 # Any globals added here, should be initialized in the init() function
 _base_connector = None
 _config = dict()
-_email_id_contains = list()
+
 _container = dict()
 _artifacts = list()
 _attachments = list()
@@ -66,10 +66,6 @@ MAGIC_FORMATS = [
 EWS_DEFAULT_ARTIFACT_COUNT = 100
 EWS_DEFAULT_CONTAINER_COUNT = 100
 HASH_FIXED_PHANTOM_VERSION = "2.0.201"
-
-OFFICE365_APP_ID = "a73f6d32-c9d5-4fec-b024-43876700daa6"
-EXCHANGE_ONPREM_APP_ID = "badc5252-4a82-4a6d-bc53-d1e503857124"
-IMAP_APP_ID = "9f2e9f72-b0e5-45d6-92a7-09ef820476c1"
 
 PROC_EMAIL_JSON_FILES = "files"
 PROC_EMAIL_JSON_BODIES = "bodies"
@@ -244,7 +240,7 @@ def _get_ips(file_data, ips):
             ips |= set(ips_in_mail)
 
 
-def _handle_body(body, parsed_mail, body_index, email_id):
+def _handle_body(body, parsed_mail, body_index):
 
     local_file_path = body['file_path']
     charset = body.get('charset')
@@ -261,7 +257,7 @@ def _handle_body(body, parsed_mail, body_index, email_id):
     if ((file_data is None) or (len(file_data) == 0)):
         return phantom.APP_ERROR
 
-    _parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
+    _parse_email_headers_as_inline(file_data, parsed_mail, charset)
 
     if (_config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]):
         emails = []
@@ -307,7 +303,7 @@ def _add_artifacts(cef_key, input_set, artifact_name, start_index, artifacts):
     return added_artifacts
 
 
-def _parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id):
+def _parse_email_headers_as_inline(file_data, parsed_mail, charset):
 
     # remove the 'Forwarded Message' from the email text and parse it
     p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
@@ -317,7 +313,7 @@ def _parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id):
     # Get the array
     # email_headers = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
 
-    _parse_email_headers(parsed_mail, mail, charset, add_email_id=email_id)
+    _parse_email_headers(parsed_mail, mail, charset)
 
     # email_headers.append(mail.items())
 
@@ -516,9 +512,7 @@ def _handle_part(part, part_index, tmp_dir, extract_attach, parsed_mail):
     return phantom.APP_SUCCESS
 
 
-def _parse_email_headers(parsed_mail, part, charset=None, add_email_id=None):
-
-    global _email_id_contains
+def _parse_email_headers(parsed_mail, part, charset=None):
 
     email_header_artifacts = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
 
@@ -545,7 +539,6 @@ def _parse_email_headers(parsed_mail, part, charset=None, add_email_id=None):
 
     # Parse email keys first
     cef_artifact = {}
-    cef_types = {}
 
     if (headers.get('From')):
         emails = headers['From']
@@ -561,25 +554,14 @@ def _parse_email_headers(parsed_mail, part, charset=None, add_email_id=None):
     if (not cef_artifact):
         return 0
 
-    cef_types.update({'fromEmail': ['email'], 'toEmail': ['email']})
-
     if (headers):
         cef_artifact['emailHeaders'] = headers
-
-    # Adding the email id as a cef artifact crashes the UI when trying to show the action dialog box
-    # so not adding this right now. All the other code to process the emailId is there, but the refraining
-    # from adding the emailId
-    # add_email_id = False
-    if (add_email_id):
-        cef_artifact['emailId'] = add_email_id
-        if (_email_id_contains):
-            cef_types.update({'emailId': _email_id_contains})
 
     artifact = {}
     artifact.update(_artifact_common)
     artifact['name'] = 'Email Artifact'
     artifact['cef'] = cef_artifact
-    artifact['cef_types'] = cef_types
+    artifact['cef_types'] = {'fromEmail': ['email'], 'toEmail': ['email']}
     email_header_artifacts.append(artifact)
 
     return len(email_header_artifacts)
@@ -615,11 +597,8 @@ def _handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
     # parse the parts of the email
     if (mail.is_multipart()):
         for i, part in enumerate(mail.walk()):
-            add_email_id = None
-            if (i == 0):
-                add_email_id = email_id
 
-            _parse_email_headers(parsed_mail, part, add_email_id=add_email_id)
+            _parse_email_headers(parsed_mail, part)
 
             # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
 
@@ -637,7 +616,7 @@ def _handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
                 continue
 
     else:
-        _parse_email_headers(parsed_mail, mail, add_email_id=email_id)
+        _parse_email_headers(parsed_mail, mail)
         # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(mail.items())
         file_path = "{0}/part_1.text".format(tmp_dir)
         with open(file_path, 'wb') as f:
@@ -675,7 +654,7 @@ def _handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
             continue
 
         try:
-            _handle_body(body, parsed_mail, i, email_id)
+            _handle_body(body, parsed_mail, i)
         except Exception as e:
             _debug_print("ErrorExp in _handle_body # {0}: {1}".format(i, str(e)))
             continue
@@ -695,36 +674,12 @@ def _init():
     global _container
     global _artifacts
     global _attachments
-    global _email_id_contains
 
     _base_connector = None
-    _email_id_contains = list()
     _config = None
     _container = dict()
     _artifacts = list()
     _attachments = list()
-
-
-def _set_email_id_contains(email_id):
-
-    global _base_connector
-    global _email_id_contains
-
-    if (not _base_connector):
-        return
-
-    email_id = str(email_id)
-
-    if ((_base_connector.get_app_id() == EXCHANGE_ONPREM_APP_ID) and (email_id.endswith('='))):
-        _email_id_contains = [ "exchange email id" ]
-    elif ((_base_connector.get_app_id() == OFFICE365_APP_ID) and (email_id.endswith('='))):
-        _email_id_contains = [ "office 365 email id" ]
-    elif (_base_connector.get_app_id() == IMAP_APP_ID) and (email_id.isdigit()):
-        _email_id_contains = [ "imap email id" ]
-    elif (ph_utils.is_sha1(email_id)):
-        _email_id_contains = [ "vault id" ]
-
-    return
 
 
 def _int_process_email(rfc822_email, email_id, start_time_epoch):
@@ -759,11 +714,6 @@ def process_email(base_connector, rfc822_email, email_id, config, epoch):
 
     _base_connector = base_connector
     _config = config
-
-    try:
-        _set_email_id_contains(email_id)
-    except:
-        pass
 
     ret_val, message, results = _int_process_email(rfc822_email, email_id, epoch)
 
@@ -860,39 +810,6 @@ def _parse_results(results):
     return _base_connector.set_status(phantom.APP_SUCCESS)
 
 
-def _add_vault_hashes_to_dictionary(cef_artifact, vault_id):
-
-    vault_info = Vault.get_file_info(vault_id=vault_id)
-
-    if (not vault_info):
-        return (phantom.APP_ERROR, "Vault ID not found")
-
-    # The return value is a list, each item represents an item in the vault
-    # matching the vault id, the info that we are looking for (the hashes)
-    # will be the same for every entry, so just access the first one
-    try:
-        metadata = vault_info[0].get('metadata')
-    except:
-        return (phantom.APP_ERROR, "Failed to get vault item metadata")
-
-    try:
-        cef_artifact['fileHashSha256'] = metadata['sha256']
-    except:
-        pass
-
-    try:
-        cef_artifact['fileHashMd5'] = metadata['md5']
-    except:
-        pass
-
-    try:
-        cef_artifact['fileHashSha1'] = metadata['sha1']
-    except:
-        pass
-
-    return (phantom.APP_SUCCESS, "Mapped hash values")
-
-
 def _handle_file(curr_file, vault_ids, container_id, artifact_id):
 
     file_name = curr_file.get('file_name')
@@ -932,14 +849,10 @@ def _handle_file(curr_file, vault_ids, container_id, artifact_id):
     cef_artifact = {}
     if (file_name):
         cef_artifact.update({'fileName': file_name})
-
     if (phantom.APP_JSON_HASH in vault_ret):
         cef_artifact.update({'vaultId': vault_ret[phantom.APP_JSON_HASH],
             'cs6': vault_ret[phantom.APP_JSON_HASH],
             'cs6Label': 'Vault ID'})
-
-        # now get the rest of the hashes and add them to the cef artifact
-        _add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH])
 
     if (not cef_artifact):
         return (phantom.APP_SUCCESS, phantom.APP_ERROR)

@@ -97,41 +97,17 @@ of Phantom Cyber Corporation.
 
 <!------------------- For each Result ---------------------->
 
-{% if result.param.container_id or result.param.vault_id %}
+{% if result.param.container_id %}
   <table class="wf-table-vertical">
-    {% if result.param.container_id %}
-      <tr>
-        <td><b>Container ID</b></td>
-        <td>
-          <a href="javascript:;" onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.param.container_id }}' }], 0, {{ container.id }}, null, false);">
-          {{ result.param.container_id }}
-          &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
-          </a>
-        </td>
-      </tr>
-    {% endif %}
-    {% if result.param.vault_id %}
-      <tr>
-        <td><b>Vault ID</b></td>
-        <td>
-          <a href="javascript:;" onclick="context_menu(this, [{'contains': ['vault id'], 'value': '{{ result.param.vault_id }}' }], 0, {{ container.id }}, null, false);">
-          {{ result.param.vault_id }}
-          &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
-          </a>
-        </td>
-      </tr>
-    {% endif %}
-    {% if result.summary.email_id %}
     <tr>
-      <td><b>Email ID</b></td>
+      <td><b>Container ID</b></td>
       <td>
-        <a href="javascript:;" onclick="context_menu(this, [{'contains': ['exchange email id'], 'value': '{{ result.summary.email_id }}' }], 0, {{ container.id }}, null, false);">
-        {{ result.summary.email_id }}
+        <a href="javascript:;" onclick="context_menu(this, [{'contains': ['phantom container id'], 'value': '{{ result.param.container_id }}' }], 0, {{ container.id }}, null, false);">
+        {{ result.param.container_id }}
         &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
         </a>
       </td>
     </tr>
-    {% endif %}
   <tr>
     <td><b>Ingested Container ID</b></td>
     {% if result.summary.container_id %}
@@ -150,16 +126,9 @@ of Phantom Cyber Corporation.
     {% for key, value in result.data.items %}
     <tr>
         <td><b>{{ key }}</b></td>
-        {% if key == "To" or key == "Delivered-To" or key == "Sender" or key == "From" or key == "Return-Path" or key == "Reply-To" or key == "X-Mail-Filter-Gateway-From" or key == "X-Mail-Filter-Gateway-To" %}
+        {% if key == "To" or key == "Delivered-To" or key == "Sender" or key == "From" or key == "Return-Path" or key == "Reply-To" %}
           <td>
             <a href="javascript:;" onclick="context_menu(this, [{'contains': ['email'], 'value': '{{ value }}' }], 0, {{ container.id }}, null, false);">
-            {{ value }}
-            &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
-            </a>
-          </td>
-        {% elif key == "Message-ID" %}
-          <td>
-            <a href="javascript:;" onclick="context_menu(this, [{'contains': ['internet message id'], 'value': '{{ value }}' }], 0, {{ container.id }}, null, false);">
             {{ value }}
             &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
             </a>
@@ -226,12 +195,7 @@ of Phantom Cyber Corporation.
 {% if result.data.t_InternetMessageId %}
 <tr>
   <td><b>Internet Message Id</b></td>
-  <td>
-    <a href="javascript:;" onclick="context_menu(this, [{'contains': ['internet message id'], 'value': '{{ result.data.t_InternetMessageId }}' }], 0, {{ container.id }}, null, false);">
-    {{ result.data.t_InternetMessageId }}
-    &nbsp;<span class="fa fa-caret-down" style="font-size: smaller;"></span>
-    </a>
-  </td>
+  <td>{{ result.data.t_InternetMessageId }}</td>
 </tr>
 {% endif %}
 {% if result.summary.create_time %}

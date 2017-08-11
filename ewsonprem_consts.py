@@ -26,7 +26,6 @@ EWSONPREM_JSON_ID = "id"
 EWSONPREM_JSON_GROUP = "group"
 EWSONPREM_JSON_INGEST_EMAIL = "ingest_email"
 EWS_JSON_CONTAINER_ID = "container_id"
-EWS_JSON_VAULT_ID = "vault_id"
 
 EWSONPREM_SEARCH_FINISHED_STATUS = "Finished Searching {0:.0%}"
 
