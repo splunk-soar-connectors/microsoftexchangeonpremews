@@ -54,8 +54,7 @@ import email
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
-os.sys.path.insert(0, '{}/dependencies/python-ntlm3-master'.format(app_dir))  # noqa
-os.sys.path.insert(0, '{}/dependencies'.format(app_dir))  # noqa
+os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
 from requests_ntlm import HttpNtlmAuth  # noqa
 
 
