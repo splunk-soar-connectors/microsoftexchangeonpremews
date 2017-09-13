@@ -51,6 +51,7 @@ from datetime import datetime, timedelta
 import re
 import process_email
 import email
+import urllib
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -768,6 +769,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_container_id(self, email_id):
 
+        email_id = urllib.quote_plus(email_id)
         url = 'https://127.0.0.1/rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
