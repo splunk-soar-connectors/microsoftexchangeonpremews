@@ -623,6 +623,14 @@
                     "primary": false,
                     "required": false,
                     "default": false
+                },
+                "use_current_container": {
+                    "description": "Create artifacts in the same container",
+                    "data_type": "boolean",
+                    "order": 5,
+                    "primary": false,
+                    "required": false,
+                    "default": false
                 }
             },
             "render": {

@@ -855,7 +855,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return RetVal2(phantom.APP_SUCCESS, ret_val)
 
-    def _handle_email_with_container_id(self, action_result, container_id, ingest_email):
+    def _handle_email_with_container_id(self, action_result, container_id, ingest_email, target_container_id=None):
 
         ret_val, email_data, email_id = self._get_email_data_from_container(container_id, action_result)
         if (phantom.is_fail(ret_val)):
@@ -879,7 +879,7 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_ips": True,
                 "extract_urls": True }
 
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None)
+        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if (phantom.is_fail(ret_val)):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -891,7 +891,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email):
+    def _handle_email_with_vault_id(self, action_result, vault_id, ingest_email, target_container_id=None):
 
         ret_val, email_data, email_id = self._get_email_data_from_vault(vault_id, action_result)
 
@@ -914,7 +914,7 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_ips": True,
                 "extract_urls": True }
 
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None)
+        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if (phantom.is_fail(ret_val)):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -937,6 +937,11 @@ class EWSOnPremConnector(BaseConnector):
         container_id = param.get(EWS_JSON_CONTAINER_ID)
         vault_id = param.get(EWS_JSON_VAULT_ID)
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
+        use_current_container = param.get('use_current_container')
+        target_container_id = None
+
+        if (use_current_container):
+            target_container_id = self.get_container_id()
 
         if (not email_id and not container_id and not vault_id):
             return action_result.set_status(phantom.APP_ERROR, "Please specify id, container_id or vault_id to get the email")
@@ -944,9 +949,9 @@ class EWSOnPremConnector(BaseConnector):
         ingest_email = param.get(EWSONPREM_JSON_INGEST_EMAIL, False)
 
         if (container_id is not None):
-            return self._handle_email_with_container_id(action_result, container_id, ingest_email)
+            return self._handle_email_with_container_id(action_result, container_id, ingest_email, target_container_id)
         if (vault_id is not None):
-            return self._handle_email_with_vault_id(action_result, vault_id, ingest_email)
+            return self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
         else:
             data = ews_soap.xml_get_emails_data([email_id])
 
@@ -988,16 +993,19 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_SUCCESS)
 
             try:
-                self._process_email_id(email_id)
+                self._process_email_id(email_id, target_container_id)
             except Exception as e:
                 self.debug_print("ErrorExp in _process_email_id with Message ID: {1}".format(email_id), e)
                 action_result.update_summary({"container_id": None})
                 return action_result.set_status(phantom.APP_SUCCESS)
 
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
+        if (target_container_id is None):
+            # get the container id that of the email that was ingested
+            container_id = self._get_container_id(email_id)
+            action_result.update_summary({"container_id": container_id})
+        else:
+            action_result.update_summary({"container_id": target_container_id})
 
-        action_result.update_summary({"container_id": container_id})
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _delete_email(self, param):
@@ -1347,7 +1355,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, rfc822_email)
 
-    def _parse_email(self, resp_json, email_id):
+    def _parse_email(self, resp_json, email_id, target_container_id):
 
         try:
             mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
@@ -1362,9 +1370,9 @@ class EWSOnPremConnector(BaseConnector):
 
         epoch = self._get_email_epoch(resp_json)
 
-        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch)
+        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id)
 
-    def _process_email_id(self, email_id):
+    def _process_email_id(self, email_id, target_container_id=None):
 
         data = ews_soap.xml_get_emails_data([email_id])
 
@@ -1379,7 +1387,7 @@ class EWSOnPremConnector(BaseConnector):
             self.send_progress(message)
             return phantom.APP_ERROR
 
-        ret_val, message = self._parse_email(resp_json, email_id)
+        ret_val, message = self._parse_email(resp_json, email_id, target_container_id)
 
         if (phantom.is_fail(ret_val)):
             return phantom.APP_ERROR

@@ -750,7 +750,7 @@ def _int_process_email(rfc822_email, email_id, start_time_epoch):
     return (ret_val, "Email Parsed", results)
 
 
-def process_email(base_connector, rfc822_email, email_id, config, epoch):
+def process_email(base_connector, rfc822_email, email_id, config, epoch, container_id=None):
 
     _init()
 
@@ -770,12 +770,12 @@ def process_email(base_connector, rfc822_email, email_id, config, epoch):
     if (not ret_val):
         return (phantom.APP_ERROR, message)
 
-    _parse_results(results)
+    _parse_results(results, container_id)
 
     return (phantom.APP_SUCCESS, "Email Processed")
 
 
-def _parse_results(results):
+def _parse_results(results, container_id=None):
 
     global _base_connector
 
@@ -792,29 +792,31 @@ def _parse_results(results):
 
     for result in results:
 
-        container = result.get('container')
+        if (container_id is None):
 
-        if (not container):
-            continue
+            container = result.get('container')
 
-        container.update(_container_common)
-        try:
-            (ret_val, message, container_id) = _base_connector.save_container(container)
-        except Exception as e:
-            _base_connector.debug_print("Handled Exception while saving container", e)
-            continue
+            if (not container):
+                continue
 
-        _base_connector.debug_print("save_container returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
+            container.update(_container_common)
+            try:
+                (ret_val, message, container_id) = _base_connector.save_container(container)
+            except Exception as e:
+                _base_connector.debug_print("Handled Exception while saving container", e)
+                continue
 
-        if (phantom.is_fail(ret_val)):
-            message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
-            _base_connector.debug_print(message)
-            continue
+            _base_connector.debug_print("save_container returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
 
-        if (not container_id):
-            message = "save_container did not return a container_id"
-            _base_connector.debug_print(message)
-            continue
+            if (phantom.is_fail(ret_val)):
+                message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
+                _base_connector.debug_print(message)
+                continue
+
+            if (not container_id):
+                message = "save_container did not return a container_id"
+                _base_connector.debug_print(message)
+                continue
 
         files = result.get('files')
 
