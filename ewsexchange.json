@@ -603,7 +603,7 @@
                     ],
                     "primary": true,
                     "required": false,
-                    "allow_list": true
+                    "allow_list": false
                 },
                 "vault_id": {
                     "description": "Vault ID to get email from",
