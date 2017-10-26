@@ -1332,7 +1332,7 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'total_entries': len(mailboxes)})
 
         for mailbox in mailboxes:
-            if param['recursive'] and "DL" in mailbox['t:MailboxType']:
+            if param.get('recursive', False) and "DL" in mailbox['t:MailboxType']:
                 param[EWSONPREM_JSON_GROUP] = mailbox['t:EmailAddress']
                 self._expand_dl(param)
             self._cleanse_key_names(mailbox)
