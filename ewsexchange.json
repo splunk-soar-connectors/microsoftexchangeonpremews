@@ -1013,6 +1013,13 @@
                     ],
                     "primary": true,
                     "required": true
+                },
+                "recursive": {
+                    "description": "Expand all sub distribution lists",
+                    "data_type": "boolean",
+                    "order": 1,
+                    "primary": true,
+                    "required": true
                 }
             },
             "render": {
