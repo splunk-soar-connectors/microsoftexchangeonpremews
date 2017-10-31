@@ -90,6 +90,7 @@ class EWSOnPremConnector(BaseConnector):
     # actions supported by this script
     ACTION_ID_RUN_QUERY = "run_query"
     ACTION_ID_DELETE_EMAIL = "delete_email"
+    ACTION_ID_UPDATE_EMAIL = "update_email"
     ACTION_ID_COPY_EMAIL = "copy_email"
     ACTION_ID_EXPAND_DL = "expand_dl"
     ACTION_ID_RESOLVE_NAME = "resolve_name"
@@ -414,6 +415,9 @@ class EWSOnPremConnector(BaseConnector):
     def _check_delete_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
 
+    def _check_update_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
+
     def _check_copy_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
 
@@ -613,6 +617,9 @@ class EWSOnPremConnector(BaseConnector):
     def _cleanse_key_names(self, input_dict):
 
         if (not input_dict):
+            return input_dict
+
+        if (type(input_dict) != dict):
             return input_dict
 
         for k, v in input_dict.items():
@@ -1006,6 +1013,86 @@ class EWSOnPremConnector(BaseConnector):
         else:
             action_result.update_summary({"container_id": target_container_id})
 
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _update_email(self, param):
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        # Connectivity
+        self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
+
+        email_id = param[EWSONPREM_JSON_ID]
+        self._target_user = param.get(EWSONPREM_JSON_EMAIL)
+        category = param.get('category')
+        subject = param.get('subject')
+
+        if ((subject is None) and (category is None)):
+            return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
+
+        # do a get on the message to get the change id
+        data = ews_soap.xml_get_emails_data([email_id])
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+            self.debug_print(message)
+            self.send_progress(message)
+            return phantom.APP_ERROR
+
+        try:
+            change_key = resp_json['m:Items']['t:Message']['t:ItemId']['@ChangeKey']
+        except:
+            return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
+
+        if (category is not None):
+            category = [x.strip() for x in category.split(',')]
+
+        data = ews_soap.get_update_email(email_id, change_key, category, subject)
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_status()
+
+        if (not resp_json):
+            return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
+
+        data = ews_soap.xml_get_emails_data([email_id])
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_status()
+
+        self._cleanse_key_names(resp_json)
+
+        message = resp_json.get('m_Items', {}).get('t_Message', {})
+
+        categories = message.get('t_Categories', {}).get('t_String')
+        if (categories):
+            if (type(categories) != list):
+                categories = [categories]
+            message['t_Categories'] = categories
+
+        action_result.add_data(message)
+
+        recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
+
+        if ((recipients_mailbox) and (type(recipients_mailbox) != list)):
+            message['t_ToRecipients']['t_Mailbox'] = [recipients_mailbox]
+
+        summary = {'subject': message.get('t_Subject'),
+                'create_time': message.get('t_DateTimeCreated'),
+                'sent_time': message.get('t_DateTimeSent')}
+
+        action_result.update_summary(summary)
+
+        # Set the Status
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _delete_email(self, param):
@@ -1608,6 +1695,8 @@ class EWSOnPremConnector(BaseConnector):
             ret_val = self._run_query_aqs(param)
         elif (action == self.ACTION_ID_DELETE_EMAIL):
             ret_val = self._delete_email(param)
+        elif (action == self.ACTION_ID_UPDATE_EMAIL):
+            ret_val = self._update_email(param)
         elif (action == self.ACTION_ID_GET_EMAIL):
             ret_val = self._get_email(param)
         elif (action == self.ACTION_ID_COPY_EMAIL):

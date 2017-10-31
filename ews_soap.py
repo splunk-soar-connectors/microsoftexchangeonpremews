@@ -133,6 +133,7 @@ def xml_get_emails_data(email_ids):
             T.FieldURI({'FieldURI': 'message:From'}),
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+            T.FieldURI({'FieldURI': 'item:Categories'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
             T.FieldURI({'FieldURI': 'item:Body'}))
@@ -301,6 +302,32 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
             *elements)
 
     return find_item
+
+
+def get_update_email(email_id, change_key, categories=None, subject=None):
+
+    item_id = T.ItemId({'Id': email_id, 'ChangeKey': change_key})
+
+    update_node = []
+
+    if (categories is not None):
+        category_string_list = []
+
+        for curr_category in categories:
+            category_string_list.append(T.String(curr_category))
+
+        cat_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Categories'}), T.Message(T.Categories(*category_string_list)))
+        update_node.append(cat_node)
+
+    if (subject is not None):
+        sub_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Subject'}), T.Message(T.Subject(subject)))
+        update_node.append(sub_node)
+
+    update_item = M.UpdateItem(
+            {'MessageDisposition': 'SaveOnly', 'ConflictResolution': 'AlwaysOverwrite'},
+            M.ItemChanges(T.ItemChange(item_id, T.Updates(*update_node))))
+
+    return update_item
 
 
 def get_delete_email(message_ids):
