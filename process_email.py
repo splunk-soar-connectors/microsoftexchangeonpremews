@@ -72,6 +72,7 @@ PROC_EMAIL_JSON_SUBJECT = "subject"
 PROC_EMAIL_JSON_TO = "to"
 PROC_EMAIL_JSON_START_TIME = "start_time"
 PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS = "extract_attachments"
+PROC_EMAIL_JSON_EXTRACT_BODY = "add_body_to_header_artifacts"
 PROC_EMAIL_JSON_EXTRACT_URLS = "extract_urls"
 PROC_EMAIL_JSON_EXTRACT_IPS = "extract_ips"
 PROC_EMAIL_JSON_EXTRACT_DOMAINS = "extract_domains"
@@ -599,6 +600,12 @@ class ProcessEmail(object):
         if (headers):
             self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
+
+        for curr_key in cef_artifact['emailHeaders'].keys():
+            if curr_key.lower().startswith('body'):
+                curr_value = cef_artifact['emailHeaders'].pop(curr_key)
+                if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
+                    cef_artifact.update({curr_key: curr_value})
 
         # Adding the email id as a cef artifact crashes the UI when trying to show the action dialog box
         # so not adding this right now. All the other code to process the emailId is there, but the refraining
