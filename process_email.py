@@ -566,7 +566,7 @@ class ProcessEmail(object):
             return 0
 
         # Convert the header tuple into a dictionary
-        headers = {}
+        headers = CaseInsensitiveDict()
         [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
 
         # Handle received seperately
@@ -590,15 +590,15 @@ class ProcessEmail(object):
                 cef_artifact.update({'toEmail': emails})
 
         # if the header did not contain any email addresses then ignore this artifact
-        if (not cef_artifact):
+        message_id = headers.get('message-id')
+        if ((not cef_artifact) and (message_id is None)):
             return 0
 
         cef_types.update({'fromEmail': ['email'], 'toEmail': ['email']})
 
         if (headers):
-
             self._update_headers(headers)
-            cef_artifact['emailHeaders'] = headers
+            cef_artifact['emailHeaders'] = dict(headers)
 
         # Adding the email id as a cef artifact crashes the UI when trying to show the action dialog box
         # so not adding this right now. All the other code to process the emailId is there, but the refraining
