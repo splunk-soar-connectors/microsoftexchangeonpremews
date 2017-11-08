@@ -49,7 +49,8 @@ from urlparse import urlparse
 import base64
 from datetime import datetime, timedelta
 import re
-import process_email
+from process_email import ProcessEmail
+from email.parser import HeaderParser
 import email
 import urllib
 
@@ -65,7 +66,7 @@ class RetVal3(tuple):
 
 
 class RetVal2(tuple):
-    def __new__(cls, val1, val2):
+    def __new__(cls, val1, val2=None):
         return tuple.__new__(RetVal2, (val1, val2))
 
 
@@ -406,6 +407,9 @@ class EWSOnPremConnector(BaseConnector):
         return aqs_str.strip()
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
+    def _check_get_attachment_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+
     def _check_getitem_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
 
@@ -886,6 +890,7 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_ips": True,
                 "extract_urls": True }
 
+        process_email = ProcessEmail()
         ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if (phantom.is_fail(ret_val)):
@@ -921,6 +926,7 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_ips": True,
                 "extract_urls": True }
 
+        process_email = ProcessEmail()
         ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if (phantom.is_fail(ret_val)):
@@ -1442,6 +1448,93 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, rfc822_email)
 
+    def _extract_email_headers_from_attachments(self, resp_json):
+
+        email_headers_ret = list()
+
+        if ('m:Items' not in resp_json):
+            k = resp_json.keys()[0]
+            resp_json['m:Items'] = resp_json.pop(k)
+
+        # Get the attachments
+        try:
+            attachments = resp_json['m:Items']['t:Message']['t:Attachments']
+        except:
+            return RetVal2(phantom.APP_SUCCESS)
+
+        attachment_ids = list()
+
+        for curr_key in attachments.iterkeys():
+
+            attachment_data = attachments[curr_key]
+
+            if (type(attachment_data) != list):
+                attachment_data = [attachment_data]
+
+            [attachment_ids.append(x['t:AttachmentId']['@Id']) for x in attachment_data]
+
+        if (not attachment_ids):
+            return RetVal2(phantom.APP_SUCCESS)
+
+        data = ews_soap.xml_get_attachments_data(attachment_ids)
+
+        action_result = ActionResult()
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_get_attachment_response)
+
+        # Process errors
+        if (phantom.is_fail(ret_val)):
+            return RetVal2(action_result.get_status(), None)
+
+        if (type(resp_json) != list):
+            resp_json = [resp_json]
+
+        for curr_attachment_data in resp_json:
+
+            try:
+                curr_attachment_data = curr_attachment_data['m:Attachments']
+            except Exception as e:
+                self.debug_print("Could not parse the attachments response", e)
+                continue
+
+            ret_val, data = self._extract_email_headers(curr_attachment_data)
+
+            if (data):
+                email_headers_ret.append(data)
+                ret_val, data = self._extract_email_headers_from_attachments(curr_attachment_data)
+                if (data):
+                    email_headers_ret.extend(data)
+
+        return (phantom.APP_SUCCESS, email_headers_ret)
+
+    def _extract_email_headers(self, resp_json):
+
+        if ('m:Items' not in resp_json):
+            k = resp_json.keys()[0]
+            resp_json['m:Items'] = resp_json.pop(k)
+
+        # Get the headers
+        try:
+            email_headers = resp_json['m:Items']['t:Message']['t:ExtendedProperty']['t:Value']
+        except:
+            return RetVal2(phantom.APP_SUCCESS)
+
+        header_parser = HeaderParser()
+        email_part = header_parser.parsestr(email_headers)
+        email_headers = email_part.items()
+
+        headers = {}
+        charset = 'utf-8'
+        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+
+        # Handle received seperately
+        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+
+        if (received_headers):
+            headers['Received'] = received_headers
+
+        return (phantom.APP_SUCCESS, headers)
+
     def _parse_email(self, resp_json, email_id, target_container_id):
 
         try:
@@ -1457,7 +1550,20 @@ class EWSOnPremConnector(BaseConnector):
 
         epoch = self._get_email_epoch(resp_json)
 
-        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id)
+        email_header_list = list()
+
+        ret_val, data = self._extract_email_headers(resp_json)
+
+        if (data):
+            email_header_list.append(data)
+
+        ret_val, data = self._extract_email_headers_from_attachments(resp_json)
+
+        if (data):
+            email_header_list.extend(data)
+
+        process_email = ProcessEmail()
+        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id, email_headers=email_header_list)
 
     def _process_email_id(self, email_id, target_container_id=None):
 
@@ -1751,6 +1857,7 @@ if __name__ == '__main__':
                     "extract_ips": True,
                     "extract_urls": True }
 
+            process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)
 
     exit(0)
