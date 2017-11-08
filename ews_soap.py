@@ -123,9 +123,42 @@ def get_expand_dl(email):
     return M.ExpandDL(M.Mailbox(T.EmailAddress(email.decode('utf-8'))))
 
 
+def xml_get_attachments_data(attachment_ids_to_query):
+    """
+    https://msdn.microsoft.com/en-us/library/office/aa494316(v=exchg.150).aspx
+    FieldURI: InternetMessageHeaders does _not_ return all the headers
+    PropertyTag 0x007D is required, which points to PR_TRANSPORT_MESSAGE_HEADERS
+    """
+
+    additional_properties = T.AdditionalProperties(
+            T.FieldURI({'FieldURI': 'message:Sender'}),
+            T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+            T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
+            T.FieldURI({'FieldURI': 'item:Attachments'}),
+            T.ExtendedFieldURI({'PropertyTag': '0x007D', 'PropertyType': 'String'}),
+            T.FieldURI({'FieldURI': 'item:LastModifiedTime'}))
+
+    attachment_shape = M.AttachmentShape(
+            T.IncludeMimeContent('true'),
+            T.BodyType('Best'),
+            T.FilterHtmlContent('true'),
+            additional_properties)
+
+    attachment_ids = M.AttachmentIds()
+    [attachment_ids.append(T.AttachmentId({'Id': x})) for x in attachment_ids_to_query]
+
+    get_attachments = M.GetAttachment(
+            attachment_shape,
+            attachment_ids)
+
+    return get_attachments
+
+
 def xml_get_emails_data(email_ids):
     """
     https://msdn.microsoft.com/en-us/library/office/aa566013(v=exchg.150).aspx
+    FieldURI: InternetMessageHeaders does _not_ return all the headers
+    PropertyTag 0x007D is required, which points to PR_TRANSPORT_MESSAGE_HEADERS
     """
 
     additional_properties = T.AdditionalProperties(
@@ -134,6 +167,7 @@ def xml_get_emails_data(email_ids):
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:Categories'}),
+            T.ExtendedFieldURI({'PropertyTag': '0x007D', 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
             T.FieldURI({'FieldURI': 'item:Body'}))
