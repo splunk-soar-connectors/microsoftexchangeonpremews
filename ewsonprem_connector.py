@@ -45,6 +45,7 @@ import os
 import uuid
 from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
+from requests.structures import CaseInsensitiveDict
 from urlparse import urlparse
 import base64
 from datetime import datetime, timedelta
@@ -1448,7 +1449,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, rfc822_email)
 
-    def _extract_email_headers_from_attachments(self, resp_json):
+    def _extract_ext_properties_from_attachments(self, resp_json):
 
         email_headers_ret = list()
 
@@ -1497,27 +1498,17 @@ class EWSOnPremConnector(BaseConnector):
                 self.debug_print("Could not parse the attachments response", e)
                 continue
 
-            ret_val, data = self._extract_email_headers(curr_attachment_data)
+            ret_val, data = self._extract_ext_properties(curr_attachment_data)
 
             if (data):
                 email_headers_ret.append(data)
-                ret_val, data = self._extract_email_headers_from_attachments(curr_attachment_data)
+                ret_val, data = self._extract_ext_properties_from_attachments(curr_attachment_data)
                 if (data):
                     email_headers_ret.extend(data)
 
         return (phantom.APP_SUCCESS, email_headers_ret)
 
-    def _extract_email_headers(self, resp_json):
-
-        if ('m:Items' not in resp_json):
-            k = resp_json.keys()[0]
-            resp_json['m:Items'] = resp_json.pop(k)
-
-        # Get the headers
-        try:
-            email_headers = resp_json['m:Items']['t:Message']['t:ExtendedProperty']['t:Value']
-        except:
-            return RetVal2(phantom.APP_SUCCESS)
+    def _extract_email_headers(self, email_headers):
 
         header_parser = HeaderParser()
         email_part = header_parser.parsestr(email_headers)
@@ -1532,6 +1523,69 @@ class EWSOnPremConnector(BaseConnector):
 
         if (received_headers):
             headers['Received'] = received_headers
+
+        return headers
+
+    def _extract_ext_properties(self, resp_json):
+
+        if ('m:Items' not in resp_json):
+            k = resp_json.keys()[0]
+            resp_json['m:Items'] = resp_json.pop(k)
+
+        headers = dict()
+        extended_properties = list()
+
+        # Get the Extended Properties
+        try:
+            extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
+        except:
+            return RetVal2(phantom.APP_SUCCESS)
+
+        if (type(extended_properties) != list):
+            extended_properties = [extended_properties]
+
+        for curr_ext_property in extended_properties:
+
+            property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
+            value = curr_ext_property.get('t:Value')
+
+            if (not property_tag):
+                continue
+
+            if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                email_headers = self._extract_email_headers(value)
+                if (email_headers is not None):
+                    headers.update(email_headers)
+                    continue
+            if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
+                headers.update({'bodyText': value})
+
+        # now parse the body in the main resp_json
+        try:
+            body_text = resp_json['m:Items']['t:Message']['t:Body']['#text']
+        except:
+            body_text = None
+
+        try:
+            body_type = resp_json['m:Items']['t:Message']['t:Body']['@BodyType']
+        except:
+            body_type = None
+
+        if (body_text is not None):
+            if (body_type is not None):
+                body_key = "body{0}".format(body_type.title().replace(' ', ''))
+                headers.update({body_key: body_text})
+
+        # In some cases the message id is not part of the headers, in this case
+        # copy the message id from the envelope to the header
+        headers_ci = CaseInsensitiveDict(headers)
+        message_id = headers_ci.get('message-id')
+        if (message_id is None):
+            try:
+                message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+                headers['Message-ID'] = message_id
+            except:
+                pass
 
         return (phantom.APP_SUCCESS, headers)
 
@@ -1552,12 +1606,12 @@ class EWSOnPremConnector(BaseConnector):
 
         email_header_list = list()
 
-        ret_val, data = self._extract_email_headers(resp_json)
+        ret_val, data = self._extract_ext_properties(resp_json)
 
         if (data):
             email_header_list.append(data)
 
-        ret_val, data = self._extract_email_headers_from_attachments(resp_json)
+        ret_val, data = self._extract_ext_properties_from_attachments(resp_json)
 
         if (data):
             email_header_list.extend(data)

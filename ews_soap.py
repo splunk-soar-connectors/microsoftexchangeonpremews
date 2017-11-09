@@ -29,6 +29,11 @@ S = ElementMaker(namespace=SOAP_ENVELOPE_NAMESPACE, nsmap=NSMAP)
 M = ElementMaker(namespace=MESSAGES_NAMESPACE, nsmap=NSMAP)
 T = ElementMaker(namespace=TYPES_NAMESPACE, nsmap=NSMAP)
 
+EXTENDED_PROPERTY_HEADERS = '0x007D'
+EXTENDED_PROPERTY_HEADERS_RESPONSE = '0x7D'
+EXTENDED_PROPERTY_BODY_TEXT = '0x1000'
+EXTENDED_PROPERTY_BODY_HTML = '0x1013'
+
 
 def xml_get_restriction(greater_than_time=None, message_id=None):
 
@@ -135,7 +140,8 @@ def xml_get_attachments_data(attachment_ids_to_query):
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:Attachments'}),
-            T.ExtendedFieldURI({'PropertyTag': '0x007D', 'PropertyType': 'String'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_HEADERS, 'PropertyType': 'String'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}))
 
     attachment_shape = M.AttachmentShape(
@@ -167,7 +173,8 @@ def xml_get_emails_data(email_ids):
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:Categories'}),
-            T.ExtendedFieldURI({'PropertyTag': '0x007D', 'PropertyType': 'String'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_HEADERS, 'PropertyType': 'String'}),
+            T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
             T.FieldURI({'FieldURI': 'item:Body'}))
