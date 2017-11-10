@@ -363,7 +363,7 @@ class EWSOnPremConnector(BaseConnector):
             self._session.auth, message = self._set_federated_auth(config)
         else:
             # depending on the app, it's either basic or NTML
-            if (self.get_app_id() == EXCHANGE_ONPREM_APP_ID):
+            if (self.get_app_id() != OFFICE365_APP_ID):
                 self.save_progress("Using NTLM authentication")
                 # use NTLM (Exchange on Prem)
                 self._session.auth = HttpNtlmAuth(username, password)
@@ -1875,7 +1875,6 @@ class EWSOnPremConnector(BaseConnector):
 
 if __name__ == '__main__':
 
-    import sys
     import pudb
     import argparse
 
@@ -1923,7 +1922,7 @@ if __name__ == '__main__':
             print ("Unable to get session id from the platfrom. Error: " + str(e))
             exit(1)
 
-    with open(sys.argv[1]) as f:
+    with open(args.input_test_json) as f:
 
         in_json = f.read()
         in_json = json.loads(in_json)
