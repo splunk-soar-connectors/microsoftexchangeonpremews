@@ -506,7 +506,9 @@ class EWSOnPremConnector(BaseConnector):
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
         if (hasattr(result, 'add_debug_data')):
+            result.add_debug_data({'r_status_code': r.status_code})
             result.add_debug_data({'r_text': r.text if r else 'r is None'})
+            result.add_debug_data({'r_headers': r.headers})
 
         if (not (200 <= r.status_code <= 399)):
             # error
