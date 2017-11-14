@@ -1455,8 +1455,6 @@ class EWSOnPremConnector(BaseConnector):
 
         attach_meta_info = dict()
 
-        # keys_to_extract = ['t:ContentId', 't:Size', 't:Name', 't:IsInline', 't:LastModifiedTime', 't:ContentType', 't:Content']
-
         try:
             attach_meta_info['attachmentId'] = attachment['t:AttachmentId']['@Id']
         except:
@@ -1506,7 +1504,6 @@ class EWSOnPremConnector(BaseConnector):
 
             for curr_attachment in attachment_data:
 
-                # [attachment_ids.append(x['t:AttachmentId']['@Id']) for x in attachment_data]
                 attachment_ids.append(curr_attachment['t:AttachmentId']['@Id'])
                 # Add the info that we have right now
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key)
@@ -1524,7 +1521,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            return RetVal2(action_result.get_status(), None)
+            return RetVal3(action_result.get_status())
 
         if (type(resp_json) != list):
             resp_json = [resp_json]
