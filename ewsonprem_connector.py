@@ -62,7 +62,7 @@ from requests_ntlm import HttpNtlmAuth  # noqa
 
 
 class RetVal3(tuple):
-    def __new__(cls, val1, val2, val3):
+    def __new__(cls, val1, val2=None, val3=None):
         return tuple.__new__(RetVal3, (val1, val2, val3))
 
 
@@ -1451,9 +1451,37 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, rfc822_email)
 
+    def _get_attachment_meta_info(self, attachment, curr_key):
+
+        attach_meta_info = dict()
+
+        try:
+            attach_meta_info['attachmentId'] = attachment['t:AttachmentId']['@Id']
+        except:
+            pass
+
+        try:
+            attach_meta_info['attachmentType'] = curr_key[2:].replace('Attachment', '').lower()
+        except:
+            pass
+
+        # attachmentID, attachmentType
+        for k, v in attachment.iteritems():
+
+            if (not isinstance(v, basestring)):
+                continue
+
+            # convert the key to the convention used by cef
+            cef_key_name = k[2:]
+            cef_key_name = cef_key_name[0].lower() + cef_key_name[1:]
+            attach_meta_info[cef_key_name] = v
+
+        return attach_meta_info
+
     def _extract_ext_properties_from_attachments(self, resp_json):
 
         email_headers_ret = list()
+        attach_meta_info_ret = list()
 
         if ('m:Items' not in resp_json):
             k = resp_json.keys()[0]
@@ -1463,7 +1491,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             attachments = resp_json['m:Items']['t:Message']['t:Attachments']
         except:
-            return RetVal2(phantom.APP_SUCCESS)
+            return RetVal3(phantom.APP_SUCCESS)
 
         attachment_ids = list()
 
@@ -1474,10 +1502,16 @@ class EWSOnPremConnector(BaseConnector):
             if (type(attachment_data) != list):
                 attachment_data = [attachment_data]
 
-            [attachment_ids.append(x['t:AttachmentId']['@Id']) for x in attachment_data]
+            for curr_attachment in attachment_data:
+
+                attachment_ids.append(curr_attachment['t:AttachmentId']['@Id'])
+                # Add the info that we have right now
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key)
+                if (curr_attach_meta_info):
+                    attach_meta_info_ret.append(curr_attach_meta_info)
 
         if (not attachment_ids):
-            return RetVal2(phantom.APP_SUCCESS)
+            return RetVal3(phantom.APP_SUCCESS)
 
         data = ews_soap.xml_get_attachments_data(attachment_ids)
 
@@ -1487,7 +1521,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            return RetVal2(action_result.get_status(), None)
+            return RetVal3(action_result.get_status())
 
         if (type(resp_json) != list):
             resp_json = [resp_json]
@@ -1504,11 +1538,22 @@ class EWSOnPremConnector(BaseConnector):
 
             if (data):
                 email_headers_ret.append(data)
-                ret_val, data = self._extract_ext_properties_from_attachments(curr_attachment_data)
-                if (data):
-                    email_headers_ret.extend(data)
+                ret_val, email_headers_info, attach_meta_info = self._extract_ext_properties_from_attachments(curr_attachment_data)
+                if (email_headers_info):
+                    email_headers_ret.extend(email_headers_info)
+                if (attach_meta_info):
+                    attach_meta_info_ret.extend(attach_meta_info)
+            else:
+                # This is a file attachment, we most probably already have the info from the resp_json
+                # But update it with the call to the xml_get_attachments_data(..) There might be more info
+                # that has to be updated
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment')
+                if (curr_attach_meta_info):
+                    # find the attachmetn in the list and update it
+                    matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
+                    matched_meta_info[0].update(curr_attach_meta_info)
 
-        return (phantom.APP_SUCCESS, email_headers_ret)
+        return (phantom.APP_SUCCESS, email_headers_ret, attach_meta_info_ret)
 
     def _extract_email_headers(self, email_headers):
 
@@ -1607,19 +1652,24 @@ class EWSOnPremConnector(BaseConnector):
         epoch = self._get_email_epoch(resp_json)
 
         email_header_list = list()
+        attach_meta_info_list = list()
 
         ret_val, data = self._extract_ext_properties(resp_json)
 
         if (data):
             email_header_list.append(data)
 
-        ret_val, data = self._extract_ext_properties_from_attachments(resp_json)
+        ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
 
-        if (data):
-            email_header_list.extend(data)
+        if (attach_email_headers):
+            email_header_list.extend(attach_email_headers)
+
+        if (attach_meta_info):
+            attach_meta_info_list.extend(attach_meta_info)
 
         process_email = ProcessEmail()
-        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id, email_headers=email_header_list)
+        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id, email_headers=email_header_list,
+                attachments_data=attach_meta_info_list)
 
     def _process_email_id(self, email_id, target_container_id=None):
 

@@ -464,17 +464,26 @@ class ProcessEmail(object):
 
         part_base64_encoded = part.get_payload()
 
+        headers = self._get_email_headers_from_part(part)
+
+        attach_meta_info = dict()
+
+        if (headers):
+            attach_meta_info = {'headers': dict(headers)}
+
         for curr_attach in self._attachments_from_ews:
 
             if (curr_attach.get('should_ignore', False)):
                 continue
 
             try:
-                attach_content = curr_attach['t:FileAttachment']['t:Content']
+                attach_content = curr_attach['content']
             except:
                 continue
 
             if (attach_content.strip().replace('\r\n', '') == part_base64_encoded.strip().replace('\r\n', '')):
+                attach_meta_info.update(dict(curr_attach))
+                del attach_meta_info['content']
                 curr_attach['should_ignore'] = True
 
         part_payload = part.get_payload(decode=True)
@@ -482,7 +491,7 @@ class ProcessEmail(object):
             return phantom.APP_SUCCESS
         with open(file_path, 'wb') as f:
             f.write(part_payload)
-        files.append({'file_name': file_name, 'file_path': file_path})
+        files.append({'file_name': file_name, 'file_path': file_path, 'meta_info': attach_meta_info})
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail):
 
@@ -551,12 +560,11 @@ class ProcessEmail(object):
 
         return phantom.APP_SUCCESS
 
-    def _parse_email_headers(self, parsed_mail, part, charset=None, add_email_id=None):
-
-        email_header_artifacts = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
+    def _get_email_headers_from_part(self, part, charset=None):
 
         email_headers = part.items()
 
+        # TODO: the next 2 ifs can be condensed to use 'or'
         if (charset is None):
             charset = part.get_content_charset()
 
@@ -564,7 +572,7 @@ class ProcessEmail(object):
             charset = 'utf8'
 
         if (not email_headers):
-            return 0
+            return {}
 
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
@@ -575,6 +583,17 @@ class ProcessEmail(object):
 
         if (received_headers):
             headers['Received'] = received_headers
+
+        return headers
+
+    def _parse_email_headers(self, parsed_mail, part, charset=None, add_email_id=None):
+
+        email_header_artifacts = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
+
+        headers = self._get_email_headers_from_part(part, charset)
+
+        if (not headers):
+            return 0
 
         # Parse email keys first
         cef_artifact = {}
@@ -942,7 +961,7 @@ class ProcessEmail(object):
             return (phantom.APP_ERROR, phantom.APP_ERROR)
 
         # add the vault id artifact to the container
-        cef_artifact = {}
+        cef_artifact = curr_file.get('meta_info', {})
         if (file_name):
             cef_artifact.update({'fileName': file_name})
 
