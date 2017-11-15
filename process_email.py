@@ -592,29 +592,6 @@ class ProcessEmail(object):
 
         headers = self._get_email_headers_from_part(part, charset)
 
-        """
-        email_headers = part.items()
-
-        if (charset is None):
-            charset = part.get_content_charset()
-
-        if (charset is None):
-            charset = 'utf8'
-
-        if (not email_headers):
-            return 0
-
-        # Convert the header tuple into a dictionary
-        headers = CaseInsensitiveDict()
-        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
-
-        # Handle received seperately
-        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
-
-        if (received_headers):
-            headers['Received'] = received_headers
-        """
-
         if (not headers):
             return 0
 
