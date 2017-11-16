@@ -625,6 +625,15 @@ class ProcessEmail(object):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
                     cef_artifact.update({curr_key: curr_value})
+            elif (curr_key == 'parentInternetMessageId'):
+                curr_value = cef_artifact['emailHeaders'].pop(curr_key)
+                cef_artifact.update({curr_key: curr_value})
+            elif (curr_key == 'parentGuid'):
+                curr_value = cef_artifact['emailHeaders'].pop(curr_key)
+                cef_artifact.update({curr_key: curr_value})
+            elif (curr_key == 'emailGuid'):
+                curr_value = cef_artifact['emailHeaders'].pop(curr_key)
+                cef_artifact.update({curr_key: curr_value})
 
         # Adding the email id as a cef artifact crashes the UI when trying to show the action dialog box
         # so not adding this right now. All the other code to process the emailId is there, but the refraining
