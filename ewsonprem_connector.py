@@ -1451,7 +1451,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, rfc822_email)
 
-    def _get_attachment_meta_info(self, attachment, curr_key):
+    def _get_attachment_meta_info(self, attachment, curr_key, parent_internet_message_id, parent_guid):
 
         attach_meta_info = dict()
 
@@ -1464,6 +1464,9 @@ class EWSOnPremConnector(BaseConnector):
             attach_meta_info['attachmentType'] = curr_key[2:].replace('Attachment', '').lower()
         except:
             pass
+
+        attach_meta_info['parentInternetMessageId'] = parent_internet_message_id
+        attach_meta_info['parentGuid'] = parent_guid
 
         # attachmentID, attachmentType
         for k, v in attachment.iteritems():
@@ -1495,6 +1498,14 @@ class EWSOnPremConnector(BaseConnector):
 
         attachment_ids = list()
 
+        internet_message_id = None
+        try:
+            internet_message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+        except:
+            internet_message_id = None
+
+        email_guid = resp_json['emailGuid']
+
         for curr_key in attachments.iterkeys():
 
             attachment_data = attachments[curr_key]
@@ -1506,7 +1517,7 @@ class EWSOnPremConnector(BaseConnector):
 
                 attachment_ids.append(curr_attachment['t:AttachmentId']['@Id'])
                 # Add the info that we have right now
-                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key)
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment, curr_key, internet_message_id, email_guid)
                 if (curr_attach_meta_info):
                     attach_meta_info_ret.append(curr_attach_meta_info)
 
@@ -1534,7 +1545,8 @@ class EWSOnPremConnector(BaseConnector):
                 self.debug_print("Could not parse the attachments response", e)
                 continue
 
-            ret_val, data = self._extract_ext_properties(curr_attachment_data)
+            curr_attachment_data['emailGuid'] = str(uuid.uuid4())
+            ret_val, data = self._extract_ext_properties(curr_attachment_data, internet_message_id, email_guid)
 
             if (data):
                 email_headers_ret.append(data)
@@ -1547,7 +1559,7 @@ class EWSOnPremConnector(BaseConnector):
                 # This is a file attachment, we most probably already have the info from the resp_json
                 # But update it with the call to the xml_get_attachments_data(..) There might be more info
                 # that has to be updated
-                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment')
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
                 if (curr_attach_meta_info):
                     # find the attachmetn in the list and update it
                     matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
@@ -1573,7 +1585,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return headers
 
-    def _extract_ext_properties(self, resp_json):
+    def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):
 
         if ('m:Items' not in resp_json):
             k = resp_json.keys()[0]
@@ -1634,6 +1646,14 @@ class EWSOnPremConnector(BaseConnector):
             except:
                 pass
 
+        if (parent_internet_message_id is not None):
+            headers['parentInternetMessageId'] = parent_internet_message_id
+
+        if (parent_guid is not None):
+            headers['parentGuid'] = parent_guid
+
+        headers['emailGuid'] = resp_json['emailGuid']
+
         return (phantom.APP_SUCCESS, headers)
 
     def _parse_email(self, resp_json, email_id, target_container_id):
@@ -1653,6 +1673,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email_header_list = list()
         attach_meta_info_list = list()
+        resp_json['emailGuid'] = str(uuid.uuid4())
 
         ret_val, data = self._extract_ext_properties(resp_json)
 
