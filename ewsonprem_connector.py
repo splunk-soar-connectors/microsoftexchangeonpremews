@@ -1410,6 +1410,7 @@ class EWSOnPremConnector(BaseConnector):
             message = action_result.get_message()
             if ( 'ErrorNameResolutionNoResults' in message):
                 message += ' The input parameter might not be a distribution list.'
+                action_result.add_data({"t_EmailAddress": group})
             return action_result.set_status(phantom.APP_ERROR, message)
 
         if (not resp_json):
@@ -1427,6 +1428,9 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'total_entries': len(mailboxes)})
 
         for mailbox in mailboxes:
+            if param.get('recursive', False) and "DL" in mailbox['t:MailboxType']:
+                param[EWSONPREM_JSON_GROUP] = mailbox['t:EmailAddress']
+                self._expand_dl(param)
             self._cleanse_key_names(mailbox)
             action_result.add_data(mailbox)
 
