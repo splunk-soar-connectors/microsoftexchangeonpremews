@@ -1009,7 +1009,7 @@
         {
             "action": "list addresses",
             "description": "Get the email addresses that make up a Distribution List",
-            "verbose": "The <b>group</b> parameter, supports as input the email (for e.g. dleng@corp.contoso.com) or the name (for e.g. dleng) of the distribution list.<br><br>The <b>recursive</b> parameter will cause the action to recursively search for distribution lists inside of the initial distribution lists and expand those.<br>Each discovered distribution list will be submitted as a separate set of results, causing multiple sets of action results to be created.",
+            "verbose": "The <b>group</b> parameter supports, as input, the email (for e.g. dleng@corp.contoso.com) or the name (for e.g. dleng) of the distribution list.<br><br>The <b>recursive</b> parameter will cause the action to recursively search for distribution lists inside of the initial distribution lists and expand those.<br>Each discovered distribution list will be submitted as a separate set of results, causing multiple sets of action results to be created.",
             "type": "investigate",
             "identifier": "expand_dl",
             "read_only": true,
