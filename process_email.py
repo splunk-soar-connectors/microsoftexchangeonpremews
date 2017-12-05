@@ -29,6 +29,7 @@ import hashlib
 import json
 import magic
 from requests.structures import CaseInsensitiveDict
+from copy import deepcopy
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -121,7 +122,7 @@ class ProcessEmail(object):
         self._headers_from_ews = list()
         self._attachments_from_ews = list()
         self._parsed_mail = None
-
+        self._guid_to_hash = dict()
         pass
 
     def _get_file_contains(self, file_path):
@@ -823,11 +824,11 @@ class ProcessEmail(object):
         param = self._base_connector.get_current_param()
 
         container_count = EWS_DEFAULT_CONTAINER_COUNT
-        artifact_count = EWS_DEFAULT_ARTIFACT_COUNT
+        # artifact_count = EWS_DEFAULT_ARTIFACT_COUNT
 
         if (param):
             container_count = param.get(phantom.APP_JSON_CONTAINER_COUNT, EWS_DEFAULT_CONTAINER_COUNT)
-            artifact_count = param.get(phantom.APP_JSON_ARTIFACT_COUNT, EWS_DEFAULT_ARTIFACT_COUNT)
+            # artifact_count = param.get(phantom.APP_JSON_ARTIFACT_COUNT, EWS_DEFAULT_ARTIFACT_COUNT)
 
         results = results[:container_count]
 
@@ -859,6 +860,17 @@ class ProcessEmail(object):
                     self._base_connector.debug_print(message)
                     continue
 
+            # run a loop to first set the sdi which will create the hash
+            artifacts = result.get('artifacts', [])
+            for j, artifact in enumerate(artifacts):
+
+                if (not artifact):
+                    continue
+
+                # add the container id to the artifact
+                artifact['container_id'] = container_id
+                self._set_sdi(artifact)
+
             files = result.get('files')
 
             vault_ids = list()
@@ -871,12 +883,8 @@ class ProcessEmail(object):
                 if (added_to_vault):
                     vault_artifacts_added += 1
 
-            artifacts = result.get('artifacts')
             if (not artifacts):
                 continue
-
-            if (not self._base_connector.is_poll_now()):
-                artifacts = artifacts[:artifact_count]
 
             len_artifacts = len(artifacts)
 
@@ -885,14 +893,18 @@ class ProcessEmail(object):
                 if (not artifact):
                     continue
 
-                # add the container id to the artifact
-                artifact['container_id'] = container_id
-                self._set_sdi((j + vault_artifacts_added), artifact)
-
                 # if it is the last artifact of the last container
                 if ((j + 1) == len_artifacts):
                     # mark it such that active playbooks get executed
                     artifact['run_automation'] = True
+
+                cef_artifact = artifact.get('cef')
+                if ('parentGuid' in cef_artifact):
+                    parent_guid = cef_artifact.pop('parentGuid')
+                    cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+                if ('emailGuid' in cef_artifact):
+                    # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
+                    del cef_artifact['emailGuid']
 
                 ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
                 self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
@@ -992,36 +1004,43 @@ class ProcessEmail(object):
         artifact['cef'] = cef_artifact
         if (contains):
             artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
-        self._set_sdi(artifact_id, artifact)
+        self._set_sdi(artifact)
+
+        if ('parentGuid' in cef_artifact):
+            parent_guid = cef_artifact.pop('parentGuid')
+            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
 
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
 
         return (phantom.APP_SUCCESS, ret_val)
 
-    def _set_sdi(self, default_id, input_dict):
+    def _set_sdi(self, input_dict):
 
         if ('source_data_identifier' in input_dict):
             del input_dict['source_data_identifier']
-        dict_hash = None
 
-        # first get the phantom version
-        phantom_version = self._base_connector.get_product_version()
+        input_dict_hash = input_dict
 
-        if (not phantom_version):
-            dict_hash = self._create_dict_hash(input_dict)
-        else:
-            ver_cmp = cmp(phantom_version, HASH_FIXED_PHANTOM_VERSION)
+        cef = input_dict.get('cef')
 
-            if (ver_cmp == -1):
-                dict_hash = self._create_dict_hash(input_dict)
+        curr_email_guid = None
 
-        if (dict_hash):
-            input_dict['source_data_identifier'] = dict_hash
-        else:
-            # Remove this code once the backend has fixed PS-4216 _and_ it has been
-            # merged into next so that 2.0 and 2.1 has the code
-            input_dict['source_data_identifier'] = self._create_dict_hash(input_dict)
+        if (cef is not None):
+            if (('parentGuid' in cef) or ('emailGuid' in cef)):
+                # make a copy since the dictionary will have to be different
+                input_dict_hash = deepcopy(input_dict)
+                cef = input_dict_hash['cef']
+                if ('parentGuid' in cef):
+                    del cef['parentGuid']
+                curr_email_guid = cef.get('emailGuid')
+                if (curr_email_guid is not None):
+                    del cef['emailGuid']
+
+        input_dict['source_data_identifier'] = self._create_dict_hash(input_dict_hash)
+
+        if (curr_email_guid):
+            self._guid_to_hash[curr_email_guid] = input_dict['source_data_identifier']
 
         return phantom.APP_SUCCESS
 
