@@ -1684,7 +1684,7 @@
         },
         {
             "action": "on poll",
-            "description": "Action handler for the ingest functionality",
+            "description": "Ingest emails from the server into Phantom",
             "verbose": "Please see sections <a href=\"#poll_now\">POLL NOW</a> and <a href=\"#scheduled_polling\">Scheduled Polling</a> for more info on how this action is implemented by the app.",
             "type": "ingest",
             "identifier": "on_poll",
