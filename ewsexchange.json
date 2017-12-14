@@ -1,7 +1,7 @@
 {
     "appid": "badc5252-4a82-4a6d-bc53-d1e503857124",
     "name": "EWS for Exchange",
-    "description": "This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation.",
+    "description": "This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation",
     "publisher": "Phantom",
     "type": "email",
     "main_module": "ewsonprem_connector.pyc",
@@ -131,7 +131,7 @@
     "actions": [
         {
             "action": "test connectivity",
-            "description": "Validate the asset configuration for connectivity. This action runs a quick query on the device to check the connection and credentials.",
+            "description": "Validate the asset configuration for connectivity using supplied configuration",
             "type": "test",
             "identifier": "test_asset_connectivity",
             "read_only": true,
