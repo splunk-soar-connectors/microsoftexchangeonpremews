@@ -12,7 +12,8 @@
     "product_name": "Exchange",
     "product_version_regex": ".*",
     "min_phantom_version": "3.0.251",
-    "logo": "microsoft_logo.png",
+    "logo": "logo_microsoft.svg",
+    "logo_dark": "logo_microsoft_dark.svg",
     "license": "Copyright (c) Phantom Cyber Corporation 2016-2017",
     "configuration": {
         "url": {
@@ -223,56 +224,53 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
+                    "data_path": "action_result.status",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
+                    "data_path": "action_result.parameter.body",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_ItemId.@Id",
+                    "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "contains": [
-                        "exchange email id"
-                    ],
-                    "column_name": "Message ID",
-                    "column_order": 6
+                        "email"
+                    ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_ItemId.@ChangeKey",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
+                    "data_path": "action_result.parameter.folder",
                     "data_type": "string",
-                    "column_name": "Sender",
-                    "column_order": 1
+                    "contains": [
+                        "mail folder",
+                        "mail folder path"
+                    ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_Subject",
+                    "data_path": "action_result.parameter.internet_message_id",
                     "data_type": "string",
-                    "column_name": "Subject",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.data.*.t_InternetMessageId",
-                    "data_type": "string",
-                    "column_name": "Internet Message ID",
-                    "column_order": 5,
                     "contains": [
                         "internet message id"
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_DateTimeReceived",
+                    "data_path": "action_result.parameter.query",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.range",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.sender",
                     "data_type": "string",
-                    "column_name": "Received Time",
-                    "column_order": 2
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.subject",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.folder",
@@ -293,60 +291,63 @@
                     "column_order": 4
                 },
                 {
-                    "data_path": "action_result.status",
+                    "data_path": "action_result.data.*.t_DateTimeReceived",
+                    "data_type": "string",
+                    "column_name": "Received Time",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.message",
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_InternetMessageId",
+                    "data_type": "string",
+                    "column_name": "Internet Message ID",
+                    "column_order": 5,
+                    "contains": [
+                        "internet message id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ItemId.@ChangeKey",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ItemId.@Id",
+                    "data_type": "string",
+                    "contains": [
+                        "exchange email id"
+                    ],
+                    "column_name": "Message ID",
+                    "column_order": 6
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "column_name": "Sender",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.t_Subject",
+                    "data_type": "string",
+                    "column_name": "Subject",
+                    "column_order": 0
                 },
                 {
                     "data_path": "action_result.summary.emails_matched",
                     "data_type": "numeric"
                 },
                 {
-                    "data_path": "action_result.parameter.body",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.internet_message_id",
-                    "data_type": "string",
-                    "contains": [
-                        "internet message id"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.sender",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.range",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.query",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.parameter.folder",
-                    "data_type": "string",
-                    "contains": [
-                        "mail folder",
-                        "mail folder path"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.subject",
+                    "data_path": "action_result.message",
                     "data_type": "string"
                 },
                 {
@@ -402,12 +403,6 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.message",
-                    "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 1
-                },
-                {
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "contains": [
@@ -422,6 +417,12 @@
                     ],
                     "column_name": "Message ID",
                     "column_order": 0
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Status Message",
+                    "column_order": 1
                 },
                 {
                     "data_path": "summary.total_objects",
@@ -508,19 +509,8 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.message",
-                    "data_type": "string",
-                    "column_name": "Status Message",
-                    "column_order": 4
-                },
-                {
-                    "data_path": "action_result.parameter.id",
-                    "data_type": "string",
-                    "contains": [
-                        "exchange email id"
-                    ],
-                    "column_name": "Source Message ID",
-                    "column_order": 2
+                    "data_path": "action_result.parameter.dont_impersonate",
+                    "data_type": "boolean"
                 },
                 {
                     "data_path": "action_result.parameter.email",
@@ -542,6 +532,22 @@
                     "column_order": 1
                 },
                 {
+                    "data_path": "action_result.parameter.id",
+                    "data_type": "string",
+                    "contains": [
+                        "exchange email id"
+                    ],
+                    "column_name": "Source Message ID",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.parameter.impersonate_email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.new_email_id",
                     "data_type": "string",
                     "contains": [
@@ -551,15 +557,10 @@
                     "column_order": 3
                 },
                 {
-                    "data_path": "action_result.parameter.dont_impersonate",
-                    "data_type": "boolean"
-                },
-                {
-                    "data_path": "action_result.parameter.impersonate_email",
+                    "data_path": "action_result.message",
                     "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
+                    "column_name": "Status Message",
+                    "column_order": 4
                 },
                 {
                     "data_path": "summary.total_objects",
@@ -649,6 +650,169 @@
             },
             "output": [
                 {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.container_id",
+                    "data_type": "numeric",
+                    "contains": [
+                        "phantom container id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.id",
+                    "data_type": "string",
+                    "contains": [
+                        "exchange email id"
+                    ],
+                    "column_name": "Email ID",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.parameter.ingest_email",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.parameter.use_current_container",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.parameter.vault_id",
+                    "data_type": "string",
+                    "contains": [
+                        "vault id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.Content-Type",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Date",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Delivered-To",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.From",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Importance",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.MIME-Version",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Mail-Filter-Gateway",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Message-ID",
+                    "data_type": "string",
+                    "contains": [
+                        "internet message id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.Received",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Return-Path",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Sender",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Subject",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.To",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Account-Key",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-CTCH-RefID",
+                    "data_type": "string"
+                },
+                {
+                    "contains": [
+                        "email"
+                    ],
+                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-From",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-ID",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-SpamDetectionEngine",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-SpamScore",
+                    "data_type": "string"
+                },
+                {
+                    "contains": [
+                        "email"
+                    ],
+                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-To",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Mailer",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MimeOLE",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Mozilla-Keys",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Priority",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-SOHU-Antispam-Bayes",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-SOHU-Antispam-Language",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-Spam-Status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-UIDL",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_Body.#text",
                     "data_type": "string"
                 },
@@ -657,15 +821,15 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
+                    "data_path": "action_result.data.*.t_DateTimeCreated",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
+                    "data_path": "action_result.data.*.t_DateTimeReceived",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
+                    "data_path": "action_result.data.*.t_DateTimeSent",
                     "data_type": "string"
                 },
                 {
@@ -676,15 +840,42 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_Size",
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_HasAttachments",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_InternetMessageId",
+                    "data_type": "string",
+                    "contains": [
+                        "internet message id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsAssociated",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
+                    "data_type": "boolean"
                 },
                 {
                     "data_path": "action_result.data.*.t_IsRead",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_ItemId.@Id",
+                    "data_path": "action_result.data.*.t_IsReadReceiptRequested",
                     "data_type": "string"
                 },
                 {
@@ -692,26 +883,11 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
+                    "data_path": "action_result.data.*.t_ItemId.@Id",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Subject",
+                    "data_path": "action_result.data.*.t_LastModifiedTime",
                     "data_type": "string"
                 },
                 {
@@ -721,25 +897,6 @@
                 {
                     "data_path": "action_result.data.*.t_MimeContent.@CharacterSet",
                     "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sensitivity",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_DateTimeSent",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_IsAssociated",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_InternetMessageId",
-                    "data_type": "string",
-                    "contains": [
-                        "internet message id"
-                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
@@ -754,19 +911,34 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
-                    "data_type": "boolean"
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_MailboxType",
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_RoutingType",
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sensitivity",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Size",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Subject",
                     "data_type": "string"
                 },
                 {
@@ -777,193 +949,15 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_HasAttachments",
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_MailboxType",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_DateTimeCreated",
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_DateTimeReceived",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_LastModifiedTime",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_IsReadReceiptRequested",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.status",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary.subject",
-                    "data_type": "string",
-                    "column_name": "Subject",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.summary.sent_time",
-                    "data_type": "string",
-                    "column_name": "Sent Time",
-                    "column_order": 2
-                },
-                {
-                    "data_path": "action_result.summary.create_time",
-                    "data_type": "string",
-                    "column_name": "Create Time",
-                    "column_order": 1
-                },
-                {
-                    "data_path": "action_result.parameter.vault_id",
-                    "data_type": "string",
-                    "contains": [
-                        "vault id"
-                    ]
-                },
-                {
-                    "data_path": "action_result.parameter.id",
-                    "data_type": "string",
-                    "contains": [
-                        "exchange email id"
-                    ],
-                    "column_name": "Email ID",
-                    "column_order": 3
-                },
-                {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.To",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Date",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.From",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Sender",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-UIDL",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Subject",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Received",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Mailer",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-MimeOLE",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Importance",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Message-ID",
-                    "data_type": "string",
-                    "contains": [
-                        "internet message id"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-Priority",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Return-Path",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Content-Type",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Delivered-To",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.MIME-Version",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-CTCH-RefID",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Account-Key",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Spam-Status",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Mozilla-Keys",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Mail-Filter-Gateway",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-SOHU-Antispam-Bayes",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-ID",
-                    "data_type": "string"
-                },
-                {
-                    "contains": [
-                        "email"
-                    ],
-                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-To",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-SOHU-Antispam-Language",
-                    "data_type": "string"
-                },
-                {
-                    "contains": [
-                        "email"
-                    ],
-                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-From",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-SpamScore",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-Mail-Filter-Gateway-SpamDetectionEngine",
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_RoutingType",
                     "data_type": "string"
                 },
                 {
@@ -974,6 +968,12 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.summary.create_time",
+                    "data_type": "string",
+                    "column_name": "Create Time",
+                    "column_order": 1
+                },
+                {
                     "data_path": "action_result.summary.email_id",
                     "data_type": "numeric",
                     "contains": [
@@ -981,19 +981,20 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.parameter.container_id",
-                    "data_type": "numeric",
-                    "contains": [
-                        "phantom container id"
-                    ]
+                    "data_path": "action_result.summary.sent_time",
+                    "data_type": "string",
+                    "column_name": "Sent Time",
+                    "column_order": 2
                 },
                 {
-                    "data_path": "action_result.parameter.ingest_email",
-                    "data_type": "boolean"
+                    "data_path": "action_result.summary.subject",
+                    "data_type": "string",
+                    "column_name": "Subject",
+                    "column_order": 0
                 },
                 {
-                    "data_path": "action_result.parameter.use_current_container",
-                    "data_type": "boolean"
+                    "data_path": "action_result.message",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "summary.total_objects",
@@ -1041,22 +1042,16 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.data.*.t_Name",
-                    "data_type": "string",
-                    "column_name": "User Name",
-                    "column_order": 1
+                    "data_path": "action_result.status",
+                    "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_MailboxType",
+                    "data_path": "action_result.parameter.group",
                     "data_type": "string",
-                    "column_name": "Mailbox Type",
-                    "column_order": 3
-                },
-                {
-                    "data_path": "action_result.data.*.t_RoutingType",
-                    "data_type": "string",
-                    "column_name": "Routing Type",
-                    "column_order": 2
+                    "contains": [
+                        "email",
+                        "exchange distribution list"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_EmailAddress",
@@ -1068,24 +1063,30 @@
                     "column_order": 0
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_path": "action_result.data.*.t_MailboxType",
+                    "data_type": "string",
+                    "column_name": "Mailbox Type",
+                    "column_order": 3
                 },
                 {
-                    "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_path": "action_result.data.*.t_Name",
+                    "data_type": "string",
+                    "column_name": "User Name",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.t_RoutingType",
+                    "data_type": "string",
+                    "column_name": "Routing Type",
+                    "column_order": 2
                 },
                 {
                     "data_path": "action_result.summary.total_entries",
                     "data_type": "numeric"
                 },
                 {
-                    "data_path": "action_result.parameter.group",
-                    "data_type": "string",
-                    "contains": [
-                        "email",
-                        "exchange distribution list"
-                    ]
+                    "data_path": "action_result.message",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "summary.total_objects",
@@ -1126,48 +1127,8 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_DisplayName",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_ContactSource",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_EmailAddresses.*.@Key",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_EmailAddresses.*.#text",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Mailbox.t_Name",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Mailbox.t_RoutingType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Mailbox.t_EmailAddress",
-                    "data_type": "string"
-                },
-                {
                     "data_path": "action_result.status",
                     "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary.total_entries",
-                    "data_type": "numeric"
                 },
                 {
                     "data_path": "action_result.parameter.email",
@@ -1178,23 +1139,11 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_Surname",
+                    "data_path": "action_result.data.*.t_Contact.t_CompanyName",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_Initials",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_GivenName",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_Manager",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_JobTitle",
+                    "data_path": "action_result.data.*.t_Contact.t_ContactSource",
                     "data_type": "string"
                 },
                 {
@@ -1202,11 +1151,35 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_CompanyName",
+                    "data_path": "action_result.data.*.t_Contact.t_DisplayName",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_PhoneNumbers.t_Entry.*.@Key",
+                    "data_path": "action_result.data.*.t_Contact.t_EmailAddresses.*.#text",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_EmailAddresses.*.@Key",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_GivenName",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_Initials",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_JobTitle",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_Manager",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_OfficeLocation",
                     "data_type": "string"
                 },
                 {
@@ -1214,7 +1187,7 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_OfficeLocation",
+                    "data_path": "action_result.data.*.t_Contact.t_PhoneNumbers.t_Entry.*.@Key",
                     "data_type": "string"
                 },
                 {
@@ -1226,6 +1199,14 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.t_Contact.t_PhysicalAddresses.t_Entry.t_CountryOrRegion",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_PhysicalAddresses.t_Entry.t_PostalCode",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_Contact.t_PhysicalAddresses.t_Entry.t_State",
                     "data_type": "string"
                 },
@@ -1234,11 +1215,31 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_PhysicalAddresses.t_Entry.t_PostalCode",
+                    "data_path": "action_result.data.*.t_Contact.t_Surname",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.t_Contact.t_PhysicalAddresses.t_Entry.t_CountryOrRegion",
+                    "data_path": "action_result.data.*.t_Mailbox.t_EmailAddress",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Mailbox.t_MailboxType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Mailbox.t_Name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Mailbox.t_RoutingType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.total_entries",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.message",
                     "data_type": "string"
                 },
                 {
@@ -1308,307 +1309,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_DateTimeCreated",
-                    "data_type": "string",
-                    "example_values": [
-                        "2017-10-05T20:19:58Z"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Categories",
-                    "data_type": "string",
-                    "example_values": [
-                        "red"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Body.#text",
-                    "data_type": "string",
-                    "example_values": [
-                        "Attached .msg file. Hello"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Body.@BodyType",
-                    "data_type": "string",
-                    "example_values": [
-                        "Text"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Subject",
-                    "data_type": "string",
-                    "example_values": [
-                        "Both value are modified"
-                    ],
-                    "column_name": "Subject",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.data.*.t_HasAttachments",
-                    "data_type": "string",
-                    "example_values": [
-                        "true"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
-                    "data_type": "string",
-                    "example_values": [
-                        "Phantom User"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_MailboxType",
-                    "data_type": "string",
-                    "example_values": [
-                        "Mailbox"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_RoutingType",
-                    "data_type": "string",
-                    "example_values": [
-                        "SMTP"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
-                    "data_type": "string",
-                    "example_values": [
-                        "phantom@deshaw.com"
-                    ],
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_InternetMessageId",
-                    "data_type": "string",
-                    "example_values": [
-                        "<81c761fe-caa8-f924-f65d-079382c1ad0b@deshaw.com>"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_LastModifiedTime",
-                    "data_type": "string",
-                    "example_values": [
-                        "2017-10-31T01:09:20Z"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_MimeContent.@CharacterSet",
-                    "data_type": "string",
-                    "example_values": [
-                        "UTF-8"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_MimeContent.#text",
-                    "data_type": "string",
-                    "example_values": [
-                        "RnJvbTogUGhhbnRvbSBVc2VyIDxwaGFudG9t..."
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_IsRead",
-                    "data_type": "string",
-                    "example_values": [
-                        "true"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_DateTimeSent",
-                    "data_type": "string",
-                    "example_values": [
-                        "2017-10-03T21:31:20Z"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
-                    "data_type": "string",
-                    "example_values": [
-                        "Phantom"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
-                    "data_type": "string",
-                    "example_values": [
-                        "OneOff"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
-                    "data_type": "string",
-                    "example_values": [
-                        "SMTP"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
-                    "data_type": "string",
-                    "example_values": [
-                        "phantom@deshaw.com"
-                    ],
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_IsAssociated",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sensitivity",
-                    "data_type": "string",
-                    "example_values": [
-                        "Normal"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Size",
-                    "data_type": "string",
-                    "example_values": [
-                        "56353"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_IsReadReceiptRequested",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_DateTimeReceived",
-                    "data_type": "string",
-                    "example_values": [
-                        "2017-10-03T21:31:05Z"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
-                    "data_type": "string",
-                    "example_values": [
-                        "Phantom"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
-                    "data_type": "string",
-                    "example_values": [
-                        "OneOff"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
-                    "data_type": "string",
-                    "example_values": [
-                        "SMTP"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
-                    "data_type": "string",
-                    "example_values": [
-                        "phantom@deshaw.com"
-                    ],
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ItemId.@Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA="
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ItemId.@ChangeKey",
-                    "data_type": "string",
-                    "example_values": [
-                        "CQAAABYAAACQhMsoV7EYSJF42ChR9SCxAAAAj9UU"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsInline",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsContactPhoto",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAABEgAQAHAXDtZM8ItNnDTtvcd6IAo="
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentType",
-                    "data_type": "string",
-                    "example_values": [
-                        "application/octet-stream"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
-                    "data_type": "string",
-                    "example_values": [
-                        "7518226202D21C4397EE1CB1E2E540C7@deshaw.com"
-                    ],
-                    "contains": [
-                        "email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Size",
-                    "data_type": "string",
-                    "example_values": [
-                        "55360"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
-                    "data_type": "string",
-                    "example_values": [
-                        "test.msg"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_LastModifiedTime",
-                    "data_type": "string",
-                    "example_values": [
-                        "2017-10-03T21:31:05"
-                    ]
-                },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string",
-                    "example_values": [
-                        "Create time: 2017-10-05T20:19:58Z\nSubject: Both value are modified\nSent time: 2017-10-03T21:31:20Z"
-                    ]
-                },
-                {
                     "data_path": "action_result.parameter.category",
                     "data_type": "string",
                     "example_values": [
@@ -1645,10 +1345,311 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAABEgAQAHAXDtZM8ItNnDTtvcd6IAo="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
+                    "data_type": "string",
+                    "example_values": [
+                        "7518226202D21C4397EE1CB1E2E540C7@deshaw.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentType",
+                    "data_type": "string",
+                    "example_values": [
+                        "application/octet-stream"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsContactPhoto",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:05"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "test.msg"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "55360"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Body.#text",
+                    "data_type": "string",
+                    "example_values": [
+                        "Attached .msg file. Hello"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Body.@BodyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Text"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Categories",
+                    "data_type": "string",
+                    "example_values": [
+                        "red"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_DateTimeCreated",
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-05T20:19:58Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_DateTimeReceived",
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:05Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_DateTimeSent",
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:20Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "phantom@deshaw.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "Phantom"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_HasAttachments",
+                    "data_type": "string",
+                    "example_values": [
+                        "true"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_InternetMessageId",
+                    "data_type": "string",
+                    "example_values": [
+                        "<81c761fe-caa8-f924-f65d-079382c1ad0b@deshaw.com>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsAssociated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsRead",
+                    "data_type": "string",
+                    "example_values": [
+                        "true"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsReadReceiptRequested",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ItemId.@ChangeKey",
+                    "data_type": "string",
+                    "example_values": [
+                        "CQAAABYAAACQhMsoV7EYSJF42ChR9SCxAAAAj9UU"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ItemId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-31T01:09:20Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_MimeContent.#text",
+                    "data_type": "string",
+                    "example_values": [
+                        "RnJvbTogUGhhbnRvbSBVc2VyIDxwaGFudG9t..."
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_MimeContent.@CharacterSet",
+                    "data_type": "string",
+                    "example_values": [
+                        "UTF-8"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "phantom@deshaw.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "Phantom"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sensitivity",
+                    "data_type": "string",
+                    "example_values": [
+                        "Normal"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "56353"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Subject",
+                    "data_type": "string",
+                    "example_values": [
+                        "Both value are modified"
+                    ],
+                    "column_name": "Subject",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "phantom@deshaw.com"
+                    ],
+                    "contains": [
+                        "email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Mailbox"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "Phantom User"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
                     "data_path": "action_result.summary.create_time",
                     "data_type": "string",
                     "example_values": [
                         "2017-10-05T20:19:58Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.sent_time",
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:20Z"
                     ]
                 },
                 {
@@ -1659,10 +1660,10 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.summary.sent_time",
+                    "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        "2017-10-03T21:31:20Z"
+                        "Create time: 2017-10-05T20:19:58Z\nSubject: Both value are modified\nSent time: 2017-10-03T21:31:20Z"
                     ]
                 },
                 {
