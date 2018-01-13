@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-=======
 ewsonprem_connector.py
 ewsonprem_consts.py
 ews_soap.py
 process_email.py
 ewsonprem_view.py
 .git*
->>>>>>> 948a605b05a2af325301fd99a5ffa9c3abc4243f
