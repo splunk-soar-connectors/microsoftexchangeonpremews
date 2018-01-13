@@ -247,7 +247,6 @@ class ProcessEmail(object):
             ips_in_mail = [x for x in ips_in_mail if self._is_ip(x)]
             if (ips_in_mail):
                 ips |= set(ips_in_mail)
-<<<<<<< HEAD
 
     def _handle_body(self, body, parsed_mail, body_index, email_id):
 
@@ -283,43 +282,6 @@ class ProcessEmail(object):
         if (self._config[PROC_EMAIL_JSON_EXTRACT_IPS]):
             self._get_ips(file_data, ips)
 
-=======
-
-    def _handle_body(self, body, parsed_mail, body_index, email_id):
-
-        local_file_path = body['file_path']
-        charset = body.get('charset')
-
-        ips = parsed_mail[PROC_EMAIL_JSON_IPS]
-        hashes = parsed_mail[PROC_EMAIL_JSON_HASHES]
-        urls = parsed_mail[PROC_EMAIL_JSON_URLS]
-        domains = parsed_mail[PROC_EMAIL_JSON_DOMAINS]
-
-        file_data = None
-        with open(local_file_path, 'r') as f:
-            file_data = f.read()
-
-        if ((file_data is None) or (len(file_data) == 0)):
-            return phantom.APP_ERROR
-
-        self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
-
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]):
-            emails = []
-            emails.extend(re.findall(email_regexc, file_data))
-            emails.extend(re.findall(email_regexc2, file_data))
-
-            for curr_email in emails:
-                domain = curr_email[curr_email.rfind('@') + 1:]
-                if (domain) and (not ph_utils.is_ip(domain)):
-                    domains.add(domain)
-
-        self._extract_urls_domains(file_data, urls, domains)
-
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_IPS]):
-            self._get_ips(file_data, ips)
-
->>>>>>> 948a605b05a2af325301fd99a5ffa9c3abc4243f
         if (self._config[PROC_EMAIL_JSON_EXTRACT_HASHES]):
             hashs_in_mail = re.findall(hash_regexc, file_data)
             if (hashs_in_mail):
@@ -483,7 +445,6 @@ class ProcessEmail(object):
             return (phantom.APP_SUCCESS, True)
 
         part_payload = part.get_payload(decode=True)
-<<<<<<< HEAD
 
         if (not part_payload):
             return (phantom.APP_SUCCESS, False)
@@ -526,50 +487,6 @@ class ProcessEmail(object):
                 del attach_meta_info['content']
                 curr_attach['should_ignore'] = True
 
-=======
-
-        if (not part_payload):
-            return (phantom.APP_SUCCESS, False)
-
-        with open(file_path, 'wb') as f:
-            f.write(part_payload)
-
-        bodies.append({'file_path': file_path, 'charset': part.get_content_charset()})
-
-        return (phantom.APP_SUCCESS, False)
-
-    def _handle_attachment(self, part, file_name, file_path):
-
-        files = self._parsed_mail[PROC_EMAIL_JSON_FILES]
-
-        if (not self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]):
-            return phantom.APP_SUCCESS
-
-        part_base64_encoded = part.get_payload()
-
-        headers = self._get_email_headers_from_part(part)
-
-        attach_meta_info = dict()
-
-        if (headers):
-            attach_meta_info = {'headers': dict(headers)}
-
-        for curr_attach in self._attachments_from_ews:
-
-            if (curr_attach.get('should_ignore', False)):
-                continue
-
-            try:
-                attach_content = curr_attach['content']
-            except:
-                continue
-
-            if (attach_content.strip().replace('\r\n', '') == part_base64_encoded.strip().replace('\r\n', '')):
-                attach_meta_info.update(dict(curr_attach))
-                del attach_meta_info['content']
-                curr_attach['should_ignore'] = True
-
->>>>>>> 948a605b05a2af325301fd99a5ffa9c3abc4243f
         part_payload = part.get_payload(decode=True)
         if (not part_payload):
             return phantom.APP_SUCCESS
@@ -727,7 +644,6 @@ class ProcessEmail(object):
             cef_artifact['emailId'] = add_email_id
             if (self._email_id_contains):
                 cef_types.update({'emailId': self._email_id_contains})
-<<<<<<< HEAD
 
         artifact = {}
         artifact.update(_artifact_common)
@@ -989,278 +905,10 @@ class ProcessEmail(object):
                 if ('emailGuid' in cef_artifact):
                     # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
                     del cef_artifact['emailGuid']
-
-                # ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
-                # self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
 
             artifacts = self._base_connector._preprocess_artifacts(artifacts)
-            ret_val, status_string, artifact_ids = self._base_connector.save_artifacts(artifacts)
-=======
-
-        artifact = {}
-        artifact.update(_artifact_common)
-        artifact['name'] = 'Email Artifact'
-        artifact['cef'] = cef_artifact
-        artifact['cef_types'] = cef_types
-        email_header_artifacts.append(artifact)
-
-        return len(email_header_artifacts)
-
-    def _handle_mail_object(self, mail, email_id, rfc822_email, tmp_dir, start_time_epoch):
-
-        self._parsed_mail = OrderedDict()
-
-        # Create a tmp directory for this email, will extract all files here
-        tmp_dir = tmp_dir
-        if not os.path.exists(tmp_dir):
-            os.makedirs(tmp_dir)
-
-        extract_attach = self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]
-
-        charset = mail.get_content_charset()
-
-        if (charset is None):
-            charset = 'utf8'
-
-        # Extract fields and place it in a dictionary
-        self._parsed_mail[PROC_EMAIL_JSON_SUBJECT] = mail.get('Subject', '')
-        self._parsed_mail[PROC_EMAIL_JSON_FROM] = mail.get('From', '')
-        self._parsed_mail[PROC_EMAIL_JSON_TO] = mail.get('To', '')
-        self._parsed_mail[PROC_EMAIL_JSON_DATE] = mail.get('Date', '')
-        self._parsed_mail[PROC_EMAIL_JSON_MSG_ID] = mail.get('Message-ID', '')
-        self._parsed_mail[PROC_EMAIL_JSON_FILES] = files = []
-        self._parsed_mail[PROC_EMAIL_JSON_BODIES] = bodies = []
-        self._parsed_mail[PROC_EMAIL_JSON_START_TIME] = start_time_epoch
-        self._parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS] = []
-
-        # parse the parts of the email
-        if (mail.is_multipart()):
-            for i, part in enumerate(mail.walk()):
-                add_email_id = None
-                if (i == 0):
-                    add_email_id = email_id
-
-                self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
-
-                # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
-
-                # _debug_print("part: {0}".format(part.__dict__))
-                # _debug_print("part type", type(part))
-                if (part.is_multipart()):
-                    continue
-                try:
-                    ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
-                except Exception as e:
-                    self._debug_print("ErrorExp in _handle_part # {0}".format(i), e)
-                    continue
-
-                if (phantom.is_fail(ret_val)):
-                    continue
-
-        else:
-            self._parse_email_headers(self._parsed_mail, mail, add_email_id=email_id)
-            # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(mail.items())
-            file_path = "{0}/part_1.text".format(tmp_dir)
-            with open(file_path, 'wb') as f:
-                f.write(mail.get_payload(decode=True))
-            bodies.append({'file_path': file_path, 'charset': mail.get_content_charset()})
-
-        # get the container name
-        container_name = self._get_container_name(self._parsed_mail, email_id)
-
-        if (container_name is None):
-            return phantom.APP_ERROR
-
-        # Add the container
-        # first save the container, to do that copy things from parsed_mail to a new object
-        container = {}
-        container_data = dict(self._parsed_mail)
-
-        # delete the header info, we dont make it a part of the container json
-        del(container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
-        container.update(_container_common)
-        self._container['source_data_identifier'] = email_id
-        self._container['name'] = container_name
-        self._container['data'] = {'raw_email': rfc822_email}
-
-        # Create the sets before handling the bodies If both the bodies add the same ip
-        # only one artifact should be created
-        self._parsed_mail[PROC_EMAIL_JSON_IPS] = set()
-        self._parsed_mail[PROC_EMAIL_JSON_HASHES] = set()
-        self._parsed_mail[PROC_EMAIL_JSON_URLS] = set()
-        self._parsed_mail[PROC_EMAIL_JSON_DOMAINS] = set()
-
-        # For bodies
-        for i, body in enumerate(bodies):
-            if (not body):
-                continue
-
-            try:
-                self._handle_body(body, self._parsed_mail, i, email_id)
-            except Exception as e:
-                self._debug_print("ErrorExp in _handle_body # {0}: {1}".format(i, str(e)))
-                continue
-
-        # Files
-        self._attachments.extend(files)
-
-        self._create_artifacts(self._parsed_mail)
-
-        return phantom.APP_SUCCESS
-
-    def _set_email_id_contains(self, email_id):
-
-        if (not self._base_connector):
-            return
-
-        email_id = str(email_id)
-
-        if ((self._base_connector.get_app_id() == EXCHANGE_ONPREM_APP_ID) and (email_id.endswith('='))):
-            self._email_id_contains = [ "exchange email id" ]
-        elif ((self._base_connector.get_app_id() == OFFICE365_APP_ID) and (email_id.endswith('='))):
-            self._email_id_contains = [ "office 365 email id" ]
-        elif (self._base_connector.get_app_id() == IMAP_APP_ID) and (email_id.isdigit()):
-            self._email_id_contains = [ "imap email id" ]
-        elif (ph_utils.is_sha1(email_id)):
-            self._email_id_contains = [ "vault id" ]
-
-        return
-
-    def _int_process_email(self, rfc822_email, email_id, start_time_epoch):
-
-        mail = email.message_from_string(rfc822_email)
-
-        ret_val = phantom.APP_SUCCESS
-
-        tmp_dir = tempfile.mkdtemp(prefix='ph_email')
-
-        try:
-            ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
-        except Exception as e:
-            message = "ErrorExp in self._handle_mail_object: {0}".format(e)
-            self._debug_print(message)
-            return (phantom.APP_ERROR, message, [])
-
-        results = [{'container': self._container, 'artifacts': self._artifacts, 'files': self._attachments, 'temp_directory': tmp_dir}]
-
-        return (ret_val, "Email Parsed", results)
-
-    def process_email(self, base_connector, rfc822_email, email_id, config, epoch, container_id=None, email_headers=None, attachments_data=None):
-
-        self._base_connector = base_connector
-        self._config = config
-
-        if (email_headers):
-            for curr_header in email_headers:
-                self._headers_from_ews.append(CaseInsensitiveDict(curr_header))
-
-        if (config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]) and (attachments_data is not None):
-            self._attachments_from_ews = attachments_data
-
-        try:
-            self._set_email_id_contains(email_id)
-        except:
-            pass
-
-        ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
-
-        if (not ret_val):
-            return (phantom.APP_ERROR, message)
-
-        self._parse_results(results, container_id)
-
-        return (phantom.APP_SUCCESS, "Email Processed")
-
-    def _parse_results(self, results, container_id=None):
-
-        param = self._base_connector.get_current_param()
-
-        container_count = EWS_DEFAULT_CONTAINER_COUNT
-        # artifact_count = EWS_DEFAULT_ARTIFACT_COUNT
-
-        if (param):
-            container_count = param.get(phantom.APP_JSON_CONTAINER_COUNT, EWS_DEFAULT_CONTAINER_COUNT)
-            # artifact_count = param.get(phantom.APP_JSON_ARTIFACT_COUNT, EWS_DEFAULT_ARTIFACT_COUNT)
-
-        results = results[:container_count]
-
-        for result in results:
-
-            if (container_id is None):
-
-                container = result.get('container')
-
-                if (not container):
-                    continue
-
-                container.update(_container_common)
-                try:
-                    (ret_val, message, container_id) = self._base_connector.save_container(container)
-                except Exception as e:
-                    self._base_connector.debug_print("Handled Exception while saving container", e)
-                    continue
-
-                self._base_connector.debug_print("save_container returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
-
-                if (phantom.is_fail(ret_val)):
-                    message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
-                    self._base_connector.debug_print(message)
-                    continue
-
-                if (not container_id):
-                    message = "save_container did not return a container_id"
-                    self._base_connector.debug_print(message)
-                    continue
-
-            # run a loop to first set the sdi which will create the hash
-            artifacts = result.get('artifacts', [])
-            for j, artifact in enumerate(artifacts):
-
-                if (not artifact):
-                    continue
-
-                # add the container id to the artifact
-                artifact['container_id'] = container_id
-                self._set_sdi(artifact)
-
-            files = result.get('files')
-
-            vault_ids = list()
-
-            vault_artifacts_added = 0
-
-            for curr_file in files:
-                ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added)
-
-                if (added_to_vault):
-                    vault_artifacts_added += 1
-
-            if (not artifacts):
-                continue
-
-            len_artifacts = len(artifacts)
-
-            for j, artifact in enumerate(artifacts):
-
-                if (not artifact):
-                    continue
-
-                # if it is the last artifact of the last container
-                if ((j + 1) == len_artifacts):
-                    # mark it such that active playbooks get executed
-                    artifact['run_automation'] = True
-
-                cef_artifact = artifact.get('cef')
-                if ('parentGuid' in cef_artifact):
-                    parent_guid = cef_artifact.pop('parentGuid')
-                    cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
-                if ('emailGuid' in cef_artifact):
-                    # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
-                    del cef_artifact['emailGuid']
-
-                ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
-                self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
->>>>>>> 948a605b05a2af325301fd99a5ffa9c3abc4243f
+            ret_val, status_string, artifact_id = self._base_connector.save_artifacts(artifacts)
+            self._base_connector.debug_print("save_artifacts returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
 
         # delete any temp directories that were created by the email parsing function
         [shutil.rmtree(x['temp_directory'], ignore_errors=True) for x in results if x.get('temp_directory')]
