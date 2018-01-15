@@ -877,8 +877,19 @@ class ProcessEmail(object):
 
             container['artifacts'] = artifacts
             container = self._base_connector._preprocess_container(container)
+
             ret_val, message, container_id = self._base_connector.save_container(container)
             self._base_connector.debug_print("save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
+
+            if (phantom.is_fail(ret_val)):
+                message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
+                self._base_connector.debug_print(message)
+                continue
+
+            if (not container_id):
+                message = "save_container did not return a container_id"
+                self._base_connector.debug_print(message)
+                continue
 
             files = result.get('files')
 
