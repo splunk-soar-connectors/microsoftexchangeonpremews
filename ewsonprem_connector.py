@@ -123,7 +123,7 @@ class EWSOnPremConnector(BaseConnector):
         config = self.get_config()
         script = config.get('preprocess_script')
 
-        self._preprocess_artifacts = lambda x: x
+        self._preprocess_container = lambda x: x
 
         if script:
             script_path = os.path.join(app_dir, config['preprocess_script__filename'])
@@ -133,7 +133,7 @@ class EWSOnPremConnector(BaseConnector):
                 return phantom.APP_SUCCESS
 
             try:
-                self._preprocess_artifacts = script_module.preprocess_artifacts
+                self._preprocess_container = script_module.preprocess_container
             except:
                 pass
 
