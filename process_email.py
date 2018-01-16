@@ -876,7 +876,7 @@ class ProcessEmail(object):
                     del cef_artifact['emailGuid']
 
             container['artifacts'] = artifacts
-            container = self._base_connector._preprocess_container(container)
+            container = self._base_connector._preprocess_container(container, self._base_connector.get_config())
 
             ret_val, message, container_id = self._base_connector.save_container(container)
             self._base_connector.debug_print("save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
