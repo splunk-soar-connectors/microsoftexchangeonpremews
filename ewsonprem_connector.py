@@ -123,7 +123,7 @@ class EWSOnPremConnector(BaseConnector):
         config = self.get_config()
         script = config.get('preprocess_script')
 
-        self._preprocess_container = lambda x, y: x
+        self._preprocess_container = lambda x: x
 
         if script:
             script_path = os.path.join(app_dir, config['preprocess_script__filename'])
