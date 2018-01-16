@@ -201,7 +201,7 @@ Depending upon the scheduled interval and how busy the inbox is, one of the foll
 <p>
 It is possible to upload your own script which will has functions to handle preprocessing of containers.
 The artifacts which are going to be added with the container can be accessed through this container as well.
-This function should accept a container and the app config, and return the updated container. Also note that the name of this function
+This function should accept a container and return the updated container. Also note that the name of this function
 must be <b>preprocess_container</b>.
 <pre class="shell">
 <code>
@@ -209,7 +209,7 @@ import re
 import phantom.app as phantom
 
 
-def preprocess_container(container, config):
+def preprocess_container(container):
 
     # Match urls like https://secure.contoso.com/link/https://www.google.com
     #  In the above example, the first capture group would be 'https://secure.contos.com/link/
