@@ -842,23 +842,6 @@ class ProcessEmail(object):
                     continue
 
                 container.update(_container_common)
-                try:
-                    (ret_val, message, container_id) = self._base_connector.save_container(container)
-                except Exception as e:
-                    self._base_connector.debug_print("Handled Exception while saving container", e)
-                    continue
-
-                self._base_connector.debug_print("save_container returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
-
-                if (phantom.is_fail(ret_val)):
-                    message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
-                    self._base_connector.debug_print(message)
-                    continue
-
-                if (not container_id):
-                    message = "save_container did not return a container_id"
-                    self._base_connector.debug_print(message)
-                    continue
 
             # run a loop to first set the sdi which will create the hash
             artifacts = result.get('artifacts', [])
@@ -867,21 +850,7 @@ class ProcessEmail(object):
                 if (not artifact):
                     continue
 
-                # add the container id to the artifact
-                artifact['container_id'] = container_id
                 self._set_sdi(artifact)
-
-            files = result.get('files')
-
-            vault_ids = list()
-
-            vault_artifacts_added = 0
-
-            for curr_file in files:
-                ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added)
-
-                if (added_to_vault):
-                    vault_artifacts_added += 1
 
             if (not artifacts):
                 continue
@@ -906,8 +875,33 @@ class ProcessEmail(object):
                     # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
                     del cef_artifact['emailGuid']
 
-                ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
-                self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
+            container['artifacts'] = artifacts
+            container = self._base_connector._preprocess_container(container, self._base_connector.get_config())
+
+            ret_val, message, container_id = self._base_connector.save_container(container)
+            self._base_connector.debug_print("save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
+
+            if (phantom.is_fail(ret_val)):
+                message = "Failed to add Container for id: {0}, error msg: {1}".format(container['source_data_identifier'], message)
+                self._base_connector.debug_print(message)
+                continue
+
+            if (not container_id):
+                message = "save_container did not return a container_id"
+                self._base_connector.debug_print(message)
+                continue
+
+            files = result.get('files')
+
+            vault_ids = list()
+
+            vault_artifacts_added = 0
+
+            for curr_file in files:
+                ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added)
+
+                if (added_to_vault):
+                    vault_artifacts_added += 1
 
         # delete any temp directories that were created by the email parsing function
         [shutil.rmtree(x['temp_directory'], ignore_errors=True) for x in results if x.get('temp_directory')]

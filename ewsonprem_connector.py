@@ -54,6 +54,7 @@ from process_email import ProcessEmail
 from email.parser import HeaderParser
 import email
 import urllib
+import imp
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -116,6 +117,27 @@ class EWSOnPremConnector(BaseConnector):
         self._state = {}
 
         self._impersonate = False
+
+    def _handle_preprocess_scipts(self):
+
+        config = self.get_config()
+        script = config.get('preprocess_script')
+
+        self._preprocess_container = lambda x, y: x
+
+        if script:
+            script_path = os.path.join(app_dir, config['preprocess_script__filename'])
+            try:  # Try to laod in script to preprocess artifacts
+                script_module = imp.load_source('preprocess_methods', script_path)
+            except:
+                return phantom.APP_SUCCESS
+
+            try:
+                self._preprocess_container = script_module.preprocess_container
+            except:
+                pass
+
+        return phantom.APP_SUCCESS
 
     def _get_ping_fed_request_xml(self, config):
 
@@ -380,6 +402,10 @@ class EWSOnPremConnector(BaseConnector):
         self._host = self._base_url[self._base_url.find('//') + 2:]
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
+
+        ret = self._handle_preprocess_scipts()
+        if phantom.is_fail(ret):
+            return ret
 
         return phantom.APP_SUCCESS
 

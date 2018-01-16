@@ -1,4 +1,4 @@
-<!-- 
+<!--
 File: readme.html
 
 Copyright (c) Phantom Cyber Corporation, 2016-2017
@@ -96,7 +96,7 @@ Depending upon the scheduled interval and how busy the inbox is, one of the foll
        As mentioned before, the app will create a single container for each email that it ingests with the following properties:
       <ul>
       <li>Name</li>
-      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message id that Exchange assigns to every mail in the mailboxes</br> 
+      The email subject is used as the name of the container. If a subject is not present the generated name is set to the unique message id that Exchange assigns to every mail in the mailboxes</br>
       <li>Source ID</li>
       The source ID of the container will be the <b> exchange email id</b> as received from the server.
       </ul>
@@ -110,19 +110,19 @@ Depending upon the scheduled interval and how busy the inbox is, one of the foll
       <table style="width:100%">
         <tr>
           <td><b>Artifact Field</b></td>
-          <td><b>Value Details</b></td> 
+          <td><b>Value Details</b></td>
         </tr>
         <tr>
           <td>fromEmail</td>
-          <td>The email address of the sender</td> 
+          <td>The email address of the sender</td>
         </tr>
         <tr>
           <td>toEmail</td>
-          <td>The email address of the receiver of the email</td> 
+          <td>The email address of the receiver of the email</td>
         </tr>
         <tr>
           <td>emailHeaders</td>
-          <td>A dictionary containing each email header as a key and it's value as the key-value</td> 
+          <td>A dictionary containing each email header as a key and it's value as the key-value</td>
         </tr>
       </table>
     <br>
@@ -196,3 +196,65 @@ Depending upon the scheduled interval and how busy the inbox is, one of the foll
   <li>The <b>url</b> should be set to https://&lt;my_exchange_server&gt;/EWS/Exchange.asmx</li>
   <li>The <b>username</b> parameter can be specifed in multiple formats like email address or the AD form like DOMAIN\Administrator.</li>
 </ul>
+
+<h3>Preprocessing Containers</h3>
+<p>
+It is possible to upload your own script which will has functions to handle preprocessing of containers.
+The artifacts which are going to be added with the container can be accessed through this container as well.
+This function should accept a container and the app config, and return the updated container. Also note that the name of this function
+must be <b>preprocess_container</b>.
+<pre class="shell">
+<code>
+import re
+import phantom.app as phantom
+
+
+def preprocess_container(container, config):
+
+    # Match urls like https://secure.contoso.com/link/https://www.google.com
+    #  In the above example, the first capture group would be 'https://secure.contos.com/link/
+    #  The second capture group would be 'https://www.google.com'
+    http_strip_re = re.compile(r'(https?://.*?)(https?://.*)')
+
+    index = 0  # Set new source data identifiers, so they will remain sequential
+    new_artifacts = []
+
+    for artifact in container.get('artifacts', []):
+        # Each artifact will only contain 1 CEF field
+        cef = artifact.get('cef')
+        url = cef.get('requestURL')
+        if url:
+            match = http_strip_re.match(url)
+            if match:
+                artifact['cef']['requestURL'] = match.group(2)
+
+                # Create a new domain artifact for this URL
+                new_artifacts.append({
+                    'name': 'Domain Artifact',
+                    'source_data_identifer': index,
+                    'cef': {
+                        'sourceDnsDomain': phantom.get_host_from_url(match.group(2))
+                    }
+                })
+                index += 1
+
+        domain = cef.get('sourceDnsDomain')
+        if domain and domain.lower() == 'secure.contoso.com':
+            # These are the wrong domains, ignore them
+            continue
+
+        artifact['source_data_identifer'] = index
+        index += 1
+        new_artifacts.append(artifact)
+
+    if new_artifacts:
+        new_artifacts[-1]['run_automation'] = True
+
+    container['artifacts'] = new_artifacts
+    return container
+</code>
+</pre>
+In this example, many of our URLs have 'https://secure.contoso.com/link' appended to the start of them.
+These URL artifacts will be tough to use in a playbook without additional processing. On top of that, all
+of the associated domain artifacts will be incorrect as well, since they will all point to 'secure.contoso.com'.
+</p>
