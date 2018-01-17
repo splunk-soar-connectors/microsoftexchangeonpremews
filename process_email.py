@@ -878,6 +878,9 @@ class ProcessEmail(object):
             container['artifacts'] = artifacts
             container = self._base_connector._preprocess_container(container)
 
+            for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
+                self._set_sdi(artifact)
+
             ret_val, message, container_id = self._base_connector.save_container(container)
             self._base_connector.debug_print("save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
 
