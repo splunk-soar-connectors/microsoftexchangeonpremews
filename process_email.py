@@ -881,6 +881,12 @@ class ProcessEmail(object):
             for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
                 self._set_sdi(artifact)
 
+            files = result.get('files')
+            if files and container.get('artifacts'):
+                # Make sure the playbook only runs once
+                # We will instead set run_automation on the last vault artifact which is added
+                container['artifacts'][-1]['run_automation'] = False
+
             ret_val, message, container_id = self._base_connector.save_container(container)
             self._base_connector.debug_print("save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(ret_val, message, container_id))
 
@@ -894,14 +900,16 @@ class ProcessEmail(object):
                 self._base_connector.debug_print(message)
                 continue
 
-            files = result.get('files')
-
             vault_ids = list()
 
             vault_artifacts_added = 0
 
-            for curr_file in files:
-                ret_val, added_to_vault = self._handle_file(curr_file, vault_ids, container_id, vault_artifacts_added)
+            last_file = len(files) - 1
+            for i, curr_file in enumerate(files):
+                run_automation = True if i == last_file else False
+                ret_val, added_to_vault = self._handle_file(
+                    curr_file, vault_ids, container_id, vault_artifacts_added, run_automation
+                )
 
                 if (added_to_vault):
                     vault_artifacts_added += 1
@@ -943,7 +951,7 @@ class ProcessEmail(object):
 
         return (phantom.APP_SUCCESS, "Mapped hash values")
 
-    def _handle_file(self, curr_file, vault_ids, container_id, artifact_id):
+    def _handle_file(self, curr_file, vault_ids, container_id, artifact_id, run_automation=False):
 
         file_name = curr_file.get('file_name')
 
@@ -999,6 +1007,7 @@ class ProcessEmail(object):
         artifact['container_id'] = container_id
         artifact['name'] = 'Vault Artifact'
         artifact['cef'] = cef_artifact
+        artifact['run_automation'] = run_automation
         if (contains):
             artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
         self._set_sdi(artifact)
