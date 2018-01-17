@@ -126,16 +126,18 @@ class EWSOnPremConnector(BaseConnector):
         self._preprocess_container = lambda x: x
 
         if script:
-            script_path = os.path.join(app_dir, config['preprocess_script__filename'])
             try:  # Try to laod in script to preprocess artifacts
-                script_module = imp.load_source('preprocess_methods', script_path)
-            except:
-                return phantom.APP_SUCCESS
+                self._script_module = imp.new_module('preprocess_methods')
+                exec script in self._script_module.__dict__
+            except Exception as e:
+                self.save_progress("Error loading custom script. Error: {}".format(str(e)))
+                return phantom.APP_ERROR
 
             try:
-                self._preprocess_container = script_module.preprocess_container
+                self._preprocess_container = self._script_module.preprocess_container
             except:
-                pass
+                self.save_progress("Error loading custom script. Does not contain preprocess_container function")
+                return phantom.APP_ERROR
 
         return phantom.APP_SUCCESS
 

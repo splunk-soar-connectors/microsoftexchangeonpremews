@@ -205,8 +205,11 @@ This function should accept a container and return the updated container. Also n
 must be <b>preprocess_container</b>.
 <pre class="shell">
 <code>
-import re
-import phantom.app as phantom
+import urlparse
+
+
+def get_host_from_url(url):
+    return urlparse.urlparse(url).hostname
 
 
 def preprocess_container(container):
@@ -214,37 +217,30 @@ def preprocess_container(container):
     # Match urls like https://secure.contoso.com/link/https://www.google.com
     #  In the above example, the first capture group would be 'https://secure.contos.com/link/
     #  The second capture group would be 'https://www.google.com'
-    http_strip_re = re.compile(r'(https?://.*?)(https?://.*)')
+    url_prepend = 'https://secure.contoso.com/link/'
+    domain_prepend = 'secure.contoso.com'
 
-    index = 0  # Set new source data identifiers, so they will remain sequential
     new_artifacts = []
 
     for artifact in container.get('artifacts', []):
-        # Each artifact will only contain 1 CEF field
         cef = artifact.get('cef')
         url = cef.get('requestURL')
-        if url:
-            match = http_strip_re.match(url)
-            if match:
-                artifact['cef']['requestURL'] = match.group(2)
+        if url and url.lower().startswith(url_prepend):
+            url = url.replace(url_prepend, '')
+            artifact['cef']['requestURL'] = url
+            # Create a new domain artifact for this URL
+            new_artifacts.append({
+                'name': 'Domain Artifact',
+                'cef': {
+                    'destinationDnsDomain': get_host_from_url(url)
+                }
+            })
 
-                # Create a new domain artifact for this URL
-                new_artifacts.append({
-                    'name': 'Domain Artifact',
-                    'source_data_identifer': index,
-                    'cef': {
-                        'sourceDnsDomain': phantom.get_host_from_url(match.group(2))
-                    }
-                })
-                index += 1
-
-        domain = cef.get('sourceDnsDomain')
-        if domain and domain.lower() == 'secure.contoso.com':
+        domain = cef.get('destinationDnsDomain')
+        if domain and domain.lower() == domain_prepend:
             # These are the wrong domains, ignore them
             continue
 
-        artifact['source_data_identifer'] = index
-        index += 1
         new_artifacts.append(artifact)
 
     if new_artifacts:
