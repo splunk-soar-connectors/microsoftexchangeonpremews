@@ -1279,7 +1279,7 @@
                         "exchange email id"
                     ],
                     "primary": true,
-                    "required": false
+                    "required": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
