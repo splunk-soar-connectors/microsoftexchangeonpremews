@@ -1279,7 +1279,7 @@
                         "exchange email id"
                     ],
                     "primary": true,
-                    "required": false
+                    "required": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
@@ -1295,8 +1295,7 @@
                     "description": "Subject to set",
                     "data_type": "string",
                     "order": 2,
-                    "required": false,
-                    "allow_list": true
+                    "required": false
                 },
                 "category": {
                     "description": "Categories to set",
