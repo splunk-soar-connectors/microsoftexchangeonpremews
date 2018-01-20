@@ -215,8 +215,8 @@ def get_host_from_url(url):
 def preprocess_container(container):
 
     # Match urls like https://secure.contoso.com/link/https://www.google.com
-    #  In the above example, the first capture group would be 'https://secure.contos.com/link/
-    #  The second capture group would be 'https://www.google.com'
+    # We want to strip 'https://secure.contoso.com/link/', and instead create
+    #  a URL artifact for 'https://www.google.com'
     url_prepend = 'https://secure.contoso.com/link/'
     domain_prepend = 'secure.contoso.com'
 
