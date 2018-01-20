@@ -870,7 +870,8 @@ class ProcessEmail(object):
                 cef_artifact = artifact.get('cef')
                 if ('parentGuid' in cef_artifact):
                     parent_guid = cef_artifact.pop('parentGuid')
-                    cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+                    if (parent_guid in self._guid_to_hash):
+                        cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
                 if ('emailGuid' in cef_artifact):
                     # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
                     del cef_artifact['emailGuid']
