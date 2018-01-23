@@ -1039,9 +1039,9 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self._process_email_id(email_id, target_container_id)
             except Exception as e:
-                self.debug_print("ErrorExp in _process_email_id with Message ID: {1}".format(email_id), e)
+                self.debug_print("ErrorExp in _process_email_id with Message ID: {0}".format(email_id), e)
                 action_result.update_summary({"container_id": None})
-                return action_result.set_status(phantom.APP_SUCCESS)
+                return action_result.set_status(phantom.APP_ERROR, "Error processing email", e)
 
         if (target_container_id is None):
             # get the container id that of the email that was ingested
