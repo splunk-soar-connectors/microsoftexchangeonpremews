@@ -1328,7 +1328,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1364,7 +1364,7 @@
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
                     "data_type": "string",
                     "example_values": [
-                        "7518226202D21C4397EE1CB1E2E540C7@deshaw.com"
+                        "7518226202D21C4397EE1CB1E2E540C7@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1458,7 +1458,7 @@
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1496,7 +1496,7 @@
                     "data_path": "action_result.data.*.t_InternetMessageId",
                     "data_type": "string",
                     "example_values": [
-                        "<81c761fe-caa8-f924-f65d-079382c1ad0b@deshaw.com>"
+                        "<81c761fe-caa8-f924-f65d-079382c1ad0b@sample.com>"
                     ]
                 },
                 {
@@ -1566,7 +1566,7 @@
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1620,7 +1620,7 @@
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@deshaw.com"
+                        "phantom@sample.com"
                     ],
                     "contains": [
                         "email"

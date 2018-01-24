@@ -1,4 +1,4 @@
-#--
+# --
 # File: __init__.py
 #
 # Copyright (c) Phantom Cyber Corporation, 2016-2018
