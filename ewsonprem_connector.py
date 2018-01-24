@@ -1,7 +1,7 @@
 # --
 # File: ewsonprem_connector.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2017
+# Copyright (c) Phantom Cyber Corporation, 2016-2018
 #
 # This unpublished material is proprietary to Phantom Cyber.
 # All rights reserved. The methods and
@@ -54,6 +54,7 @@ from process_email import ProcessEmail
 from email.parser import HeaderParser
 import email
 import urllib
+import imp
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -116,6 +117,29 @@ class EWSOnPremConnector(BaseConnector):
         self._state = {}
 
         self._impersonate = False
+
+    def _handle_preprocess_scipts(self):
+
+        config = self.get_config()
+        script = config.get('preprocess_script')
+
+        self._preprocess_container = lambda x: x
+
+        if script:
+            try:  # Try to laod in script to preprocess artifacts
+                self._script_module = imp.new_module('preprocess_methods')
+                exec script in self._script_module.__dict__
+            except Exception as e:
+                self.save_progress("Error loading custom script. Error: {}".format(str(e)))
+                return phantom.APP_ERROR
+
+            try:
+                self._preprocess_container = self._script_module.preprocess_container
+            except:
+                self.save_progress("Error loading custom script. Does not contain preprocess_container function")
+                return phantom.APP_ERROR
+
+        return phantom.APP_SUCCESS
 
     def _get_ping_fed_request_xml(self, config):
 
@@ -380,6 +404,10 @@ class EWSOnPremConnector(BaseConnector):
         self._host = self._base_url[self._base_url.find('//') + 2:]
 
         self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
+
+        ret = self._handle_preprocess_scipts()
+        if phantom.is_fail(ret):
+            return ret
 
         return phantom.APP_SUCCESS
 
@@ -1011,9 +1039,9 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self._process_email_id(email_id, target_container_id)
             except Exception as e:
-                self.debug_print("ErrorExp in _process_email_id with Message ID: {1}".format(email_id), e)
+                self.debug_print("ErrorExp in _process_email_id with Message ID: {0}".format(email_id), e)
                 action_result.update_summary({"container_id": None})
-                return action_result.set_status(phantom.APP_SUCCESS)
+                return action_result.set_status(phantom.APP_ERROR, "Error processing email", e)
 
         if (target_container_id is None):
             # get the container id that of the email that was ingested
