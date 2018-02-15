@@ -220,6 +220,11 @@
                     "data_type": "string",
                     "order": 6,
                     "default": "0-10"
+                },
+                "ignore_subfolders": {
+                    "description": "Ignore subfolders",
+                    "data_type": "boolean",
+                    "order": 7
                 }
             },
             "render": {
