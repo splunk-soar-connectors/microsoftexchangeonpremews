@@ -875,7 +875,7 @@ class ProcessEmail(object):
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
         if (phantom.is_fail(ret_val)):
-            message = "Failed to save ingested artifacts, error msg: {1}".format(message)
+            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
             return
 
