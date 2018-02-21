@@ -57,15 +57,22 @@
         "poll_folder": {
             "data_type": "string",
             "description": "Mailbox folder to be polled",
-            "order": 8,
+            "order": 6,
             "required": true,
             "default": "Inbox"
+        },
+        "is_public_folder": {
+            "data_type": "boolean",
+            "description": "Mailbox folder is a public folder",
+            "order": 7,
+            "required": false,
+            "default": false
         },
         "ingest_manner": {
             "data_type": "string",
             "description": "How to ingest",
             "required": true,
-            "order": 9,
+            "order": 8,
             "value_list": [
                 "oldest first",
                 "latest first"
@@ -74,7 +81,7 @@
         },
         "first_run_max_emails": {
             "data_type": "numeric",
-            "order": 10,
+            "order": 9,
             "description": "Maximum emails to poll first time",
             "default": "2000",
             "required": true
@@ -82,7 +89,7 @@
         "max_containers": {
             "data_type": "numeric",
             "description": "Maximum emails for scheduled polling",
-            "order": 11,
+            "order": 10,
             "default": 100,
             "required": true
         },
@@ -90,49 +97,49 @@
             "data_type": "boolean",
             "description": "Extract Attachments",
             "required": false,
-            "order": 12,
+            "order": 11,
             "default": true
         },
         "extract_urls": {
             "data_type": "boolean",
             "description": "Extract URLs",
             "required": false,
-            "order": 13,
+            "order": 12,
             "default": true
         },
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
             "required": false,
-            "order": 14,
+            "order": 13,
             "default": true
         },
         "extract_domains": {
             "data_type": "boolean",
             "description": "Extract Domain Names",
             "required": false,
-            "order": 15,
+            "order": 14,
             "default": true
         },
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
             "required": false,
-            "order": 16,
+            "order": 15,
             "default": true
         },
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add email body to the Email Artifact",
             "required": false,
-            "order": 17,
+            "order": 16,
             "default": false
         },
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with functions to preprocess containers and artifacts",
             "required": false,
-            "order": 18
+            "order": 17
         }
     },
     "actions": [
@@ -225,6 +232,13 @@
                     "description": "Ignore subfolders",
                     "data_type": "boolean",
                     "order": 7
+                },
+                "is_public_folder": {
+                    "description": "Mailbox folder is a public folder",
+                    "data_type": "boolean",
+                    "order": 8,
+                    "required": false,
+                    "default": false
                 }
             },
             "render": {
@@ -504,6 +518,13 @@
                     "data_type": "boolean",
                     "order": 5,
                     "primary": false,
+                    "required": false,
+                    "default": false
+                },
+                "is_public_folder": {
+                    "description": "Mailbox folder is a public folder",
+                    "data_type": "boolean",
+                    "order": 6,
                     "required": false,
                     "default": false
                 }
