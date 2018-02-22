@@ -175,6 +175,9 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
+        if (']' in url):
+            url = url[:url.find(']')]
+
         return url
 
     def _extract_urls_domains(self, file_data, urls, domains):
@@ -410,8 +413,11 @@ class ProcessEmail(object):
             if (encoding != 'utf-8'):
                 value = unicode(value, encoding).encode('utf-8')
 
-            # substitute the encoded string with the decoded one
-            input_str = input_str.replace(encoded_string, value)
+            try:
+                # substitute the encoded string with the decoded one
+                input_str = input_str.replace(encoded_string, value)
+            except:
+                pass
 
         return input_str
 
@@ -584,6 +590,12 @@ class ProcessEmail(object):
 
         if (received_headers):
             headers['Received'] = received_headers
+
+        # handle the subject string, if required add a new key
+        subject = headers.get('Subject')
+        if (subject):
+            if (type(subject) == unicode):
+                headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
 
         return headers
 
@@ -862,7 +874,8 @@ class ProcessEmail(object):
             # Create a new container
             container['artifacts'] = artifacts
 
-        container = self._base_connector._preprocess_container(container)
+        if (hasattr(self._base_connector, '_preprocess_container')):
+            container = self._base_connector._preprocess_container(container)
 
         for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
             self._set_sdi(artifact)

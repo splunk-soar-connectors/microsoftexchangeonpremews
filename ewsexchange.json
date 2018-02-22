@@ -20,7 +20,8 @@
             "data_type": "string",
             "order": 0,
             "description": "EWS URL",
-            "required": true
+            "required": true,
+            "default": "https://corp.contoso.com/EWS/Exchange.asmx"
         },
         "verify_server_cert": {
             "data_type": "boolean",
