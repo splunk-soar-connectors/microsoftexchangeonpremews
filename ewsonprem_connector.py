@@ -2254,7 +2254,8 @@ if __name__ == '__main__':
                     "extract_domains": True,
                     "extract_hashes": True,
                     "extract_ips": True,
-                    "extract_urls": True }
+                    "extract_urls": True,
+                    "add_body_to_header_artifacts": True }
 
             process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)
