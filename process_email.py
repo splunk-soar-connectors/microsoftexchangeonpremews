@@ -227,6 +227,8 @@ class ProcessEmail(object):
                 for curr_email in mailtos:
                     domain = curr_email[curr_email.find('@') + 1:]
                     if (domain) and (not self._is_ip(domain)):
+                        if ('?' in domain):
+                            domain = domain[:domain.find('?')]
                         domains.add(domain)
 
         return
