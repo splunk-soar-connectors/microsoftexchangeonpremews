@@ -175,10 +175,9 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
-        if (']' in url):
-            url = url[:url.find(']')]
+        url = url.rstrip(']')
 
-        return url
+        return url.strip()
 
     def _extract_urls_domains(self, file_data, urls, domains):
 

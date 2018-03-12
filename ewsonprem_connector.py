@@ -57,10 +57,8 @@ import urllib
 import imp
 
 import time
-try:
-    from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
-except:
-    pass
+
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
