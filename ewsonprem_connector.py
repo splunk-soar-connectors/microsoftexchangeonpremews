@@ -99,6 +99,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_DELETE_EMAIL = "delete_email"
     ACTION_ID_UPDATE_EMAIL = "update_email"
     ACTION_ID_COPY_EMAIL = "copy_email"
+    ACTION_ID_MOVE_EMAIL = "move_email"
     ACTION_ID_EXPAND_DL = "expand_dl"
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
@@ -642,6 +643,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _check_copy_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+
+    def _check_move_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
 
     def _check_expand_dl_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
@@ -1507,7 +1511,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, folder_info)
 
-    def _copy_email(self, param):
+    def _copy_move_email(self, param, action="copy"):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -1529,7 +1533,7 @@ class EWSOnPremConnector(BaseConnector):
             self._target_user = impersonate_email
 
         # finally see if impersonation has been enabled/disabled for this action
-        # as of right now copy email is the only action that allows over-ride
+        # as of right now copy or move email is the only action that allows over-ride
         impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
 
         self._impersonate = impersonate
@@ -1540,8 +1544,13 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.get_status()
 
         data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        response_checker = self._check_copy_response
 
-        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_copy_response)
+        if (action == "move"):
+            data = ews_soap.get_move_email(message_id, folder_info['id'])
+            response_checker = self._check_move_response
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
 
         # Process errors
         if (phantom.is_fail(ret_val)):
@@ -1552,15 +1561,17 @@ class EWSOnPremConnector(BaseConnector):
 
         new_email_id = None
 
+        action_verb = 'copied' if (action == "copy") else 'moved'
+
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except:
-            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get copied Email ID")
+            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
 
         # Set the Status
-        return action_result.set_status(phantom.APP_SUCCESS, "Email Copied")
+        return action_result.set_status(phantom.APP_SUCCESS, "Email {0}".format(action_verb.title()))
 
     def _resolve_name(self, param):
 
@@ -2160,7 +2171,9 @@ class EWSOnPremConnector(BaseConnector):
         elif (action == self.ACTION_ID_GET_EMAIL):
             ret_val = self._get_email(param)
         elif (action == self.ACTION_ID_COPY_EMAIL):
-            ret_val = self._copy_email(param)
+            ret_val = self._copy_move_email(param)
+        elif (action == self.ACTION_ID_MOVE_EMAIL):
+            ret_val = self._copy_move_email(param, action='move')
         elif (action == self.ACTION_ID_EXPAND_DL):
             ret_val = self._expand_dl(param)
         elif (action == self.ACTION_ID_RESOLVE_NAME):

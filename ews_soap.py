@@ -386,6 +386,15 @@ def get_delete_email(message_ids):
     return del_item
 
 
+def get_move_email(message_id, folder_id):
+
+    return M.MoveItem(
+            M.ToFolderId(
+                T.FolderId({'Id': folder_id})),
+            M.ItemIds(
+                T.ItemId({'Id': message_id})))
+
+
 def get_copy_email(message_id, folder_id):
 
     return M.CopyItem(
