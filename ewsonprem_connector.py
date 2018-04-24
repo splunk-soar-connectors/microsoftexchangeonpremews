@@ -56,6 +56,10 @@ import email
 import urllib
 import imp
 
+import time
+
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
+
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
 os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
@@ -95,6 +99,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_DELETE_EMAIL = "delete_email"
     ACTION_ID_UPDATE_EMAIL = "update_email"
     ACTION_ID_COPY_EMAIL = "copy_email"
+    ACTION_ID_MOVE_EMAIL = "move_email"
     ACTION_ID_EXPAND_DL = "expand_dl"
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
@@ -197,6 +202,11 @@ class EWSOnPremConnector(BaseConnector):
 
     def _set_federated_auth(self, config):
 
+        ret_val, message = self._check_password(config)
+        if phantom.is_fail(ret_val):
+            self.save_progress(message)
+            return (None, message)
+
         required_params = [EWS_JSON_CLIENT_ID, EWS_JSON_FED_PING_URL, EWS_JSON_AUTH_URL, EWS_JSON_FED_VERIFY_CERT]
 
         for required_param in required_params:
@@ -281,7 +291,173 @@ class EWSOnPremConnector(BaseConnector):
 
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
+    def _make_rest_calls_to_phantom(self, action_result, url):
+
+        r = requests.get(url, verify=False)
+        if not r:
+            message = 'Status Code: {0}'.format(r.status_code)
+            if (r.text):
+                message += " Error from Server: {0}".format(r.text.replace('{', '{{').replace('}', '}}'))
+            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving system info, {0}".format(message)), None)
+
+        try:
+            resp_json = r.json()
+        except Exception as e:
+            return (action_result.set_status(phantom.APP_ERROR, "Error processing response JSON", e), None)
+
+        return (phantom.APP_SUCCESS, resp_json)
+
+    def _get_phantom_base_url(self, action_result):
+
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, 'https://127.0.0.1/rest/system_info')
+
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), None)
+
+        phantom_base_url = resp_json.get('base_url')
+        if (not phantom_base_url):
+            return (action_result.set_status(phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"), None)
+
+        return (phantom.APP_SUCCESS, phantom_base_url)
+
+    def _get_asset_name(self, action_result):
+
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, 'https://127.0.0.1/rest/asset/{0}'.format(self.get_asset_id()))
+
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), None)
+
+        asset_name = resp_json.get('name')
+        if (not asset_name):
+            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving asset name"), None)
+
+        return (phantom.APP_SUCCESS, asset_name)
+
+    def _get_url_to_app_rest(self, action_result=None):
+        if (not action_result):
+            action_result = ActionResult()
+        # get the phantom ip to redirect to
+        ret_val, phantom_base_url = self._get_phantom_base_url(action_result)
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), action_result.get_message())
+        # get the asset name
+        ret_val, asset_name = self._get_asset_name(action_result)
+        if (phantom.is_fail(ret_val)):
+            return (action_result.get_status(), action_result.get_message())
+        self.save_progress('Using Phantom base URL as: {0}'.format(phantom_base_url))
+        app_json = self.get_app_json()
+        app_name = app_json['name']
+        app_dir_name = _get_dir_name_from_app_name(app_name)
+        url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
+        return (phantom.APP_SUCCESS, url_to_app_rest)
+
+    def _azure_int_auth_initial(self, client_id, rsh):
+        state = rsh.load_state()
+        asset_id = self.get_asset_id()
+
+        ret_val, message = self._get_url_to_app_rest()
+        if phantom.is_fail(ret_val):
+            return (None, message)
+
+        app_rest_url = message
+
+        request_url = 'https://login.microsoftonline.com/common/oauth2'
+
+        state['client_id'] = client_id
+        state['redirect_url'] = app_rest_url
+        state['request_url'] = request_url
+
+        rsh.save_state(state)
+
+        params = {
+            'response_type': 'code',
+            'response_mode': 'query',
+            'client_id': client_id,
+            'state': asset_id,
+            'redirect_url': app_rest_url
+        }
+        url = requests.Request('GET', request_url + '/authorize', params=params).prepare().url
+        url += '&'
+
+        self.save_progress("To continue, open this link in a new tab in your browser")
+        self.save_progress(url)
+        for _ in range(0, 60):
+            state = rsh.load_state()
+            oauth_token = state.get('oauth_token')
+            if oauth_token:
+                break
+            elif state.get('error'):
+                return (None, "Error retrieving OAuth token")
+
+            time.sleep(5)
+        else:
+            return (None, "Timed out waiting for login")
+
+        self._state['oauth_token'] = oauth_token
+        return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
+
+    def _azure_int_auth_refresh(self, client_id):
+
+        oauth_token = self._state.get('oauth_token')
+        if not oauth_token:
+            return (None, "Unable to get refresh token. Has Test Connectivity been run?")
+
+        if client_id != self._state.get('client_id', ''):
+            return (None, "Client ID has been changed. Please run Test Connectivity again")
+
+        refresh_token = oauth_token['refresh_token']
+
+        request_url = 'https://login.microsoftonline.com/common/oauth2/token'
+        body = {
+            'grant_type': 'refresh_token',
+            'resource': 'https://outlook.office365.com/',
+            'client_id': client_id,
+            'refresh_token': refresh_token
+        }
+        try:
+            r = requests.post(request_url, data=body)
+        except Exception as e:
+            return (None, "Error refreshing token: {}".format(str(e)))
+
+        try:
+            oauth_token = r.json()
+        except Exception as e:
+            return (None, "Error retrieving OAuth Token")
+
+        self._state['oauth_token'] = oauth_token
+        return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
+
+    def _set_azure_int_auth(self, config):
+
+        client_id = config.get(EWS_JSON_CLIENT_ID)
+        if (not client_id):
+            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
+
+        asset_id = self.get_asset_id()
+        rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
+
+        self._state = rsh._decrypt_state(self._state)
+
+        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
+            ret = self._azure_int_auth_refresh(client_id)
+        else:
+            ret = self._azure_int_auth_initial(client_id, rsh)
+
+        self._state = rsh._encrypt_state(self._state)
+        self._state['client_id'] = client_id
+
+        # NOTE: This state is in the app directory, it is
+        #  different than the app state (i.e. self._state)
+        rsh.delete_state()
+
+        return ret
+
     def _set_azure_auth(self, config):
+
+        ret_val, message = self._check_password(config)
+        if phantom.is_fail(ret_val):
+            self.save_progress(message)
+            return (None, message)
 
         client_id = config.get(EWS_JSON_CLIENT_ID)
 
@@ -351,6 +527,11 @@ class EWSOnPremConnector(BaseConnector):
 
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
+    def _check_password(self, config):
+        if phantom.APP_JSON_PASSWORD not in config.keys():
+            return phantom.APP_ERROR, "Password not present in asset configuration"
+        return phantom.APP_SUCCESS, ''
+
     def finalize(self):
         self.save_state(self._state)
         return phantom.APP_SUCCESS
@@ -365,27 +546,36 @@ class EWSOnPremConnector(BaseConnector):
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
 
-        password = config[phantom.APP_JSON_PASSWORD]
-        username = config[phantom.APP_JSON_USERNAME]
-        username = username.replace('/', '\\')
-
         self._session = requests.Session()
 
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
-        # Assume it's going to be Basic Auth (office 365)
-        self._session.auth = HTTPBasicAuth(username, password)
         message = ''
 
         if (auth_type == AUTH_TYPE_AZURE):
             self.save_progress("Using Azure AD authentication")
             self._session.auth, message = self._set_azure_auth(config)
+        elif (auth_type == AUTH_TYPE_AZURE_INTERACTIVE):
+            self.save_progress("Using Azure AD authentication (interactive)")
+            self._session.auth, message = self._set_azure_int_auth(config)
         elif (auth_type == AUTH_TYPE_FEDERATED):
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
         else:
+            # Make sure username and password are set
+            ret_val, message = self._check_password(config)
+            if phantom.is_fail(ret_val):
+                self.save_progress(message)
+                return ret_val
+
+            password = config[phantom.APP_JSON_PASSWORD]
+            username = config[phantom.APP_JSON_USERNAME]
+            username = username.replace('/', '\\')
+
+            self._session.auth = HTTPBasicAuth(username, password)
+
             # depending on the app, it's either basic or NTML
             if (self.get_app_id() != OFFICE365_APP_ID):
                 self.save_progress("Using NTLM authentication")
@@ -453,6 +643,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _check_copy_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+
+    def _check_move_response(self, resp_json):
+            return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
 
     def _check_expand_dl_response(self, resp_json):
             return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
@@ -611,41 +804,55 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
 
-        input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info['id'])
+        step_size = 500
+        folder_infos = list()
 
-        ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
+        for curr_step_value in xrange(0, 10000, step_size):
 
-        if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
+            curr_range = "{0}-{1}".format(curr_step_value, curr_step_value + step_size - 1)
 
-        total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
+            input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info['id'], query_range=curr_range)
 
-        if (total_items == '0'):
-            return (action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None)
+            ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
-        folders = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
+            if (phantom.is_fail(ret_val)):
+                return (action_result.get_status(), None)
 
-        if (not folders):
-            return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
+            total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
-        if (type(folders) != list):
-            folders = [folders]
+            if (total_items == '0'):
+                # total_items gives the total items in the view, not just items returned in the current call
+                return (action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None)
 
-        folder_infos = [{
-            'id': x['t:FolderId']['@Id'],
-            'display_name': x['t:DisplayName'],
-            'children_count': x['t:ChildFolderCount'],
-            'folder_path': self._extract_folder_path(x.get('t:ExtendedProperty'))} for x in folders]
+            folders = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
-        '''
-        for folder_info in folder_infos:
-            if (int(folder_info['children_count']) <= 0):
-                continue
-            curr_ar = ActionResult()
-            ret_val, child_folder_infos = self._get_child_folder_infos(user, curr_ar, folder_info)
-            if (ret_val):
-                folder_infos.extend(child_folder_infos)
-        '''
+            if (not folders):
+                return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
+
+            if (type(folders) != list):
+                folders = [folders]
+
+            folder_infos.extend([{
+                'id': x['t:FolderId']['@Id'],
+                'display_name': x['t:DisplayName'],
+                'children_count': x['t:ChildFolderCount'],
+                'folder_path': self._extract_folder_path(x.get('t:ExtendedProperty'))} for x in folders])
+
+            curr_folder_len = len(folders)
+            if (curr_folder_len < step_size):
+
+                # got less than what we asked for, so looks like we got all that we wanted
+                break
+
+            '''
+            for folder_info in folder_infos:
+                if (int(folder_info['children_count']) <= 0):
+                    continue
+                curr_ar = ActionResult()
+                ret_val, child_folder_infos = self._get_child_folder_infos(user, curr_ar, folder_info)
+                if (ret_val):
+                    folder_infos.extend(child_folder_infos)
+            '''
 
         return (phantom.APP_SUCCESS, folder_infos)
 
@@ -703,6 +910,7 @@ class EWSOnPremConnector(BaseConnector):
         body = param.get(EWSONPREM_JSON_BODY, "")
         int_msg_id = param.get(EWSONPREM_JSON_INT_MSG_ID, "")
         aqs = param.get(EWSONPREM_JSON_QUERY, "")
+        is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         if (not subject and not sender and not aqs and not body and not int_msg_id):
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
@@ -721,8 +929,12 @@ class EWSOnPremConnector(BaseConnector):
         user = param[EWSONPREM_JSON_EMAIL]
         folder_path = param.get(EWSONPREM_JSON_FOLDER)
         self._target_user = user
+        ignore_subfolders = param.get('ignore_subfolders', False)
 
-        self.save_progress("Searching in {0}\{1} (and the children)".format(self._clean_str(user), folder_path if folder_path else 'All Folders'))
+        self.save_progress("Searching in {0}\{1}{2}".format(
+            self._clean_str(user),
+            folder_path if folder_path else 'All Folders',
+            ' (and the children)' if (not ignore_subfolders) else ''))
 
         email_range = param.get(EWSONPREM_JSON_RANGE, "0-10")
 
@@ -733,30 +945,30 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_infos = []
 
-        parent_folder_info = {'id': 'root', 'display_name': 'root', 'children_count': -1, 'folder_path': ''}
-
         if (folder_path):
             # get the id of the folder specified
-            ret_val, folder_info = self._get_folder_info(user, folder_path, action_result)
+            ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
         else:
-            ret_val, folder_info = self._get_root_folder_id(user, action_result)
+            ret_val, folder_info = self._get_root_folder_id(user, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
+
         parent_folder_info = folder_info
         folder_infos.append(folder_info)
 
-        if (int(parent_folder_info['children_count']) != 0):
-            ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
-            if (phantom.is_fail(ret_val)):
-                return action_result.get_status()
-            folder_infos.extend(child_folder_infos)
+        if (not ignore_subfolders):
+            if (int(parent_folder_info['children_count']) != 0):
+                ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
+                if (phantom.is_fail(ret_val)):
+                    return action_result.get_status()
+                folder_infos.extend(child_folder_infos)
 
         items_matched = 0
 
         num_folder_ids = len(folder_infos)
 
-        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if (num_folder_ids > 0) else '')
+        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if (num_folder_ids > 1) else '')
 
         for i, folder_info in enumerate(folder_infos):
 
@@ -1211,28 +1423,14 @@ class EWSOnPremConnector(BaseConnector):
 
         return value
 
-    def _get_root_folder_id(self, user, action_result):
+    def _get_root_folder_id(self, user, action_result, is_public_folder=False):
 
-        self.save_progress('Getting info about {0}\{1}'.format(self._clean_str(user), "root"))
+        if is_public_folder:
+            root_folder_id = 'publicfoldersroot'
+        else:
+            root_folder_id = 'root'
 
-        input_xml = ews_soap.xml_get_root_folder_id(user)
-
-        ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_getfolder_response)
-
-        if (phantom.is_fail(ret_val)):
-            return (action_result.get_status(), None)
-
-        folder = resp_json.get('m:Folders', {}).get('t:Folder')
-
-        if (not folder):
-            return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
-
-        folder_id = folder.get('t:FolderId', {}).get('@Id')
-
-        if (not folder_id):
-            return (action_result.set_status(phantom.APP_ERROR, "Folder ID information not found in response, possibly not present"), None)
-
-        folder_info = {'id': folder_id, 'display_name': 'root', 'children_count': -1, 'folder_path': self._extract_folder_path(folder.get('t:ExtendedProperty'))}
+        folder_info = {'id': root_folder_id, 'display_name': root_folder_id, 'children_count': -1, 'folder_path': ''}
 
         return (phantom.APP_SUCCESS, folder_info)
 
@@ -1251,8 +1449,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_name)), None)
 
-    def _get_folder_info(self, user, folder_path, action_result):
-
+    def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
         # turns out even '/' is supported by office365, so let the action escape the '/' char if it's part of the folder name
         folder_path = folder_path.replace('\\/', self.REPLACE_CONST)
@@ -1260,7 +1457,10 @@ class EWSOnPremConnector(BaseConnector):
         for i, folder_name in enumerate(folder_names):
             folder_names[i] = folder_name.replace(self.REPLACE_CONST, '/')
 
-        parent_folder_id = 'root'
+        if is_public_folder:
+            parent_folder_id = 'publicfoldersroot'
+        else:
+            parent_folder_id = 'root'
 
         for i, folder_name in enumerate(folder_names):
 
@@ -1311,7 +1511,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, folder_info)
 
-    def _copy_email(self, param):
+    def _copy_move_email(self, param, action="copy"):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
@@ -1322,6 +1522,7 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_path = param[EWSONPREM_JSON_FOLDER]
         user = param[EWSONPREM_JSON_EMAIL]
+        is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         # Set the user to impersonate (i.e. target_user), by default it is the destination user
         self._target_user = user
@@ -1332,19 +1533,24 @@ class EWSOnPremConnector(BaseConnector):
             self._target_user = impersonate_email
 
         # finally see if impersonation has been enabled/disabled for this action
-        # as of right now copy email is the only action that allows over-ride
+        # as of right now copy or move email is the only action that allows over-ride
         impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
 
         self._impersonate = impersonate
 
-        ret_val, folder_info = self._get_folder_info(user, folder_path, action_result)
+        ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_status()
 
         data = ews_soap.get_copy_email(message_id, folder_info['id'])
+        response_checker = self._check_copy_response
 
-        ret_val, resp_json = self._make_rest_call(action_result, data, self._check_copy_response)
+        if (action == "move"):
+            data = ews_soap.get_move_email(message_id, folder_info['id'])
+            response_checker = self._check_move_response
+
+        ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
 
         # Process errors
         if (phantom.is_fail(ret_val)):
@@ -1355,15 +1561,17 @@ class EWSOnPremConnector(BaseConnector):
 
         new_email_id = None
 
+        action_verb = 'copied' if (action == "copy") else 'moved'
+
         try:
             new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
         except:
-            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get copied Email ID")
+            return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
 
         # Set the Status
-        return action_result.set_status(phantom.APP_SUCCESS, "Email Copied")
+        return action_result.set_status(phantom.APP_SUCCESS, "Email {0}".format(action_verb.title()))
 
     def _resolve_name(self, param):
 
@@ -1760,7 +1968,8 @@ class EWSOnPremConnector(BaseConnector):
 
         folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
 
-        ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result)
+        is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
+        ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -1912,11 +2121,6 @@ class EWSOnPremConnector(BaseConnector):
 
         restriction = self._get_restriction()
 
-        utc_now = datetime.utcnow()
-
-        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
-        self._state['last_ingested_format'] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
         ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
 
         if (phantom.is_fail(ret_val)):
@@ -1929,6 +2133,8 @@ class EWSOnPremConnector(BaseConnector):
         # The last email is the latest in the list returned
         email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
 
+        utc_now = datetime.utcnow()
+        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
 
         email_ids = [x['id'] for x in email_infos]
@@ -1965,7 +2171,9 @@ class EWSOnPremConnector(BaseConnector):
         elif (action == self.ACTION_ID_GET_EMAIL):
             ret_val = self._get_email(param)
         elif (action == self.ACTION_ID_COPY_EMAIL):
-            ret_val = self._copy_email(param)
+            ret_val = self._copy_move_email(param)
+        elif (action == self.ACTION_ID_MOVE_EMAIL):
+            ret_val = self._copy_move_email(param, action='move')
         elif (action == self.ACTION_ID_EXPAND_DL):
             ret_val = self._expand_dl(param)
         elif (action == self.ACTION_ID_RESOLVE_NAME):
@@ -2057,7 +2265,8 @@ if __name__ == '__main__':
                     "extract_domains": True,
                     "extract_hashes": True,
                     "extract_ips": True,
-                    "extract_urls": True }
+                    "extract_urls": True,
+                    "add_body_to_header_artifacts": True }
 
             process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)

@@ -175,7 +175,9 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
-        return url
+        url = url.rstrip(']')
+
+        return url.strip()
 
     def _extract_urls_domains(self, file_data, urls, domains):
 
@@ -224,6 +226,8 @@ class ProcessEmail(object):
                 for curr_email in mailtos:
                     domain = curr_email[curr_email.find('@') + 1:]
                     if (domain) and (not self._is_ip(domain)):
+                        if ('?' in domain):
+                            domain = domain[:domain.find('?')]
                         domains.add(domain)
 
         return
@@ -410,8 +414,11 @@ class ProcessEmail(object):
             if (encoding != 'utf-8'):
                 value = unicode(value, encoding).encode('utf-8')
 
-            # substitute the encoded string with the decoded one
-            input_str = input_str.replace(encoded_string, value)
+            try:
+                # substitute the encoded string with the decoded one
+                input_str = input_str.replace(encoded_string, value)
+            except:
+                pass
 
         return input_str
 
@@ -584,6 +591,12 @@ class ProcessEmail(object):
 
         if (received_headers):
             headers['Received'] = received_headers
+
+        # handle the subject string, if required add a new key
+        subject = headers.get('Subject')
+        if (subject):
+            if (type(subject) == unicode):
+                headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
 
         return headers
 
@@ -862,7 +875,8 @@ class ProcessEmail(object):
             # Create a new container
             container['artifacts'] = artifacts
 
-        container = self._base_connector._preprocess_container(container)
+        if (hasattr(self._base_connector, '_preprocess_container')):
+            container = self._base_connector._preprocess_container(container)
 
         for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
             self._set_sdi(artifact)
@@ -875,7 +889,7 @@ class ProcessEmail(object):
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
 
         if (phantom.is_fail(ret_val)):
-            message = "Failed to save ingested artifacts, error msg: {1}".format(message)
+            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
             return
 
