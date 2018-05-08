@@ -743,6 +743,7 @@ class ProcessEmail(object):
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
         self._container['data'] = {'raw_email': rfc822_email}
+        self._container['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
 
         # Create the sets before handling the bodies If both the bodies add the same ip
         # only one artifact should be created

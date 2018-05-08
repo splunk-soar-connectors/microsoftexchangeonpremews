@@ -141,6 +141,18 @@
             "description": "Script with functions to preprocess containers and artifacts",
             "required": false,
             "order": 17
+        },
+        "container_severity": {
+            "data_type": "string",
+            "description": "Container Severity",
+            "required": false,
+            "value_list": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "default": "medium",
+            "order": 18
         }
     },
     "actions": [
