@@ -307,6 +307,7 @@ class ProcessEmail(object):
             artifact['source_data_identifier'] = start_index + added_artifacts
             artifact['cef'] = {cef_key: entry}
             artifact['name'] = artifact_name
+            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
             self._debug_print('Artifact:', artifact)
             artifacts.append(artifact)
             added_artifacts += 1
@@ -661,6 +662,7 @@ class ProcessEmail(object):
         artifact = {}
         artifact.update(_artifact_common)
         artifact['name'] = 'Email Artifact'
+        artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
         artifact['cef_types'] = cef_types
         email_header_artifacts.append(artifact)
@@ -1069,8 +1071,12 @@ class ProcessEmail(object):
         artifact.update(_artifact_common)
         artifact['container_id'] = container_id
         artifact['name'] = 'Vault Artifact'
+        # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
+        # The container picks up the severity of any artifact that is higher than it's own
+        artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
         artifact['run_automation'] = run_automation
+
         if (contains):
             artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
         self._set_sdi(artifact)
