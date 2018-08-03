@@ -309,28 +309,7 @@ class ProcessEmail(object):
 
         return phantom.APP_SUCCESS
 
-    def _add_artifacts(self, cef_key, input_set, artifact_name, start_index, artifacts):
-
-        added_artifacts = 0
-        for entry in input_set:
-
-            # ignore empty entries
-            if (not entry):
-                continue
-
-            artifact = {}
-            artifact.update(_artifact_common)
-            artifact['source_data_identifier'] = start_index + added_artifacts
-            artifact['cef'] = {cef_key: entry}
-            artifact['name'] = artifact_name
-            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
-            self._debug_print('Artifact:', artifact)
-            artifacts.append(artifact)
-            added_artifacts += 1
-
-        return added_artifacts
-
-    def _add_artifacts2(self, input_set, artifact_name, start_index, artifacts):
+    def _add_artifacts(self, input_set, artifact_name, start_index, artifacts):
 
         added_artifacts = 0
         for item in input_set:
@@ -390,18 +369,18 @@ class ProcessEmail(object):
         artifact_id = 0
 
         # add artifacts
-        added_artifacts = self._add_artifacts2(ips, 'IP Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(ips, 'IP Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
-        added_artifacts = self._add_artifacts2(hashes, 'Hash Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(hashes, 'Hash Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
-        added_artifacts = self._add_artifacts2(urls, 'URL Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(urls, 'URL Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
         # domains = [x.decode('idna') for x in domains]
 
-        added_artifacts = self._add_artifacts2(domains, 'Domain Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(domains, 'Domain Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
         added_artifacts = self._add_email_header_artifacts(email_headers, artifact_id, self._artifacts)
