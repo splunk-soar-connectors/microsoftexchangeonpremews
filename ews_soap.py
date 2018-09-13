@@ -35,6 +35,9 @@ EXTENDED_PROPERTY_BODY_TEXT = '0x1000'
 EXTENDED_PROPERTY_BODY_HTML = '0x1013'
 
 
+# WARNING: pylint is disabled for the whole file due to ElementMaker
+# pylint: skip-file
+
 def xml_get_restriction(greater_than_time=None, message_id=None):
 
     filters = []
