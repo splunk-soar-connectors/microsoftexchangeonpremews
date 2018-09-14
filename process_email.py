@@ -318,7 +318,7 @@ class ProcessEmail(object):
 
         # remove the 'Forwarded Message' from the email text and parse it
         p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
-        email_text = p.sub(r'\1', file_data.strip())
+        email_text = p.sub(r'\1', file_data.strip()[:500])
         mail = email.message_from_string(email_text)
 
         # Get the array
