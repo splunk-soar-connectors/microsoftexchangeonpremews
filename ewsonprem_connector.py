@@ -1,14 +1,17 @@
 # --
 # File: ewsonprem_connector.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2018
+# Copyright (c) 2016-2018 Splunk Inc.
 #
-# This unpublished material is proprietary to Phantom Cyber.
+# SPLUNK CONFIDENTIAL – Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
+#
+# This unpublished material is proprietary to Splunk.
 # All rights reserved. The methods and
 # techniques described herein are considered trade secrets
 # and/or confidential. Reproduction or distribution, in whole
 # or in part, is forbidden except by express written permission
-# of Phantom Cyber.
+# of Splunk Inc.
 #
 # --
 
@@ -1592,8 +1595,10 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
             message = action_result.get_message()
             if ( 'ErrorNameResolutionNoResults' in message):
-                message += ' The input parameter might not be a valid alias or email.'
-            return action_result.set_status(phantom.APP_ERROR, message)
+                message = 'No email found. The input parameter might not be a valid alias or email.'
+                return action_result.set_status(phantom.APP_SUCCESS, message)
+            else:
+                return action_result.set_status(phantom.APP_ERROR, message)
 
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')

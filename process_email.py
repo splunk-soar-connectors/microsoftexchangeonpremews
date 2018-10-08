@@ -1,14 +1,17 @@
 # --
 # File: process_email.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2016-2018
+# Copyright (c) 2016-2018 Splunk Inc.
 #
-# This unpublished material is proprietary to Phantom Cyber.
+# SPLUNK CONFIDENTIAL – Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
+#
+# This unpublished material is proprietary to Splunk.
 # All rights reserved. The methods and
 # techniques described herein are considered trade secrets
 # and/or confidential. Reproduction or distribution, in whole
 # or in part, is forbidden except by express written permission
-# of Phantom Cyber Corporation.
+# of Splunk Inc.
 #
 # --
 
@@ -307,6 +310,7 @@ class ProcessEmail(object):
             artifact['source_data_identifier'] = start_index + added_artifacts
             artifact['cef'] = {cef_key: entry}
             artifact['name'] = artifact_name
+            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
             self._debug_print('Artifact:', artifact)
             artifacts.append(artifact)
             added_artifacts += 1
@@ -317,7 +321,7 @@ class ProcessEmail(object):
 
         # remove the 'Forwarded Message' from the email text and parse it
         p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
-        email_text = p.sub(r'\1', file_data.strip())
+        email_text = p.sub(r'\1', file_data.strip()[:500])
         mail = email.message_from_string(email_text)
 
         # Get the array
@@ -661,6 +665,7 @@ class ProcessEmail(object):
         artifact = {}
         artifact.update(_artifact_common)
         artifact['name'] = 'Email Artifact'
+        artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
         artifact['cef_types'] = cef_types
         email_header_artifacts.append(artifact)
@@ -743,6 +748,7 @@ class ProcessEmail(object):
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
         self._container['data'] = {'raw_email': rfc822_email}
+        self._container['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
 
         # Create the sets before handling the bodies If both the bodies add the same ip
         # only one artifact should be created
@@ -1068,8 +1074,12 @@ class ProcessEmail(object):
         artifact.update(_artifact_common)
         artifact['container_id'] = container_id
         artifact['name'] = 'Vault Artifact'
+        # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
+        # The container picks up the severity of any artifact that is higher than it's own
+        artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
         artifact['run_automation'] = run_automation
+
         if (contains):
             artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
         self._set_sdi(artifact)
