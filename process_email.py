@@ -182,7 +182,7 @@ class ProcessEmail(object):
 
         return url.strip()
 
-    def _extract_urls_domains(self, file_data, urls, domains):
+    def _extract_urls_domains(self, file_data, urls, domains, parent_id=None):
 
         if ((not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]) and (not self._config[PROC_EMAIL_JSON_EXTRACT_URLS])):
             return
@@ -216,13 +216,17 @@ class ProcessEmail(object):
 
         if (self._config[PROC_EMAIL_JSON_EXTRACT_URLS]):
             # add the uris to the urls
-            urls |= set(uris)
+            unique_uris = set(uris)
+            unique_uris = list(unique_uris)
+            for uri in unique_uris:
+                uri_dict = {'requestURL': uri, 'parentInternetMessageId': parent_id}
+                urls.append(uri_dict)
 
         if (self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]):
             for uri in uris:
                 domain = phantom.get_host_from_url(uri)
                 if (domain) and (not self._is_ip(domain)):
-                    domains.add(domain)
+                    domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
             # work on any mailto urls if present
             if (links):
                 mailtos = [x['href'] for x in links if (x['href'].startswith('mailto:'))]
@@ -231,11 +235,11 @@ class ProcessEmail(object):
                     if (domain) and (not self._is_ip(domain)):
                         if ('?' in domain):
                             domain = domain[:domain.find('?')]
-                        domains.add(domain)
+                        domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
 
         return
 
-    def _get_ips(self, file_data, ips):
+    def _get_ips(self, file_data, ips, parent_id=None):
 
         # First extract what looks like an IP from the file, this is a faster operation
         ips_in_mail = re.findall(ip_regexc, file_data)
@@ -253,12 +257,22 @@ class ProcessEmail(object):
             # TODO: Fix this with a one step approach.
             ips_in_mail = [x for x in ips_in_mail if self._is_ip(x)]
             if (ips_in_mail):
-                ips |= set(ips_in_mail)
+                unique_ips = set(ips_in_mail)
+                for ip in unique_ips:
+                    ips.append({'sourceAddress': ip, 'parentInternetMessageId': parent_id})
 
     def _handle_body(self, body, parsed_mail, body_index, email_id):
 
         local_file_path = body['file_path']
         charset = body.get('charset')
+        parent_id = None
+
+        # parent_id = parsed_mail['email_headers'][body_index]['cef'].get('parentInternetMessageId')
+        if 'True' in local_file_path:
+            for item in parsed_mail['email_headers']:
+                parent_id = item['cef'].get('parentInternetMessageId')
+                if parent_id:
+                    break
 
         ips = parsed_mail[PROC_EMAIL_JSON_IPS]
         hashes = parsed_mail[PROC_EMAIL_JSON_HASHES]
@@ -282,35 +296,35 @@ class ProcessEmail(object):
             for curr_email in emails:
                 domain = curr_email[curr_email.rfind('@') + 1:]
                 if (domain) and (not ph_utils.is_ip(domain)):
-                    domains.add(domain)
+                    domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
 
-        self._extract_urls_domains(file_data, urls, domains)
+        self._extract_urls_domains(file_data, urls, domains, parent_id)
 
         if (self._config[PROC_EMAIL_JSON_EXTRACT_IPS]):
-            self._get_ips(file_data, ips)
+            self._get_ips(file_data, ips, parent_id)
 
         if (self._config[PROC_EMAIL_JSON_EXTRACT_HASHES]):
             hashs_in_mail = re.findall(hash_regexc, file_data)
             if (hashs_in_mail):
-                hashes |= set(hashs_in_mail)
+                unique_hashes = set(hashs_in_mail)
+                for hash in unique_hashes:
+                    hashes.append({'fileHash': hash, 'parentInternetMessageId': parent_id})
 
         return phantom.APP_SUCCESS
 
-    def _add_artifacts(self, cef_key, input_set, artifact_name, start_index, artifacts):
+    def _add_artifacts(self, input_set, artifact_name, start_index, artifacts):
 
         added_artifacts = 0
-        for entry in input_set:
-
+        for item in input_set:
             # ignore empty entries
-            if (not entry):
+            if (not item):
                 continue
 
             artifact = {}
             artifact.update(_artifact_common)
             artifact['source_data_identifier'] = start_index + added_artifacts
-            artifact['cef'] = {cef_key: entry}
+            artifact['cef'] = item
             artifact['name'] = artifact_name
-            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
             self._debug_print('Artifact:', artifact)
             artifacts.append(artifact)
             added_artifacts += 1
@@ -347,10 +361,10 @@ class ProcessEmail(object):
     def _create_artifacts(self, parsed_mail):
 
         # get all the artifact data in their own list objects
-        ips = parsed_mail[PROC_EMAIL_JSON_IPS]
-        hashes = parsed_mail[PROC_EMAIL_JSON_HASHES]
-        urls = parsed_mail[PROC_EMAIL_JSON_URLS]
-        domains = parsed_mail[PROC_EMAIL_JSON_DOMAINS]
+        ips = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_IPS]])]
+        hashes = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_HASHES]])]
+        urls = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_URLS]])]
+        domains = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_DOMAINS]])]
         email_headers = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
 
         # set the default artifact dict
@@ -358,18 +372,18 @@ class ProcessEmail(object):
         artifact_id = 0
 
         # add artifacts
-        added_artifacts = self._add_artifacts('sourceAddress', ips, 'IP Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(ips, 'IP Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
-        added_artifacts = self._add_artifacts('fileHash', hashes, 'Hash Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(hashes, 'Hash Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
-        added_artifacts = self._add_artifacts('requestURL', urls, 'URL Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(urls, 'URL Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
         # domains = [x.decode('idna') for x in domains]
 
-        added_artifacts = self._add_artifacts('destinationDnsDomain', domains, 'Domain Artifact', artifact_id, self._artifacts)
+        added_artifacts = self._add_artifacts(domains, 'Domain Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
         added_artifacts = self._add_email_header_artifacts(email_headers, artifact_id, self._artifacts)
@@ -505,7 +519,7 @@ class ProcessEmail(object):
             f.write(part_payload)
         files.append({'file_name': file_name, 'file_path': file_path, 'meta_info': attach_meta_info})
 
-    def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail):
+    def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail, child=False):
 
         bodies = parsed_mail[PROC_EMAIL_JSON_BODIES]
 
@@ -517,7 +531,7 @@ class ProcessEmail(object):
 
         if (file_name is None):
             # init name and extension to default values
-            name = "part_{0}".format(part_index)
+            name = "part_{0}_{1}".format(part_index, child)
             extension = ".{0}".format(part_index)
 
             # Try to create an extension from the content type if possible
@@ -533,8 +547,8 @@ class ProcessEmail(object):
             file_name = self._decode_uni_string(file_name, file_name)
 
         # Remove any chars that we don't want in the name
-        file_path = "{0}/{1}_{2}".format(tmp_dir, part_index,
-                file_name.translate(None, ''.join(['<', '>', ' '])))
+        file_path = "{0}/{1}_{2}_{3}".format(tmp_dir, part_index,
+                file_name.translate(None, ''.join(['<', '>', ' '])), child)
 
         self._debug_print("file_path: {0}".format(file_path))
 
@@ -701,12 +715,20 @@ class ProcessEmail(object):
 
         # parse the parts of the email
         if (mail.is_multipart()):
+            child = False
+            message_id = None
             for i, part in enumerate(mail.walk()):
                 add_email_id = None
                 if (i == 0):
                     add_email_id = email_id
 
                 self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
+                if message_id is None and part.get('Message-ID'):
+                    message_id = part.get('Message-ID')
+                    child = False
+                elif message_id and part.get('Message-ID'):
+                    child = True
+
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
 
@@ -715,7 +737,7 @@ class ProcessEmail(object):
                 if (part.is_multipart()):
                     continue
                 try:
-                    ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail)
+                    ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail, child)
                 except Exception as e:
                     self._debug_print("ErrorExp in _handle_part # {0}".format(i), e)
                     continue
@@ -724,6 +746,7 @@ class ProcessEmail(object):
                     continue
 
         else:
+            print('else')
             self._parse_email_headers(self._parsed_mail, mail, add_email_id=email_id)
             # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(mail.items())
             file_path = "{0}/part_1.text".format(tmp_dir)
@@ -752,10 +775,12 @@ class ProcessEmail(object):
 
         # Create the sets before handling the bodies If both the bodies add the same ip
         # only one artifact should be created
-        self._parsed_mail[PROC_EMAIL_JSON_IPS] = set()
-        self._parsed_mail[PROC_EMAIL_JSON_HASHES] = set()
-        self._parsed_mail[PROC_EMAIL_JSON_URLS] = set()
-        self._parsed_mail[PROC_EMAIL_JSON_DOMAINS] = set()
+
+        # Changing to a list due to add parent identifier in each artifact
+        self._parsed_mail[PROC_EMAIL_JSON_IPS] = list()
+        self._parsed_mail[PROC_EMAIL_JSON_HASHES] = list()
+        self._parsed_mail[PROC_EMAIL_JSON_URLS] = list()
+        self._parsed_mail[PROC_EMAIL_JSON_DOMAINS] = list()
 
         # For bodies
         for i, body in enumerate(bodies):
@@ -1079,7 +1104,6 @@ class ProcessEmail(object):
         artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
         artifact['run_automation'] = run_automation
-
         if (contains):
             artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
         self._set_sdi(artifact)

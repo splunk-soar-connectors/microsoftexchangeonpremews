@@ -1898,6 +1898,8 @@ class EWSOnPremConnector(BaseConnector):
             headers['parentGuid'] = parent_guid
 
         headers['emailGuid'] = resp_json['emailGuid']
+        self.emailGuid = headers['emailGuid']
+        self.parentGuid = headers['parentGuid']
 
         return (phantom.APP_SUCCESS, headers)
 
