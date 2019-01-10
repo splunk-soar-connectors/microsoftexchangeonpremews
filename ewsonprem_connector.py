@@ -303,7 +303,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, resp_json)
 
-    def _get_phantom_base_url(self, action_result):
+    def _get_phantom_base_url_ews(self, action_result):
 
         temp_base_url = self.get_phantom_base_url()
         ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + '/rest/system_info')
@@ -335,7 +335,7 @@ class EWSOnPremConnector(BaseConnector):
         if (not action_result):
             action_result = ActionResult()
         # get the phantom ip to redirect to
-        ret_val, phantom_base_url = self._get_phantom_base_url(action_result)
+        ret_val, phantom_base_url = self._get_phantom_base_url_ews(action_result)
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), action_result.get_message())
         # get the asset name
