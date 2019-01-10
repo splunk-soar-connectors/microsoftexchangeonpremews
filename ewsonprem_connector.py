@@ -1,17 +1,10 @@
 # --
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2018 Splunk Inc.
+# Copyright (c) 2016-2019 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL – Use or disclosure of this material in whole or in part
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
-#
-# This unpublished material is proprietary to Splunk.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Splunk Inc.
 #
 # --
 
@@ -312,7 +305,8 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_phantom_base_url(self, action_result):
 
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, 'https://127.0.0.1/rest/system_info')
+        temp_base_url = self.get_phantom_base_url()
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + '/rest/system_info')
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -325,7 +319,8 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_asset_name(self, action_result):
 
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, 'https://127.0.0.1/rest/asset/{0}'.format(self.get_asset_id()))
+        temp_base_url = self.get_phantom_base_url()
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + '/rest/asset/{0}'.format(self.get_asset_id()))
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -1027,7 +1022,8 @@ class EWSOnPremConnector(BaseConnector):
     def _get_container_id(self, email_id):
 
         email_id = urllib.quote_plus(email_id)
-        url = 'https://127.0.0.1/rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
+        temp_base_url = self.get_phantom_base_url()
+        url = temp_base_url + '/rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
             r = requests.get(url, verify=False)
@@ -2223,7 +2219,7 @@ if __name__ == '__main__':
     if (username and password):
         try:
             print ("Accessing the Login page")
-            r = requests.get("https://127.0.0.1/login", verify=False)
+            r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -2233,10 +2229,10 @@ if __name__ == '__main__':
 
             headers = dict()
             headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = 'https://127.0.0.1/login'
+            headers['Referer'] = BaseConnector._get_phantom_base_url() + 'login'
 
             print ("Logging into Platform to get the session id")
-            r2 = requests.post("https://127.0.0.1/login", verify=False, data=data, headers=headers)
+            r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print ("Unable to get session id from the platfrom. Error: " + str(e))
