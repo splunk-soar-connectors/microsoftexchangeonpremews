@@ -306,7 +306,7 @@ class EWSOnPremConnector(BaseConnector):
     def _get_phantom_base_url_ews(self, action_result):
 
         temp_base_url = self.get_phantom_base_url()
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + '/rest/system_info')
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/system_info')
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -320,7 +320,7 @@ class EWSOnPremConnector(BaseConnector):
     def _get_asset_name(self, action_result):
 
         temp_base_url = self.get_phantom_base_url()
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + '/rest/asset/{0}'.format(self.get_asset_id()))
+        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/asset/{0}'.format(self.get_asset_id()))
 
         if (phantom.is_fail(ret_val)):
             return (action_result.get_status(), None)
@@ -1023,7 +1023,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email_id = urllib.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
-        url = temp_base_url + '/rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
+        url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
             r = requests.get(url, verify=False)
