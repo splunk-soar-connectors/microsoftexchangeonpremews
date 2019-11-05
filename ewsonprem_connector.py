@@ -2138,7 +2138,7 @@ class EWSOnPremConnector(BaseConnector):
         email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
 
         utc_now = datetime.utcnow()
-        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
+        self._state['last_ingested_format'] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
 
         email_ids = [x['id'] for x in email_infos]
