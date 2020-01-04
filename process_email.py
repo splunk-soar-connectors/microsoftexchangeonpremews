@@ -412,18 +412,18 @@ class ProcessEmail(object):
             decoded_string = decoded_strings.get(i)
 
             if (not decoded_string):
-                # notihing to replace with
+                # nothing to replace with
                 continue
 
             value = decoded_string.get('value')
             encoding = decoded_string.get('encoding')
 
             if (not encoding or not value):
-                # notihing to replace with
+                # nothing to replace with
                 continue
 
             if (encoding != 'utf-8'):
-                value = unicode(value, encoding).encode('utf-8')
+                value = str(value, encoding).encode('utf-8')
 
             try:
                 # substitute the encoded string with the decoded one
@@ -581,7 +581,7 @@ class ProcessEmail(object):
 
     def _get_email_headers_from_part(self, part, charset=None):
 
-        email_headers = part.items()
+        email_headers = list(part.items())
 
         # TODO: the next 2 ifs can be condensed to use 'or'
         if (charset is None):
@@ -595,10 +595,10 @@ class ProcessEmail(object):
 
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
-        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+        [headers.update({x[0]: str(x[1], charset)}) for x in email_headers]
 
         # Handle received seperately
-        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        received_headers = [str(x[1], charset) for x in email_headers if x[0].lower() == 'received']
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -606,7 +606,7 @@ class ProcessEmail(object):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if (subject):
-            if (type(subject) == unicode):
+            if (type(subject) == str):
                 headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
 
         return headers
@@ -645,7 +645,7 @@ class ProcessEmail(object):
             self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
 
-        for curr_key in cef_artifact['emailHeaders'].keys():
+        for curr_key in list(cef_artifact['emailHeaders'].keys()):
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
@@ -721,7 +721,6 @@ class ProcessEmail(object):
                     child = False
                 elif message_id and part.get('Message-ID'):
                     child = True
-
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
 
@@ -902,7 +901,7 @@ class ProcessEmail(object):
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
+        for artifact in list([x for x in container.get('artifacts', []) if not x.get('source_data_identifier')]):
             self._set_sdi(artifact)
 
         if files and container.get('artifacts'):
