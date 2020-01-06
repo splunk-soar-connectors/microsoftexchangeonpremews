@@ -42,7 +42,6 @@ import uuid
 from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
-# from urlparse import urlparse
 import base64
 from datetime import datetime, timedelta
 import re
