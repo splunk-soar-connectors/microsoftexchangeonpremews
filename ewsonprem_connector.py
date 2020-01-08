@@ -1,7 +1,7 @@
 # --
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -42,7 +42,6 @@ import uuid
 from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
-from urlparse import urlparse
 import base64
 from datetime import datetime, timedelta
 import re
@@ -50,6 +49,7 @@ from process_email import ProcessEmail
 from email.parser import HeaderParser
 import email
 import urllib
+from urllib.parse import urlparse
 import imp
 
 import time
@@ -129,7 +129,7 @@ class EWSOnPremConnector(BaseConnector):
         if script:
             try:  # Try to laod in script to preprocess artifacts
                 self._script_module = imp.new_module('preprocess_methods')
-                exec script in self._script_module.__dict__
+                exec(script, self._script_module.__dict__)
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
                 return phantom.APP_ERROR
@@ -237,7 +237,7 @@ class EWSOnPremConnector(BaseConnector):
         end_pos = xml_response.find('</saml:Assertion>') + len('</saml:Assertion>')
 
         # validate that the saml assertion is present
-        if (start_pos is -1 or end_pos is -1):
+        if (start_pos == -1 or end_pos == -1):
             return (None, "Could not find Saml Assertion")
 
         saml_assertion = xml_response[start_pos:end_pos]
@@ -526,7 +526,7 @@ class EWSOnPremConnector(BaseConnector):
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
     def _check_password(self, config):
-        if phantom.APP_JSON_PASSWORD not in config.keys():
+        if phantom.APP_JSON_PASSWORD not in list(config.keys()):
             return phantom.APP_ERROR, "Password not present in asset configuration"
         return phantom.APP_SUCCESS, ''
 
@@ -625,37 +625,37 @@ class EWSOnPremConnector(BaseConnector):
 
     # TODO: Should change these function to be parameterized, instead of one per type of request
     def _check_get_attachment_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:GetAttachmentResponse']['m:ResponseMessages']['m:GetAttachmentResponseMessage']
 
     def _check_getitem_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:GetItemResponse']['m:ResponseMessages']['m:GetItemResponseMessage']
 
     def _check_find_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:FindItemResponse']['m:ResponseMessages']['m:FindItemResponseMessage']
 
     def _check_delete_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:DeleteItemResponse']['m:ResponseMessages']['m:DeleteItemResponseMessage']
 
     def _check_update_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:UpdateItemResponse']['m:ResponseMessages']['m:UpdateItemResponseMessage']
 
     def _check_copy_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:CopyItemResponse']['m:ResponseMessages']['m:CopyItemResponseMessage']
 
     def _check_move_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:MoveItemResponse']['m:ResponseMessages']['m:MoveItemResponseMessage']
 
     def _check_expand_dl_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:ExpandDLResponse']['m:ResponseMessages']['m:ExpandDLResponseMessage']
 
     def _check_findfolder_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:FindFolderResponse']['m:ResponseMessages']['m:FindFolderResponseMessage']
 
     def _check_getfolder_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:GetFolderResponse']['m:ResponseMessages']['m:GetFolderResponseMessage']
 
     def _check_resolve_names_response(self, resp_json):
-            return resp_json['s:Envelope']['s:Body']['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
+        return resp_json['s:Envelope']['s:Body']['m:ResolveNamesResponse']['m:ResponseMessages']['m:ResolveNamesResponseMessage']
 
     def _parse_fault_node(self, result, fault_node):
 
@@ -805,7 +805,7 @@ class EWSOnPremConnector(BaseConnector):
         step_size = 500
         folder_infos = list()
 
-        for curr_step_value in xrange(0, 10000, step_size):
+        for curr_step_value in range(0, 10000, step_size):
 
             curr_range = "{0}-{1}".format(curr_step_value, curr_step_value + step_size - 1)
 
@@ -862,7 +862,7 @@ class EWSOnPremConnector(BaseConnector):
         if (type(input_dict) != dict):
             return input_dict
 
-        for k, v in input_dict.items():
+        for k, v in list(input_dict.items()):
             if (k.find(':') != -1):
                 new_key = k.replace(':', '_')
                 input_dict[new_key] = v
@@ -929,7 +929,7 @@ class EWSOnPremConnector(BaseConnector):
         self._target_user = user
         ignore_subfolders = param.get('ignore_subfolders', False)
 
-        self.save_progress("Searching in {0}\{1}{2}".format(
+        self.save_progress("Searching in {0}\\{1}{2}".format(
             self._clean_str(user),
             folder_path if folder_path else 'All Folders',
             ' (and the children)' if (not ignore_subfolders) else ''))
@@ -1021,7 +1021,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_container_id(self, email_id):
 
-        email_id = urllib.quote_plus(email_id)
+        email_id = urllib.parse.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
         url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
@@ -1465,7 +1465,7 @@ class EWSOnPremConnector(BaseConnector):
 
             curr_valid_folder_path = '/'.join(folder_names[:i + 1])
 
-            self.save_progress('Getting info about {0}\{1}'.format(self._clean_str(user), curr_valid_folder_path))
+            self.save_progress('Getting info about {0}\\{1}'.format(self._clean_str(user), curr_valid_folder_path))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
@@ -1710,9 +1710,9 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info['parentGuid'] = parent_guid
 
         # attachmentID, attachmentType
-        for k, v in attachment.iteritems():
+        for k, v in list(attachment.items()):
 
-            if (not isinstance(v, basestring)):
+            if (not isinstance(v, str)):
                 continue
 
             # convert the key to the convention used by cef
@@ -1728,7 +1728,7 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info_ret = list()
 
         if ('m:Items' not in resp_json):
-            k = resp_json.keys()[0]
+            k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
 
         # Get the attachments
@@ -1747,7 +1747,7 @@ class EWSOnPremConnector(BaseConnector):
 
         email_guid = resp_json['emailGuid']
 
-        for curr_key in attachments.iterkeys():
+        for curr_key in list(attachments.keys()):
 
             attachment_data = attachments[curr_key]
 
@@ -1803,7 +1803,7 @@ class EWSOnPremConnector(BaseConnector):
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment', internet_message_id, email_guid)
                 if (curr_attach_meta_info):
                     # find the attachmetn in the list and update it
-                    matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'), attach_meta_info_ret))
+                    matched_meta_info = list([x for x in attach_meta_info_ret if x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2')])
                     matched_meta_info[0].update(curr_attach_meta_info)
 
         return (phantom.APP_SUCCESS, email_headers_ret, attach_meta_info_ret)
@@ -1812,14 +1812,14 @@ class EWSOnPremConnector(BaseConnector):
 
         header_parser = HeaderParser()
         email_part = header_parser.parsestr(email_headers)
-        email_headers = email_part.items()
+        email_headers = list(email_part.items())
 
         headers = {}
         charset = 'utf-8'
-        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+        [headers.update({x[0]: str(x[1], charset)}) for x in email_headers]
 
         # Handle received seperately
-        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        received_headers = [str(x[1], charset) for x in email_headers if x[0].lower() == 'received']
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -1829,7 +1829,7 @@ class EWSOnPremConnector(BaseConnector):
     def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):
 
         if ('m:Items' not in resp_json):
-            k = resp_json.keys()[0]
+            k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
 
         headers = dict()
@@ -2148,9 +2148,9 @@ class EWSOnPremConnector(BaseConnector):
             email_times = set(email_times)
 
             if (len(email_times) == 1):
-                self.debug_print("Getting all emails with the same LastModifiedTime, down to the second." +
-                        " That means the device is generating max_containers=({0}) per second.".format(max_emails) +
-                        " Skipping to the next second to not get stuck.")
+                self.debug_print("Getting all emails with the same LastModifiedTime, down to the second."
+                                 + " That means the device is generating max_containers=({0}) per second.".format(max_emails)  # noqa
+                                 + " Skipping to the next second to not get stuck.")  # noqa
 
                 self._state['last_email_format'] = self._get_next_start_time(self._state['last_email_format'])
 
@@ -2236,7 +2236,7 @@ if __name__ == '__main__':
             r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)
             session_id = r2.cookies['sessionid']
         except Exception as e:
-            print ("Unable to get session id from the platfrom. Error: " + str(e))
+            print("Unable to get session id from the platfrom. Error: " + str(e))
             exit(1)
 
     with open(args.input_test_json) as f:
@@ -2257,7 +2257,7 @@ if __name__ == '__main__':
             if (session_id is not None):
                 in_json['user_session_token'] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
-            print result
+            print(result)
             exit(0)
 
         if (data):
