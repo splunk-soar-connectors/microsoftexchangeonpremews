@@ -24,6 +24,7 @@ import shutil
 import hashlib
 import json
 import magic
+from builtins import str
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
 
