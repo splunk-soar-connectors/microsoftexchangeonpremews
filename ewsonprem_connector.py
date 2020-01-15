@@ -47,15 +47,16 @@ from datetime import datetime, timedelta
 import re
 from process_email import ProcessEmail
 from email.parser import HeaderParser
+from builtins import str
 import email
-import urllib
-from urllib.parse import urlparse
 import imp
-
 import time
-
 from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
 
+try:
+    import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
 os.sys.path.insert(0, '{}/dependencies/ews_dep'.format(app_dir))  # noqa
@@ -1021,7 +1022,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_container_id(self, email_id):
 
-        email_id = urllib.parse.quote_plus(email_id)
+        email_id = urlparse.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
         url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
