@@ -159,14 +159,14 @@ def xml_get_attachments_data(attachment_ids_to_query):
     return get_attachments
 
 
-def xml_get_emails_data(email_ids):
+def xml_get_emails_data(email_ids, version):
     """
     https://msdn.microsoft.com/en-us/library/office/aa566013(v=exchg.150).aspx
     FieldURI: InternetMessageHeaders does _not_ return all the headers
     PropertyTag 0x007D is required, which points to PR_TRANSPORT_MESSAGE_HEADERS
     """
 
-    additional_properties = T.AdditionalProperties(
+    additional_properties = [
             T.FieldURI({'FieldURI': 'item:Subject'}),
             T.FieldURI({'FieldURI': 'message:From'}),
             T.FieldURI({'FieldURI': 'message:Sender'}),
@@ -176,12 +176,16 @@ def xml_get_emails_data(email_ids):
             T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
-            T.FieldURI({'FieldURI': 'item:Body'}))
+            T.FieldURI({'FieldURI': 'item:Body'})
+        ]
+
+    if version != '2010':
+            additional_properties.append(T.FieldURI({'FieldURI': 'item:TextBody'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('Default'),
             T.IncludeMimeContent('true'),
-            additional_properties)
+            T.AdditionalProperties(*additional_properties))
 
     item_ids = M.ItemIds()
     [item_ids.append(T.ItemId({'Id': x})) for x in email_ids]
@@ -510,9 +514,9 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
             *elements)
 
 
-def add_to_envelope(lxml_obj, target_user=None):
+def add_to_envelope(lxml_obj, version, target_user=None):
 
-    header = S.Header(T.RequestServerVersion({'Version': 'Exchange2010'}))
+    header = S.Header(T.RequestServerVersion({'Version': 'Exchange{0}'.format(version)}))
 
     if (target_user):
         impersonation = T.ExchangeImpersonation(

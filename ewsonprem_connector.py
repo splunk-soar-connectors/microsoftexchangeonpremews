@@ -109,6 +109,8 @@ class EWSOnPremConnector(BaseConnector):
         # Call the BaseConnectors init first
         super(EWSOnPremConnector, self).__init__()
 
+        self._version = None
+
         self._session = None
 
         # Target user in case of impersonation
@@ -419,7 +421,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             oauth_token = r.json()
-        except Exception as e:
+        except Exception:
             return (None, "Error retrieving OAuth Token")
 
         self._state['oauth_token'] = oauth_token
@@ -543,6 +545,8 @@ class EWSOnPremConnector(BaseConnector):
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
+
+        self._version = config.get('version', '2010')
 
         self._session = requests.Session()
 
@@ -710,9 +714,9 @@ class EWSOnPremConnector(BaseConnector):
             return (result.set_status(phantom.APP_ERROR, "Impersonation is required, but target user not set. Cannot continue execution"), None)
 
         if (self._impersonate):
-            data = ews_soap.add_to_envelope(data, self._target_user)
+            data = ews_soap.add_to_envelope(data, self._version, self._target_user)
         else:
-            data = ews_soap.add_to_envelope(data)
+            data = ews_soap.add_to_envelope(data, self._version)
 
         data = ews_soap.get_string(data)
 
@@ -1079,7 +1083,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             file_path = Vault.get_file_path(vault_id)
-        except Exception as e:
+        except Exception:
             return RetVal3(action_result.set_status(phantom.APP_ERROR, "Could not get file path for vault item"), None, None)
 
         try:
@@ -1208,7 +1212,7 @@ class EWSOnPremConnector(BaseConnector):
         if (vault_id is not None):
             return self._handle_email_with_vault_id(action_result, vault_id, ingest_email, target_container_id)
         else:
-            data = ews_soap.xml_get_emails_data([email_id])
+            data = ews_soap.xml_get_emails_data([email_id], self._version)
 
             ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1279,7 +1283,7 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
 
         # do a get on the message to get the change id
-        data = ews_soap.xml_get_emails_data([email_id])
+        data = ews_soap.xml_get_emails_data([email_id], self._version)
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1309,7 +1313,7 @@ class EWSOnPremConnector(BaseConnector):
         if (not resp_json):
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
 
-        data = ews_soap.xml_get_emails_data([email_id])
+        data = ews_soap.xml_get_emails_data([email_id], self._version)
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
@@ -1876,6 +1880,16 @@ class EWSOnPremConnector(BaseConnector):
                 body_key = "body{0}".format(body_type.title().replace(' ', ''))
                 headers.update({body_key: body_text})
 
+        if 'bodyText' not in headers:
+
+            try:
+                body_text = resp_json['m:Items']['t:Message']['t:TextBody']['#text']
+            except:
+                body_text = None
+
+            if (body_text is not None):
+                headers['bodyText'] = body_text
+
         # In some cases the message id is not part of the headers, in this case
         # copy the message id from the envelope to the header
         headers_ci = CaseInsensitiveDict(headers)
@@ -1938,7 +1952,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _process_email_id(self, email_id, target_container_id=None):
 
-        data = ews_soap.xml_get_emails_data([email_id])
+        data = ews_soap.xml_get_emails_data([email_id], self._version)
 
         action_result = ActionResult()
 
@@ -2219,7 +2233,7 @@ if __name__ == '__main__':
 
     if (username and password):
         try:
-            print ("Accessing the Login page")
+            print("Accessing the Login page")
             r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)
             csrftoken = r.cookies['csrftoken']
 
@@ -2232,7 +2246,7 @@ if __name__ == '__main__':
             headers['Cookie'] = 'csrftoken=' + csrftoken
             headers['Referer'] = BaseConnector._get_phantom_base_url() + 'login'
 
-            print ("Logging into Platform to get the session id")
+            print("Logging into Platform to get the session id")
             r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)
             session_id = r2.cookies['sessionid']
         except Exception as e:
