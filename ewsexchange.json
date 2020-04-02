@@ -1,20 +1,25 @@
 {
     "appid": "badc5252-4a82-4a6d-bc53-d1e503857124",
-    "name": "EWS for Exchange",
+    "name": "Microsoft Exchange On-Premise EWS",
     "description": "This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation",
     "publisher": "Phantom",
     "type": "email",
     "main_module": "ewsonprem_connector.pyc",
     "app_version": "2.0.10",
+    "latest_tested_versions": [
+        "Exchange Server(on-prem) 2010", 
+        "Exchange Server(on-prem) 2013",
+        "Exchange Server(on-prem) 2016"
+    ],
     "utctime_updated": "2020-03-03T23:38:34.000000Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.0.1068",
+    "min_phantom_version": "4.6.19142",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
-    "license": "Copyright (c) 2016-2019 Splunk Inc.",
+    "license": "Copyright (c) 2016-2020 Splunk Inc.",
     "pip_dependencies": {
         "wheel": [
             {

@@ -1,7 +1,7 @@
 # --
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -45,6 +45,7 @@ from requests.structures import CaseInsensitiveDict
 from urlparse import urlparse
 import base64
 from datetime import datetime, timedelta
+from bs4 import BeautifulSoup
 import re
 from process_email import ProcessEmail
 from email.parser import HeaderParser
@@ -933,7 +934,7 @@ class EWSOnPremConnector(BaseConnector):
         self._target_user = user
         ignore_subfolders = param.get('ignore_subfolders', False)
 
-        self.save_progress("Searching in {0}\{1}{2}".format(
+        self.save_progress("Searching in {0}\\{1}{2}".format(
             self._clean_str(user),
             folder_path if folder_path else 'All Folders',
             ' (and the children)' if (not ignore_subfolders) else ''))
@@ -1469,7 +1470,7 @@ class EWSOnPremConnector(BaseConnector):
 
             curr_valid_folder_path = '/'.join(folder_names[:i + 1])
 
-            self.save_progress('Getting info about {0}\{1}'.format(self._clean_str(user), curr_valid_folder_path))
+            self.save_progress('Getting info about {0}\\{1}'.format(self._clean_str(user), curr_valid_folder_path))
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
@@ -1843,26 +1844,27 @@ class EWSOnPremConnector(BaseConnector):
         try:
             extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
         except:
-            return RetVal2(phantom.APP_SUCCESS)
+            pass
 
-        if (type(extended_properties) != list):
-            extended_properties = [extended_properties]
+        if extended_properties:
+            if (type(extended_properties) != list):
+                extended_properties = [extended_properties]
 
-        for curr_ext_property in extended_properties:
+            for curr_ext_property in extended_properties:
 
-            property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
-            value = curr_ext_property.get('t:Value')
+                property_tag = curr_ext_property.get('t:ExtendedFieldURI', {}).get('@PropertyTag')
+                value = curr_ext_property.get('t:Value')
 
-            if (not property_tag):
-                continue
-
-            if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
-                email_headers = self._extract_email_headers(value)
-                if (email_headers is not None):
-                    headers.update(email_headers)
+                if (not property_tag):
                     continue
-            if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
-                headers.update({'bodyText': value})
+
+                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                    email_headers = self._extract_email_headers(value)
+                    if (email_headers is not None):
+                        headers.update(email_headers)
+                        continue
+                if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
+                    headers.update({'bodyText': value})
 
         # now parse the body in the main resp_json
         try:
@@ -1880,12 +1882,32 @@ class EWSOnPremConnector(BaseConnector):
                 body_key = "body{0}".format(body_type.title().replace(' ', ''))
                 headers.update({body_key: body_text})
 
+        # if in the response json we find html body then it will not create body text,
+        # so, we have to create body text headers
         if 'bodyText' not in headers:
 
+            # try to find body text if it retrived in the response json
             try:
+                self.debug_print("Extracting body text from t:TextBody key from the response")
                 body_text = resp_json['m:Items']['t:Message']['t:TextBody']['#text']
             except:
                 body_text = None
+
+            # if body text not found into the response json
+            # then, try to create body text from fetched body HTML using Beautilful soup parser
+            if body_text is None and 'bodyHtml' in headers:
+                self.debug_print("Extracting body text from bodyHtml key from the headers")
+                try:
+                    soup = BeautifulSoup(headers.get('bodyHtml'), "html.parser")
+                    if soup.body and soup.body.text:
+                        body_text = soup.body.text
+                    else:
+                        body_text = soup.text
+                    split_lines = body_text.split('\n')
+                    split_lines = [x.strip() for x in split_lines if x.strip()]
+                    body_text = '\n'.join(split_lines)
+                except:
+                    body_text = None
 
             if (body_text is not None):
                 headers['bodyText'] = body_text
@@ -2162,10 +2184,8 @@ class EWSOnPremConnector(BaseConnector):
             email_times = set(email_times)
 
             if (len(email_times) == 1):
-                self.debug_print("Getting all emails with the same LastModifiedTime, down to the second." +
-                        " That means the device is generating max_containers=({0}) per second.".format(max_emails) +
-                        " Skipping to the next second to not get stuck.")
-
+                self.debug_print("Getting all emails with the same LastModifiedTime, down to the second. {}{}".format(
+                    "That means the device is generating max_containers=({0}) per second.".format(max_emails), " Skipping to the next second to not get stuck."))
                 self._state['last_email_format'] = self._get_next_start_time(self._state['last_email_format'])
 
         return self._process_email_ids(email_ids, action_result)
