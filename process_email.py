@@ -416,14 +416,14 @@ class ProcessEmail(object):
             decoded_string = decoded_strings.get(i)
 
             if (not decoded_string):
-                # notihing to replace with
+                # nothing to replace with
                 continue
 
             value = decoded_string.get('value')
             encoding = decoded_string.get('encoding')
 
             if (not encoding or not value):
-                # notihing to replace with
+                # nothing to replace with
                 continue
 
             try:
