@@ -45,10 +45,10 @@ def xml_get_restriction(greater_than_time=None, message_id=None):
         filters.append(greater_than_time)
 
     if (message_id):
-            message_id = T.IsNotEqualTo(
-                    T.FieldURI({'FieldURI': 'item:ItemId'}),
-                    T.FieldURIOrConstant(T.Constant({'Value': message_id})))
-            filters.append(message_id)
+        message_id = T.IsNotEqualTo(
+                T.FieldURI({'FieldURI': 'item:ItemId'}),
+                T.FieldURIOrConstant(T.Constant({'Value': message_id})))
+        filters.append(message_id)
 
     if (not filters):
         return None
@@ -180,7 +180,7 @@ def xml_get_emails_data(email_ids, version):
         ]
 
     if version != '2010':
-            additional_properties.append(T.FieldURI({'FieldURI': 'item:TextBody'}))
+        additional_properties.append(T.FieldURI({'FieldURI': 'item:TextBody'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('Default'),
