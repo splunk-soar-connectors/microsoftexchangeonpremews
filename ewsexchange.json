@@ -1,18 +1,22 @@
 {
     "appid": "badc5252-4a82-4a6d-bc53-d1e503857124",
-    "name": "EWS for Exchange",
+    "name": "Microsoft Exchange On-Premise EWS",
     "description": "This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation",
     "publisher": "Phantom",
     "type": "email",
-    "main_module": "ewsonprem_connector.py",
-    "app_version": "2.0.3",
-    "utctime_updated": "2020-01-15T00:20:35.000000Z",
+    "main_module": "ewsonprem_connector.pyc",
+    "app_version": "2.0.14",
+    "latest_tested_versions": [
+        "Exchange Server(on-prem) 2010",
+        "Exchange Server(on-prem) 2013",
+        "Exchange Server(on-prem) 2016"
+    ],
+    "utctime_updated": "2020-04-09T19:22:12.000000Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.5.15922",
-    "python_version": "3",
+    "min_phantom_version": "4.6.19142",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
     "license": "Copyright (c) 2016-2020 Splunk Inc.",
@@ -36,34 +40,50 @@
             "required": true,
             "default": "https://corp.contoso.com/EWS/Exchange.asmx"
         },
+        "ph_0": {
+            "data_type": "ph",
+            "order": 1
+        },
+        "version": {
+            "data_type": "string",
+            "order": 2,
+            "description": "EWS Version",
+            "required": false,
+            "default": "2010",
+            "value_list": [
+                "2010",
+                "2013",
+                "2016"
+            ]
+        },
         "verify_server_cert": {
             "data_type": "boolean",
             "description": "Verify server certificate",
             "required": false,
-            "order": 1,
+            "order": 3,
             "default": true
         },
         "username": {
             "data_type": "string",
-            "order": 2,
+            "order": 4,
             "description": "Username",
             "required": true
         },
         "password": {
             "data_type": "password",
-            "order": 3,
+            "order": 5,
             "description": "Password",
             "required": true
         },
         "poll_user": {
             "data_type": "string",
-            "order": 4,
+            "order": 6,
             "description": "User Email Mailbox (Test Connectivity and Poll)",
             "required": false
         },
         "use_impersonation": {
             "data_type": "boolean",
-            "order": 5,
+            "order": 7,
             "description": "Use Impersonation",
             "required": true,
             "default": false
@@ -71,14 +91,14 @@
         "poll_folder": {
             "data_type": "string",
             "description": "Mailbox folder to be polled",
-            "order": 6,
+            "order": 8,
             "required": true,
             "default": "Inbox"
         },
         "is_public_folder": {
             "data_type": "boolean",
             "description": "Mailbox folder is a public folder",
-            "order": 7,
+            "order": 9,
             "required": false,
             "default": false
         },
@@ -86,7 +106,7 @@
             "data_type": "string",
             "description": "How to ingest",
             "required": true,
-            "order": 8,
+            "order": 10,
             "value_list": [
                 "oldest first",
                 "latest first"
@@ -95,7 +115,7 @@
         },
         "first_run_max_emails": {
             "data_type": "numeric",
-            "order": 9,
+            "order": 11,
             "description": "Maximum emails to poll first time",
             "default": "2000",
             "required": true
@@ -103,7 +123,7 @@
         "max_containers": {
             "data_type": "numeric",
             "description": "Maximum emails for scheduled polling",
-            "order": 10,
+            "order": 12,
             "default": 100,
             "required": true
         },
@@ -111,49 +131,49 @@
             "data_type": "boolean",
             "description": "Extract Attachments",
             "required": false,
-            "order": 11,
+            "order": 13,
             "default": true
         },
         "extract_urls": {
             "data_type": "boolean",
             "description": "Extract URLs",
             "required": false,
-            "order": 12,
+            "order": 14,
             "default": true
         },
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
             "required": false,
-            "order": 13,
+            "order": 15,
             "default": true
         },
         "extract_domains": {
             "data_type": "boolean",
             "description": "Extract Domain Names",
             "required": false,
-            "order": 14,
+            "order": 16,
             "default": true
         },
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
             "required": false,
-            "order": 15,
+            "order": 17,
             "default": true
         },
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add email body to the Email Artifact",
             "required": false,
-            "order": 16,
+            "order": 18,
             "default": false
         },
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with functions to preprocess containers and artifacts",
             "required": false,
-            "order": 17
+            "order": 19
         },
         "container_severity": {
             "data_type": "string",
@@ -165,7 +185,7 @@
                 "high"
             ],
             "default": "medium",
-            "order": 18
+            "order": 20
         }
     },
     "actions": [

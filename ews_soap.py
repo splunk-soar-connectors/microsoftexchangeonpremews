@@ -46,8 +46,8 @@ def xml_get_restriction(greater_than_time=None, message_id=None):
 
     if (message_id):
         message_id = T.IsNotEqualTo(
-                    T.FieldURI({'FieldURI': 'item:ItemId'}),
-                    T.FieldURIOrConstant(T.Constant({'Value': message_id})))
+                T.FieldURI({'FieldURI': 'item:ItemId'}),
+                T.FieldURIOrConstant(T.Constant({'Value': message_id})))
         filters.append(message_id)
 
     if (not filters):
@@ -95,7 +95,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction):
     parent_folder_ids = M.ParentFolderIds(
             T.DistinguishedFolderId(
                 {'Id': folder_id},
-                T.Mailbox(T.EmailAddress(user))))
+                T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
 
     if (folder_id != 'inbox'):
         parent_folder_ids = M.ParentFolderIds(T.FolderId({'Id': folder_id}))
@@ -114,7 +114,7 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(email))
+    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(email.decode('utf-8')))
 
 
 def get_expand_dl(email):
@@ -124,7 +124,7 @@ def get_expand_dl(email):
 
     # All documenation says that Mailbox should be a 'T', but that just throws an error
     # it has to be an 'M' for things to work
-    return M.ExpandDL(M.Mailbox(T.EmailAddress(email)))
+    return M.ExpandDL(M.Mailbox(T.EmailAddress(email.decode('utf-8'))))
 
 
 def xml_get_attachments_data(attachment_ids_to_query):
@@ -159,14 +159,14 @@ def xml_get_attachments_data(attachment_ids_to_query):
     return get_attachments
 
 
-def xml_get_emails_data(email_ids):
+def xml_get_emails_data(email_ids, version):
     """
     https://msdn.microsoft.com/en-us/library/office/aa566013(v=exchg.150).aspx
     FieldURI: InternetMessageHeaders does _not_ return all the headers
     PropertyTag 0x007D is required, which points to PR_TRANSPORT_MESSAGE_HEADERS
     """
 
-    additional_properties = T.AdditionalProperties(
+    additional_properties = [
             T.FieldURI({'FieldURI': 'item:Subject'}),
             T.FieldURI({'FieldURI': 'message:From'}),
             T.FieldURI({'FieldURI': 'message:Sender'}),
@@ -176,12 +176,16 @@ def xml_get_emails_data(email_ids):
             T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
-            T.FieldURI({'FieldURI': 'item:Body'}))
+            T.FieldURI({'FieldURI': 'item:Body'})
+        ]
+
+    if version != '2010':
+        additional_properties.append(T.FieldURI({'FieldURI': 'item:TextBody'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('Default'),
             T.IncludeMimeContent('true'),
-            additional_properties)
+            T.AdditionalProperties(*additional_properties))
 
     item_ids = M.ItemIds()
     [item_ids.append(T.ItemId({'Id': x})) for x in email_ids]
@@ -235,7 +239,7 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
     elements.append(parent_folder_ids)
 
     # query string
-    query_string = M.QueryString(aqs)
+    query_string = M.QueryString(aqs.decode('utf-8'))
     elements.append(query_string)
 
     find_item = M.FindItem(
@@ -290,28 +294,28 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
             sub_filt = T.Contains(
                     {'ContainmentMode': 'Substring', 'ContainmentComparison': 'IgnoreCase'},
                     T.FieldURI({'FieldURI': 'item:Subject'}),
-                    T.Constant({'Value': subject}))
+                    T.Constant({'Value': subject.decode('utf-8')}))
             filters.append(sub_filt)
 
         if (sender):
             sender_filter = T.IsEqualTo(
                     T.FieldURI({'FieldURI': 'message:Sender'}),
                     T.FieldURIOrConstant(
-                        T.Constant({'Value': sender})))
+                        T.Constant({'Value': sender.decode('utf-8')})))
             filters.append(sender_filter)
 
         if (int_msg_id):
             sender_filter = T.IsEqualTo(
                     T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
                     T.FieldURIOrConstant(
-                        T.Constant({'Value': int_msg_id})))
+                        T.Constant({'Value': int_msg_id.decode('utf-8')})))
             filters.append(sender_filter)
 
         if (body):
             body_filter = T.Contains(
                     {'ContainmentMode': 'Substring', 'ContainmentComparison': 'IgnoreCase'},
                     T.FieldURI({'FieldURI': 'item:Body'}),
-                    T.Constant({'Value': body}))
+                    T.Constant({'Value': body.decode('utf-8')}))
             filters.append(body_filter)
 
         if (filters):
@@ -416,7 +420,7 @@ def xml_get_root_folder_id(user, root_folder_id='root'):
         par_folder_id = M.ParentFolderIds(
                 T.DistinguishedFolderId(
                     {'Id': root_folder_id},
-                    T.Mailbox(T.EmailAddress(user))))
+                    T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
         traversal = {'Traversal': 'Deep'}
 
     return M.FindFolder(traversal, folder_shape, par_folder_id)
@@ -463,7 +467,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
         display_name_equal_to = T.IsEqualTo(
                 T.FieldURI({'FieldURI': 'folder:DisplayName'}),
                 T.FieldURIOrConstant(
-                    T.Constant({'Value': child_folder_name})))
+                    T.Constant({'Value': child_folder_name.decode('utf-8')})))
         filters.append(display_name_equal_to)
 
     if (filters):
@@ -477,7 +481,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
             par_folder_id = M.ParentFolderIds(
                     T.DistinguishedFolderId(
                         {'Id': parent_folder_id},
-                        T.Mailbox(T.EmailAddress(user))))
+                        T.Mailbox(T.EmailAddress(user.decode('utf-8')))))
         elif (parent_folder_id == 'publicfoldersroot'):
             par_folder_id = M.ParentFolderIds(
                 T.DistinguishedFolderId({
@@ -510,14 +514,14 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
             *elements)
 
 
-def add_to_envelope(lxml_obj, target_user=None):
+def add_to_envelope(lxml_obj, version, target_user=None):
 
-    header = S.Header(T.RequestServerVersion({'Version': 'Exchange2010'}))
+    header = S.Header(T.RequestServerVersion({'Version': 'Exchange{0}'.format(version)}))
 
     if (target_user):
         impersonation = T.ExchangeImpersonation(
                 T.ConnectingSID(
-                    T.SmtpAddress(target_user)))
+                    T.SmtpAddress(target_user.decode('utf-8'))))
         header.append(impersonation)
 
     return S.Envelope(

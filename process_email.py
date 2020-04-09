@@ -23,8 +23,9 @@ from phantom.vault import Vault
 import shutil
 import hashlib
 import json
-import magic
+from bs4 import UnicodeDammit
 from builtins import str
+import magic
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
 
@@ -408,6 +409,8 @@ class ProcessEmail(object):
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
+        new_str = ''
+        new_str_create_count = 0
         for i, encoded_string in enumerate(encoded_strings):
 
             decoded_string = decoded_strings.get(i)
@@ -423,14 +426,28 @@ class ProcessEmail(object):
                 # nothing to replace with
                 continue
 
-            if (encoding != 'utf-8'):
-                value = str(value, encoding).encode('utf-8')
-
             try:
-                # substitute the encoded string with the decoded one
-                input_str = input_str.replace(encoded_string, value)
+                if (encoding != 'utf-8'):
+                    value = str(value, encoding)
             except:
                 pass
+
+            try:
+                # commenting the existing approach due to a new approach being deployed below
+                # substitute the encoded string with the decoded one
+                # input_str = input_str.replace(encoded_string, value)
+
+                # make new string insted of replacing in the input string because issue find in PAPP-9531
+                if value:
+                    new_str += UnicodeDammit(value).unicode_markup.encode('utf-8')
+                    new_str_create_count += 1
+            except:
+                pass
+
+        # replace input string with new string because issue find in PAPP-9531
+        if new_str and new_str_create_count == len(encoded_strings):
+            self._debug_print("Creating a new string entirely from the encoded_strings and assiging into input_str")
+            input_str = new_str
 
         return input_str
 
@@ -582,7 +599,7 @@ class ProcessEmail(object):
 
     def _get_email_headers_from_part(self, part, charset=None):
 
-        email_headers = list(part.items())
+        email_headers = part.items()
 
         # TODO: the next 2 ifs can be condensed to use 'or'
         if (charset is None):
@@ -596,10 +613,10 @@ class ProcessEmail(object):
 
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
-        [headers.update({x[0]: str(x[1], charset)}) for x in email_headers]
+        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
 
         # Handle received seperately
-        received_headers = [str(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -607,7 +624,7 @@ class ProcessEmail(object):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if (subject):
-            if (type(subject) == str):
+            if (type(subject) == unicode):
                 headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
 
         return headers
@@ -646,7 +663,7 @@ class ProcessEmail(object):
             self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
 
-        for curr_key in list(cef_artifact['emailHeaders'].keys()):
+        for curr_key in cef_artifact['emailHeaders'].keys():
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
@@ -902,7 +919,7 @@ class ProcessEmail(object):
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        for artifact in list([x for x in container.get('artifacts', []) if not x.get('source_data_identifier')]):
+        for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
             self._set_sdi(artifact)
 
         if files and container.get('artifacts'):
@@ -1103,7 +1120,9 @@ class ProcessEmail(object):
 
         if ('parentGuid' in cef_artifact):
             parent_guid = cef_artifact.pop('parentGuid')
-            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
+            self._debug_print("The value of parentSourceDataIdentifier in cef_artifact of process_email._handle_file is: {}".format(
+                cef_artifact.get('parentSourceDataIdentifier')))
 
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
