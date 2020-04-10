@@ -510,7 +510,8 @@ class ProcessEmail(object):
             return phantom.APP_SUCCESS
         with open(file_path, 'wb') as f:
             f.write(part_payload)
-        files.append({'file_name': file_name, 'file_path': file_path, 'meta_info': attach_meta_info})
+            file_hash = hashlib.sha1(part_payload).hexdigest()
+        files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash, 'meta_info': attach_meta_info})
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail, child=False):
 
@@ -1005,9 +1006,9 @@ class ProcessEmail(object):
 
         return self._base_connector.set_status(phantom.APP_SUCCESS)
 
-    def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id):
+    def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
 
-        vault_info = Vault.get_file_info(vault_id=vault_id)
+        vault_info = Vault.get_file_info(vault_id=vault_id, container_id=container_id, method='and')
 
         if (not vault_info):
             return (phantom.APP_ERROR, "Vault ID not found")
@@ -1040,6 +1041,10 @@ class ProcessEmail(object):
     def _handle_file(self, curr_file, vault_ids, container_id, artifact_id, run_automation=False):
 
         file_name = curr_file.get('file_name')
+
+        if "file_hash" in curr_file and Vault.get_file_info(vault_id=curr_file['file_hash'], container_id=container_id, method='and'):
+            self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
+            return phantom.APP_SUCCESS, phantom.APP_SUCCESS
 
         local_file_path = curr_file['file_path']
 
@@ -1083,7 +1088,7 @@ class ProcessEmail(object):
                 'cs6Label': 'Vault ID'})
 
             # now get the rest of the hashes and add them to the cef artifact
-            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH])
+            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
 
         if (not cef_artifact):
             return (phantom.APP_SUCCESS, phantom.APP_ERROR)
