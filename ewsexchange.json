@@ -2,7 +2,7 @@
     "appid": "badc5252-4a82-4a6d-bc53-d1e503857124",
     "name": "Microsoft Exchange On-Premise EWS",
     "description": "This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation",
-    "publisher": "Phantom",
+    "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.pyc",
     "app_version": "2.0.16",
