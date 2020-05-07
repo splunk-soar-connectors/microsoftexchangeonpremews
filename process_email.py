@@ -1,7 +1,7 @@
 # --
 # File: process_email.py
 #
-# Copyright (c) 2016-2019 Splunk Inc.
+# Copyright (c) 2016-2020 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -23,6 +23,8 @@ from phantom.vault import Vault
 import shutil
 import hashlib
 import json
+from bs4 import UnicodeDammit
+from builtins import str
 import magic
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
@@ -407,29 +409,45 @@ class ProcessEmail(object):
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
+        new_str = ''
+        new_str_create_count = 0
         for i, encoded_string in enumerate(encoded_strings):
 
             decoded_string = decoded_strings.get(i)
 
             if (not decoded_string):
-                # notihing to replace with
+                # nothing to replace with
                 continue
 
             value = decoded_string.get('value')
             encoding = decoded_string.get('encoding')
 
             if (not encoding or not value):
-                # notihing to replace with
+                # nothing to replace with
                 continue
 
-            if (encoding != 'utf-8'):
-                value = unicode(value, encoding).encode('utf-8')
-
             try:
-                # substitute the encoded string with the decoded one
-                input_str = input_str.replace(encoded_string, value)
+                if (encoding != 'utf-8'):
+                    value = str(value, encoding)
             except:
                 pass
+
+            try:
+                # commenting the existing approach due to a new approach being deployed below
+                # substitute the encoded string with the decoded one
+                # input_str = input_str.replace(encoded_string, value)
+
+                # make new string insted of replacing in the input string because issue find in PAPP-9531
+                if value:
+                    new_str += UnicodeDammit(value).unicode_markup.encode('utf-8')
+                    new_str_create_count += 1
+            except:
+                pass
+
+        # replace input string with new string because issue find in PAPP-9531
+        if new_str and new_str_create_count == len(encoded_strings):
+            self._debug_print("Creating a new string entirely from the encoded_strings and assiging into input_str")
+            input_str = new_str
 
         return input_str
 
@@ -722,7 +740,6 @@ class ProcessEmail(object):
                     child = False
                 elif message_id and part.get('Message-ID'):
                     child = True
-
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
 
@@ -1108,7 +1125,9 @@ class ProcessEmail(object):
 
         if ('parentGuid' in cef_artifact):
             parent_guid = cef_artifact.pop('parentGuid')
-            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
+            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
+            self._debug_print("The value of parentSourceDataIdentifier in cef_artifact of process_email._handle_file is: {}".format(
+                cef_artifact.get('parentSourceDataIdentifier')))
 
         ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
         self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
