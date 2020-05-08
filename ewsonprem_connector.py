@@ -729,9 +729,17 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, e), resp_json)
 
+        try:
+            resp_body = r.text
+        except UnicodeEncodeError:
+            self.debug_print('Grabbing r.text failed, using r.content instead')
+            resp_body = r.content
+            import string
+            resp_body = ''.join([x for x in resp_body if x in string.printable])
+
         if (hasattr(result, 'add_debug_data')):
             result.add_debug_data({'r_status_code': r.status_code})
-            result.add_debug_data({'r_text': r.text if r else 'r is None'})
+            result.add_debug_data({'r_text': resp_body if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
         if (not (200 <= r.status_code <= 399)):
@@ -742,13 +750,13 @@ class EWSOnPremConnector(BaseConnector):
 
         # Try a xmltodict parse
         try:
-            resp_json = xmltodict.parse(self._clean_xml(r.text))
+            resp_json = xmltodict.parse(self._clean_xml(resp_body))
 
             # convert from OrderedDict to plain dict
             resp_json = json.loads(json.dumps(resp_json))
         except Exception as e:
-            # r.text is guaranteed to be NON None, it will be empty, but not None
-            msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
+            # resp_body is guaranteed to be NON None, it will be empty, but not None
+            msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=resp_body)
             return (result.set_status(phantom.APP_ERROR, msg_string, e), resp_json)
 
         # Check if there is a fault node present
@@ -761,7 +769,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             resp_message = check_response(resp_json)
         except Exception as e:
-            msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=r.text)
+            msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=resp_body)
             return (result.set_status(phantom.APP_ERROR, msg_string, e), resp_json)
 
         if (type(resp_message) != dict):
@@ -2174,7 +2182,7 @@ class EWSOnPremConnector(BaseConnector):
         email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
 
         utc_now = datetime.utcnow()
-        self._state['last_ingested_epoch'] = utc_now.strftime("%s")
+        self._state['last_ingested_format'] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
         self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
 
         email_ids = [x['id'] for x in email_infos]
