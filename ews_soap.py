@@ -11,6 +11,7 @@
 # http://lxml.de/tutorial.html
 from lxml.builder import ElementMaker
 from lxml import etree
+from bs4 import UnicodeDammit
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -239,7 +240,7 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
     elements.append(parent_folder_ids)
 
     # query string
-    query_string = M.QueryString(aqs.decode('utf-8'))
+    query_string = M.QueryString(UnicodeDammit(aqs).unicode_markup.encode('utf-8').decode('utf-8'))
     elements.append(query_string)
 
     find_item = M.FindItem(
