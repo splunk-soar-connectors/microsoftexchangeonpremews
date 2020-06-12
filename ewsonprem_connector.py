@@ -927,7 +927,7 @@ class EWSOnPremConnector(BaseConnector):
             if aqs:
                 UnicodeDammit(aqs).unicode_markup
         except Exception as e:
-            if e.message:
+            if hasattr(e, "message"):
                 if isinstance(e.message, str):
                     error_msg = UnicodeDammit(e.message).unicode_markup
                 else:
