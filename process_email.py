@@ -603,10 +603,10 @@ class ProcessEmail(object):
         email_headers = part.items()
 
         # TODO: the next 2 ifs can be condensed to use 'or'
-        if (charset is None):
+        if (not charset):
             charset = part.get_content_charset()
 
-        if (charset is None):
+        if (not charset):
             charset = 'utf8'
 
         if (not email_headers):
@@ -711,7 +711,7 @@ class ProcessEmail(object):
 
         charset = mail.get_content_charset()
 
-        if (charset is None):
+        if (not charset):
             charset = 'utf8'
 
         # Extract fields and place it in a dictionary
