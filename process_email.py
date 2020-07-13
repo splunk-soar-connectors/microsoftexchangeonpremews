@@ -173,7 +173,7 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
-        url = url.rstrip(']')
+        url = url.rstrip('>),.]\r\n')
 
         return url.strip()
 
