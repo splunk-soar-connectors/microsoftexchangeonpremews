@@ -616,6 +616,14 @@ class ProcessEmail(object):
         headers = CaseInsensitiveDict()
         [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
 
+        # Convert "Cc" and "Bcc" fields to uppercase
+        # when the unify_cef_fields asset configuration parameter is set to True
+        if self._base_connector and self._base_connector._unify_cef_fields:
+            if headers.get("CC"):
+                headers["CC"] = headers.get("CC")
+            if headers.get("BCC"):
+                headers["BCC"] = headers.get("BCC")
+
         # Handle received seperately
         received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
 

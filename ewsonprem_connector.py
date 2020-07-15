@@ -114,6 +114,8 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session = None
 
+        self._unify_cef_fields = None
+
         # Target user in case of impersonation
         self._target_user = None
 
@@ -554,6 +556,8 @@ class EWSOnPremConnector(BaseConnector):
         auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
+
+        self._unify_cef_fields = config.get('unify_cef_fields', False)
 
         message = ''
 

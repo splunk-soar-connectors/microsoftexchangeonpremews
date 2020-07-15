@@ -169,10 +169,9 @@
             "order": 18,
             "default": false
         },
-        "preprocess_script": {
-            "data_type": "file",
-            "description": "Script with functions to preprocess containers and artifacts",
-            "required": false,
+        "unify_cef_fields": {
+            "data_type": "boolean",
+            "description": "Unify CC/BCC CEF fields (to uppercase)",
             "order": 19
         },
         "container_severity": {
@@ -186,6 +185,12 @@
             ],
             "default": "medium",
             "order": 20
+        },
+        "preprocess_script": {
+            "data_type": "file",
+            "description": "Script with functions to preprocess containers and artifacts",
+            "required": false,
+            "order": 21
         }
     },
     "actions": [
