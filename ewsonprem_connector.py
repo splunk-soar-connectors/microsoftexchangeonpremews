@@ -1459,7 +1459,7 @@ class EWSOnPremConnector(BaseConnector):
             if (curr_folder_path == folder_path):
                 return (phantom.APP_SUCCESS, curr_folder)
 
-        return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_name)), None)
+        return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_path)), None)
 
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
