@@ -48,7 +48,6 @@
             "data_type": "string",
             "order": 2,
             "description": "EWS Version",
-            "required": false,
             "default": "2010",
             "value_list": [
                 "2010",
@@ -59,7 +58,6 @@
         "verify_server_cert": {
             "data_type": "boolean",
             "description": "Verify server certificate",
-            "required": false,
             "order": 3,
             "default": true
         },
@@ -78,14 +76,12 @@
         "poll_user": {
             "data_type": "string",
             "order": 6,
-            "description": "User Email Mailbox (Test Connectivity and Poll)",
-            "required": false
+            "description": "User Email Mailbox (Test Connectivity and Poll)"
         },
         "use_impersonation": {
             "data_type": "boolean",
             "order": 7,
             "description": "Use Impersonation",
-            "required": true,
             "default": false
         },
         "poll_folder": {
@@ -99,7 +95,6 @@
             "data_type": "boolean",
             "description": "Mailbox folder is a public folder",
             "order": 9,
-            "required": false,
             "default": false
         },
         "ingest_manner": {
@@ -117,7 +112,7 @@
             "data_type": "numeric",
             "order": 11,
             "description": "Maximum emails to poll first time",
-            "default": "2000",
+            "default": 2000,
             "required": true
         },
         "max_containers": {
@@ -130,42 +125,36 @@
         "extract_attachments": {
             "data_type": "boolean",
             "description": "Extract Attachments",
-            "required": false,
             "order": 13,
             "default": true
         },
         "extract_urls": {
             "data_type": "boolean",
             "description": "Extract URLs",
-            "required": false,
             "order": 14,
             "default": true
         },
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
-            "required": false,
             "order": 15,
             "default": true
         },
         "extract_domains": {
             "data_type": "boolean",
             "description": "Extract Domain Names",
-            "required": false,
             "order": 16,
             "default": true
         },
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
-            "required": false,
             "order": 17,
             "default": true
         },
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add email body to the Email Artifact",
-            "required": false,
             "order": 18,
             "default": false
         },
@@ -177,7 +166,6 @@
         "container_severity": {
             "data_type": "string",
             "description": "Container Severity",
-            "required": false,
             "value_list": [
                 "low",
                 "medium",
@@ -189,7 +177,6 @@
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with functions to preprocess containers and artifacts",
-            "required": false,
             "order": 21
         }
     },
@@ -226,18 +213,17 @@
                     "description": "Folder Name/Path (to search in)",
                     "data_type": "string",
                     "order": 1,
-                    "required": false,
                     "default": "Inbox",
                     "contains": [
                         "mail folder",
                         "mail folder path"
-                    ]
+                    ],
+                    "primary": true
                 },
                 "subject": {
                     "description": "Substring to search in Subject",
                     "data_type": "string",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "sender": {
                     "description": "Sender Email address to match",
@@ -246,22 +232,18 @@
                         "email"
                     ],
                     "order": 3,
-                    "primary": true,
-                    "required": false
+                    "primary": true
                 },
                 "body": {
                     "description": "Substring to search in Body",
                     "data_type": "string",
-                    "order": 4,
-                    "primary": false,
-                    "required": false
+                    "order": 4
                 },
                 "internet_message_id": {
                     "description": "Internet Message ID",
                     "data_type": "string",
                     "order": 5,
                     "primary": true,
-                    "required": false,
                     "contains": [
                         "internet message id"
                     ]
@@ -269,26 +251,23 @@
                 "query": {
                     "description": "AQS string",
                     "data_type": "string",
-                    "order": 5,
-                    "primary": true,
-                    "required": false
+                    "order": 6
                 },
                 "range": {
                     "description": "Email range to return (min_offset-max_offset)",
                     "data_type": "string",
-                    "order": 6,
+                    "order": 7,
                     "default": "0-10"
                 },
                 "ignore_subfolders": {
                     "description": "Ignore subfolders",
                     "data_type": "boolean",
-                    "order": 7
+                    "order": 8
                 },
                 "is_public_folder": {
                     "description": "Mailbox folder is a public folder",
                     "data_type": "boolean",
-                    "order": 8,
-                    "required": false,
+                    "order": 9,
                     "default": false
                 }
             },
@@ -301,7 +280,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.body",
@@ -461,8 +444,7 @@
                         "exchange email id"
                     ],
                     "primary": true,
-                    "required": true,
-                    "allow_list": true
+                    "required": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
@@ -471,8 +453,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": false,
-                    "required": false
+                    "primary": true
                 }
             },
             "render": {
@@ -484,7 +465,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.email",
@@ -574,8 +559,7 @@
                     "description": "Impersonation Email",
                     "data_type": "string",
                     "order": 4,
-                    "primary": false,
-                    "required": false,
+                    "primary": true,
                     "contains": [
                         "email"
                     ]
@@ -584,15 +568,12 @@
                     "description": "Don't use impersonation",
                     "data_type": "boolean",
                     "order": 5,
-                    "primary": false,
-                    "required": false,
                     "default": false
                 },
                 "is_public_folder": {
                     "description": "Mailbox folder is a public folder",
                     "data_type": "boolean",
                     "order": 6,
-                    "required": false,
                     "default": false
                 }
             },
@@ -605,7 +586,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.dont_impersonate",
@@ -727,8 +712,7 @@
                     "description": "Impersonation Email",
                     "data_type": "string",
                     "order": 4,
-                    "primary": false,
-                    "required": false,
+                    "primary": true,
                     "contains": [
                         "email"
                     ]
@@ -737,15 +721,12 @@
                     "description": "Don't use impersonation",
                     "data_type": "boolean",
                     "order": 5,
-                    "primary": false,
-                    "required": false,
                     "default": false
                 },
                 "is_public_folder": {
                     "description": "Mailbox folder is a public folder",
                     "data_type": "boolean",
                     "order": 6,
-                    "required": false,
                     "default": false
                 }
             },
@@ -758,7 +739,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.dont_impersonate",
@@ -848,9 +833,7 @@
                     "contains": [
                         "exchange email id"
                     ],
-                    "primary": true,
-                    "required": false,
-                    "allow_list": true
+                    "primary": true
                 },
                 "email": {
                     "description": "Email of the mailbox owner (used during impersonation)",
@@ -859,8 +842,7 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": false,
-                    "required": false
+                    "primary": true
                 },
                 "container_id": {
                     "description": "Container ID to get email data from",
@@ -869,9 +851,7 @@
                     "contains": [
                         "phantom container id"
                     ],
-                    "primary": true,
-                    "required": false,
-                    "allow_list": false
+                    "primary": true
                 },
                 "vault_id": {
                     "description": "Vault ID to get email from",
@@ -880,24 +860,18 @@
                     "contains": [
                         "vault id"
                     ],
-                    "primary": true,
-                    "required": false,
-                    "allow_list": true
+                    "primary": true
                 },
                 "ingest_email": {
                     "description": "Create containers and artifacts",
                     "data_type": "boolean",
                     "order": 4,
-                    "primary": false,
-                    "required": false,
                     "default": false
                 },
                 "use_current_container": {
                     "description": "Create artifacts in the same container",
                     "data_type": "boolean",
                     "order": 5,
-                    "primary": false,
-                    "required": false,
                     "default": false
                 }
             },
@@ -911,7 +885,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.container_id",
@@ -1289,9 +1267,7 @@
                 "recursive": {
                     "description": "Expand all sub distribution lists",
                     "data_type": "boolean",
-                    "order": 1,
-                    "primary": false,
-                    "required": false
+                    "order": 1
                 }
             },
             "render": {
@@ -1303,7 +1279,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.group",
@@ -1392,7 +1372,11 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.email",
@@ -1542,22 +1526,17 @@
                     "contains": [
                         "email"
                     ],
-                    "primary": false,
-                    "required": false
+                    "primary": true
                 },
                 "subject": {
                     "description": "Subject to set",
                     "data_type": "string",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "category": {
                     "description": "Categories to set",
                     "data_type": "string",
-                    "order": 3,
-                    "primary": false,
-                    "required": false,
-                    "allow_list": true
+                    "order": 3
                 }
             },
             "render": {
@@ -1568,7 +1547,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -1975,7 +1955,6 @@
                 "artifact_count": {
                     "data_type": "numeric",
                     "description": "Parameter Ignored in this app",
-                    "required": false,
                     "default": 1000
                 }
             },

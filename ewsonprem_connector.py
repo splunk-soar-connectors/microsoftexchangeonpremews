@@ -38,6 +38,7 @@ import requests
 import json
 import xmltodict
 import os
+import sys
 import uuid
 from requests.auth import AuthBase
 from requests.auth import HTTPBasicAuth
@@ -242,7 +243,7 @@ class EWSOnPremConnector(BaseConnector):
         end_pos = xml_response.find('</saml:Assertion>') + len('</saml:Assertion>')
 
         # validate that the saml assertion is present
-        if (start_pos is -1 or end_pos is -1):
+        if (start_pos == -1 or end_pos == -1):
             return (None, "Could not find Saml Assertion")
 
         saml_assertion = xml_response[start_pos:end_pos]
@@ -535,6 +536,51 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR, "Password not present in asset configuration"
         return phantom.APP_SUCCESS, ''
 
+    def _validate_integer(self, action_result, parameter, key, allow_zero=False):
+        try:
+            if not float(parameter).is_integer():
+                return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{}' parameter".format(key)), None
+
+            parameter = int(parameter)
+        except:
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid integer value in the '{}' parameter".format(key)), None
+
+        if not allow_zero and parameter <= 0:
+            return action_result.set_status(phantom.APP_ERROR, 'Please provide non-zero positive integer in "{}"'.format(key)), None
+        elif allow_zero and parameter < 0:
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid non-negative integer value in the '{}' parameter".format(key)), None
+
+        return phantom.APP_SUCCESS, parameter
+
+    def _handle_py_ver_compat_for_input_str(self, input_str):
+        """
+        This method returns the encoded|original string based on the Python version.
+        :param input_str: Input string to be processed
+        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
+        """
+
+        try:
+            if input_str and self._python_version == 2:
+                input_str = UnicodeDammit(input_str).unicode_markup.encode('utf-8')
+        except:
+            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
+
+        return input_str
+
+    def _handle_py_ver_compat_for_input_unicode(self, input_str):
+        """
+        This method returns the unicode|string based on the Python version.
+        :param input_str: Input string to be processed
+        :return: input_str (Processed input string based on following logic 'input_str - Python 3; input_str converted to Unicode - Python 2')
+        """
+        try:
+            if input_str and self._python_version == 2:
+                input_str = UnicodeDammit(input_str).unicode_markup
+        except:
+            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string|unicode")
+
+        return input_str
+
     def finalize(self):
         self.save_state(self._state)
         return phantom.APP_SUCCESS
@@ -545,6 +591,12 @@ class EWSOnPremConnector(BaseConnector):
         self._state = self.load_state()
 
         config = self.get_config()
+
+        # Fetching the Python major version
+        try:
+            self._python_version = int(sys.version_info[0])
+        except:
+            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
 
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
@@ -920,10 +972,10 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        subject = param.get(EWSONPREM_JSON_SUBJECT, "")
-        sender = param.get(EWSONPREM_JSON_FROM, "")
-        body = param.get(EWSONPREM_JSON_BODY, "")
-        int_msg_id = param.get(EWSONPREM_JSON_INT_MSG_ID, "")
+        subject = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_SUBJECT, ""))
+        sender = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_FROM, ""))
+        body = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_BODY, ""))
+        int_msg_id = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_INT_MSG_ID, ""))
         aqs = param.get(EWSONPREM_JSON_QUERY, "")
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
@@ -959,8 +1011,8 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        user = param[EWSONPREM_JSON_EMAIL]
-        folder_path = param.get(EWSONPREM_JSON_FOLDER)
+        user = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_EMAIL])
+        folder_path = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_FOLDER))
         self._target_user = user
         ignore_subfolders = param.get('ignore_subfolders', False)
 
@@ -1223,12 +1275,18 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        email_id = param.get(EWSONPREM_JSON_ID)
+        email_id = self._handle_py_ver_compat_for_input_unicode(param.get(EWSONPREM_JSON_ID, ""))
         container_id = param.get(EWS_JSON_CONTAINER_ID)
         vault_id = param.get(EWS_JSON_VAULT_ID)
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
         use_current_container = param.get('use_current_container')
         target_container_id = None
+
+        if container_id is not None:
+            ret_val, container_id = self._validate_integer(action_result, container_id, "container_id")
+
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
 
         if (use_current_container):
             target_container_id = self.get_container_id()
@@ -1249,7 +1307,7 @@ class EWSOnPremConnector(BaseConnector):
 
             # Process errors
             if (phantom.is_fail(ret_val)):
-                message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+                message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id), action_result.get_message())
                 self.debug_print(message)
                 self.send_progress(message)
                 return phantom.APP_ERROR
@@ -1305,10 +1363,10 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        email_id = param[EWSONPREM_JSON_ID]
+        email_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
-        category = param.get('category')
-        subject = param.get('subject')
+        category = self._handle_py_ver_compat_for_input_unicode(param.get('category'))
+        subject = self._handle_py_ver_compat_for_input_unicode(param.get('subject'))
 
         if ((subject is None) and (category is None)):
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
@@ -1320,7 +1378,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id), action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
@@ -1332,6 +1390,7 @@ class EWSOnPremConnector(BaseConnector):
 
         if (category is not None):
             category = [x.strip() for x in category.split(',')]
+            category = list(filter(None, category))
 
         data = ews_soap.get_update_email(email_id, change_key, category, subject)
 
@@ -1385,7 +1444,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = param[EWSONPREM_JSON_ID]
+        message_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
 
         message_ids = ph_utils.get_list_from_string(message_id)
@@ -1478,7 +1537,7 @@ class EWSOnPremConnector(BaseConnector):
 
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
-            if (curr_folder_path == folder_path):
+            if (self._handle_py_ver_compat_for_input_str(curr_folder_path) == folder_path):
                 return (phantom.APP_SUCCESS, curr_folder)
 
         return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'".format(folder_name)), None)
@@ -1552,17 +1611,17 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = param[EWSONPREM_JSON_ID]
+        message_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
 
-        folder_path = param[EWSONPREM_JSON_FOLDER]
-        user = param[EWSONPREM_JSON_EMAIL]
+        folder_path = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_FOLDER])
+        user = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_EMAIL])
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         # Set the user to impersonate (i.e. target_user), by default it is the destination user
         self._target_user = user
 
         # Use a different email if specified
-        impersonate_email = param.get(EWS_JSON_IMPERSONATE_EMAIL)
+        impersonate_email = self._handle_py_ver_compat_for_input_str(param.get(EWS_JSON_IMPERSONATE_EMAIL))
         if (impersonate_email):
             self._target_user = impersonate_email
 
@@ -1614,7 +1673,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        email = param[EWSONPREM_JSON_EMAIL]
+        email = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_EMAIL])
 
         self._impersonate = False
 
@@ -1668,7 +1727,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        group = param[EWSONPREM_JSON_GROUP]
+        group = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_GROUP])
 
         self._impersonate = False
 
