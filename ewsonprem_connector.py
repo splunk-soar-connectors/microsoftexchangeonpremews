@@ -2095,7 +2095,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._target_user = poll_user
 
-        folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
+        folder_path = self._handle_py_ver_compat_for_input_str(config.get(EWS_JSON_POLL_FOLDER, 'Inbox'))
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
