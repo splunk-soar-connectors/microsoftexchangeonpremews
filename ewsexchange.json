@@ -5,13 +5,13 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.pyc",
-    "app_version": "2.0.19",
+    "app_version": "2.0.21",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
         "Exchange Server(on-prem) 2016"
     ],
-    "utctime_updated": "2020-05-08T22:49:09.000000Z",
+    "utctime_updated": "2020-08-05T16:16:45.000000Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
@@ -97,20 +97,9 @@
             "order": 9,
             "default": false
         },
-        "ingest_manner": {
-            "data_type": "string",
-            "description": "How to ingest",
-            "required": true,
-            "order": 10,
-            "value_list": [
-                "oldest first",
-                "latest first"
-            ],
-            "default": "oldest first"
-        },
         "first_run_max_emails": {
             "data_type": "numeric",
-            "order": 11,
+            "order": 10,
             "description": "Maximum emails to poll first time",
             "default": 2000,
             "required": true
@@ -118,50 +107,20 @@
         "max_containers": {
             "data_type": "numeric",
             "description": "Maximum emails for scheduled polling",
-            "order": 12,
+            "order": 11,
             "default": 100,
             "required": true
         },
-        "extract_attachments": {
-            "data_type": "boolean",
-            "description": "Extract Attachments",
-            "order": 13,
-            "default": true
-        },
-        "extract_urls": {
-            "data_type": "boolean",
-            "description": "Extract URLs",
-            "order": 14,
-            "default": true
-        },
-        "extract_ips": {
-            "data_type": "boolean",
-            "description": "Extract IPs",
-            "order": 15,
-            "default": true
-        },
-        "extract_domains": {
-            "data_type": "boolean",
-            "description": "Extract Domain Names",
-            "order": 16,
-            "default": true
-        },
-        "extract_hashes": {
-            "data_type": "boolean",
-            "description": "Extract Hashes",
-            "order": 17,
-            "default": true
-        },
-        "add_body_to_header_artifacts": {
-            "data_type": "boolean",
-            "description": "Add email body to the Email Artifact",
-            "order": 18,
-            "default": false
-        },
-        "unify_cef_fields": {
-            "data_type": "boolean",
-            "description": "Unify CC/BCC CEF fields (to uppercase)",
-            "order": 19
+        "ingest_manner": {
+            "data_type": "string",
+            "description": "How to ingest",
+            "required": true,
+            "order": 12,
+            "value_list": [
+                "oldest first",
+                "latest first"
+            ],
+            "default": "oldest first"
         },
         "container_severity": {
             "data_type": "string",
@@ -172,12 +131,59 @@
                 "high"
             ],
             "default": "medium",
-            "order": 20
+            "order": 13
+        },
+        "extract_attachments": {
+            "data_type": "boolean",
+            "description": "Extract Attachments",
+            "order": 14,
+            "default": true
+        },
+        "extract_urls": {
+            "data_type": "boolean",
+            "description": "Extract URLs",
+            "order": 15,
+            "default": true
+        },
+        "extract_ips": {
+            "data_type": "boolean",
+            "description": "Extract IPs",
+            "order": 16,
+            "default": true
+        },
+        "extract_domains": {
+            "data_type": "boolean",
+            "description": "Extract Domain Names",
+            "order": 17,
+            "default": true
+        },
+        "extract_hashes": {
+            "data_type": "boolean",
+            "description": "Extract Hashes",
+            "order": 18,
+            "default": true
+        },
+        "extract_email_addresses": {
+            "data_type": "boolean",
+            "description": "Extract Email Addresses",
+            "order": 19,
+            "default": true
+        },
+        "add_body_to_header_artifacts": {
+            "data_type": "boolean",
+            "description": "Add email body to the Email Artifact",
+            "order": 20,
+            "default": false
         },
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with functions to preprocess containers and artifacts",
             "order": 21
+        },
+        "unify_cef_fields": {
+            "data_type": "boolean",
+            "description": "Unify CC/BCC CEF fields (to uppercase)",
+            "order": 22
         }
     },
     "actions": [

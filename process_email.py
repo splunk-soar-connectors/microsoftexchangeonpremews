@@ -75,11 +75,13 @@ PROC_EMAIL_JSON_EXTRACT_BODY = "add_body_to_header_artifacts"
 PROC_EMAIL_JSON_EXTRACT_URLS = "extract_urls"
 PROC_EMAIL_JSON_EXTRACT_IPS = "extract_ips"
 PROC_EMAIL_JSON_EXTRACT_DOMAINS = "extract_domains"
+PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES = "extract_email_addresses"
 PROC_EMAIL_JSON_EXTRACT_HASHES = "extract_hashes"
 PROC_EMAIL_JSON_IPS = "ips"
 PROC_EMAIL_JSON_HASHES = "hashes"
 PROC_EMAIL_JSON_URLS = "urls"
 PROC_EMAIL_JSON_DOMAINS = "domains"
+PROC_EMAIL_JSON_EMAIL_ADDRESSES = "email_adresses"
 PROC_EMAIL_JSON_MSG_ID = "message_id"
 PROC_EMAIL_JSON_EMAIL_HEADERS = "email_headers"
 PROC_EMAIL_CONTENT_TYPE_MESSAGE = "message/rfc822"
@@ -273,6 +275,7 @@ class ProcessEmail(object):
         hashes = parsed_mail[PROC_EMAIL_JSON_HASHES]
         urls = parsed_mail[PROC_EMAIL_JSON_URLS]
         domains = parsed_mail[PROC_EMAIL_JSON_DOMAINS]
+        email_addresses = parsed_mail[PROC_EMAIL_JSON_EMAIL_ADDRESSES]
 
         file_data = None
         with open(local_file_path, 'r') as f:
@@ -283,15 +286,20 @@ class ProcessEmail(object):
 
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]):
+        if (self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] or self._config[PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES]):
             emails = []
             emails.extend(re.findall(email_regexc, file_data))
             emails.extend(re.findall(email_regexc2, file_data))
 
             for curr_email in emails:
-                domain = curr_email[curr_email.rfind('@') + 1:]
-                if (domain) and (not ph_utils.is_ip(domain)):
-                    domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
+
+                if self._config[PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES]:
+                    email_addresses.append({'emailAddress': curr_email, 'parentInternetMessageId': parent_id})
+
+                if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]:
+                    domain = curr_email[curr_email.rfind('@') + 1:]
+                    if (domain) and (not ph_utils.is_ip(domain)):
+                        domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
 
         self._extract_urls_domains(file_data, urls, domains, parent_id)
 
@@ -355,11 +363,14 @@ class ProcessEmail(object):
 
     def _create_artifacts(self, parsed_mail):
 
+        self._debug_print("Parsed mail: ", parsed_mail)
+
         # get all the artifact data in their own list objects
         ips = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_IPS]])]
         hashes = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_HASHES]])]
         urls = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_URLS]])]
         domains = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_DOMAINS]])]
+        email_addresses = [dict(t) for t in set([tuple(d.items()) for d in parsed_mail[PROC_EMAIL_JSON_EMAIL_ADDRESSES]])]
         email_headers = parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS]
 
         # set the default artifact dict
@@ -379,6 +390,9 @@ class ProcessEmail(object):
         # domains = [x.decode('idna') for x in domains]
 
         added_artifacts = self._add_artifacts(domains, 'Domain Artifact', artifact_id, self._artifacts)
+        artifact_id += added_artifacts
+
+        added_artifacts = self._add_artifacts(email_addresses, 'Email Address Artifact', artifact_id, self._artifacts)
         artifact_id += added_artifacts
 
         added_artifacts = self._add_email_header_artifacts(email_headers, artifact_id, self._artifacts)
@@ -751,10 +765,13 @@ class ProcessEmail(object):
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
 
-                # _debug_print("part: {0}".format(part.__dict__))
-                # _debug_print("part type", type(part))
                 if (part.is_multipart()):
+                    self._debug_print("Skipping part because it is multipart")
                     continue
+
+                self._debug_print("part: {0}".format(part.__dict__))
+                self._debug_print("part type", type(part))
+
                 try:
                     ret_val = self._handle_part(part, i, tmp_dir, extract_attach, self._parsed_mail, child)
                 except Exception as e:
@@ -800,6 +817,7 @@ class ProcessEmail(object):
         self._parsed_mail[PROC_EMAIL_JSON_HASHES] = list()
         self._parsed_mail[PROC_EMAIL_JSON_URLS] = list()
         self._parsed_mail[PROC_EMAIL_JSON_DOMAINS] = list()
+        self._parsed_mail[PROC_EMAIL_JSON_EMAIL_ADDRESSES] = list()
 
         # For bodies
         for i, body in enumerate(bodies):
