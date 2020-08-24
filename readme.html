@@ -9,7 +9,7 @@ without a valid written license from Splunk Inc. is PROHIBITED.
 -->
 
 <p>
-The app is designed to access an arbitary user's mailbox via EWS XML SOAP calls on an on-premise Exchange server. Two methods used to allow the supplied user to access other users' mailboxes:
+The app is designed to access an arbitrary user's mailbox via EWS XML SOAP calls on an on-premise Exchange server. Two methods used to allow the supplied user to access other users' mailboxes:
 <ul>
   <li>Impersonation</li>
   Impersonation needs to be specifically configured on the Exchange server. During impersonation, the App uses the login user (configured in the Asset) to impersonate the target user (specified in the Action) to delete or search in other mailboxes the target user has access to.
@@ -21,11 +21,11 @@ You can read more about the cmdlet on <a href="https://technet.microsoft.com/en-
 <ul>
   <li>
 To give <b>Phantom User</b> full access to <b>User Two's</b> Mailbox:<br>
-<pre>[PS] C:\Windows\system32>Add-MailboxPermission "User Two" -User "Phantom User" -AccessRights FullAccess</pre>
+<p>[PS] C:\Windows\system32>Add-MailboxPermission "User Two" -User "Phantom User" -AccessRights FullAccess</p>
 </li>
 <li>
 To grant the administrator access to everybody's mail box:<br>
-<pre>[PS] C:\Windows\system32>Get-Mailbox -ResultSize unlimited -Filter {(RecipientTypeDetails -eq 'UserMailbox') -and (Alias -ne 'Admin')} | Add-MailboxPermission -User admin@contoso.com -AccessRights fullaccess -InheritanceType all</pre>
+<p>[PS] C:\Windows\system32>Get-Mailbox -ResultSize unlimited -Filter {(RecipientTypeDetails -eq 'UserMailbox') -and (Alias -ne 'Admin')} | Add-MailboxPermission -User admin@contoso.com -AccessRights fullaccess -InheritanceType all</p>
 </li>
 </ul>
 </ul>
@@ -35,23 +35,23 @@ To grant the administrator access to everybody's mail box:<br>
     <p>
     To create an Exchange asset in Phantom, select Product Vendor <b>Microsoft</b> and Product name "Exchange", and fill in the various required Asset fields like <b>url, username, password and poll_user</b> as shown below. The other values can be left in the default state for now. The user specified in the Username field is the one that has the privileges to access other mailboxes. The User Email Mailbox field is used to specify the mailbox you will ingest from if you turn polling on. It's also the one used during Test Connectivity. There isn't neccessarily any relationship between the login user and the mailbox being Ingested, if you're using an admin user with the rights to access other mailboxes. But if you will be only reading from one mailbox ever (such as with our "phishing" example), then you could use the same phishing user and mailbox for both fields. Keep in mind that the phishing user probably can't access other mailboxes, so attempting to take <b>run query</b> and <b>delete email</b> actions on other mailboxes will fail.
     <br><br>
-    <a href="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/asset_settings.png">
-        <img src="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/asset_settings.png"/>
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/asset_settings.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/asset_settings.png"/>
     </a>
     </p>
     <p>
     <br>
     On the Ingest Settings tab, if you are going to use ingestion, you need to pick what we call a Container Label. This is just a name for all the Containers we make out of the emails we pull in. In our example below, we have selected 'NEW ENTRY' from the list, and typed in <b>Email</b>. After this Asset is saved, you will now find "Emails" under your Main Menu in Phantom, and that menu item will take you to a list of email Containers.
     <br><br>
-    <a href="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/ingest_settings.png">
-        <img src="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/ingest_settings.png"/>
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/ingest_settings.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/ingest_settings.png"/>
     </a>
     <br><br>
     <p>
     Once the asset is saved, run Test Connectivity and make sure it passes. The Test Connectivity action attempts to read some infomation about the configured user's mailbox to validate the credentials you gave it. The Exchange Web Services API is used for all the actions. Impersonation is also used if it is configured.
     <br><br>
-    <a href="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/test_connectivity.png">
-        <img src="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/test_connectivity.png"/>
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/test_connectivity.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/test_connectivity.png"/>
     </a>
     </p>
     <p>
@@ -124,8 +124,8 @@ Depending upon the scheduled interval and how busy the inbox is, one of the foll
       </table>
     <br>
 
-    <a href="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png">
-        <img src="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png" border="5"/>
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png" border="5"/>
     </a>
     <li>IP Artifact
         <ul>
@@ -183,8 +183,8 @@ Depending upon the scheduled interval and how busy the inbox is, one of the foll
         </ul>
       </li>
     <br>
-    <a href="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/vault_artifact.png">
-        <img src="/app_resource/ewsforexchange_badc5252-4a82-4a6d-bc53-d1e503857124/img/vault_artifact.png"/>
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/vault_artifact.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/vault_artifact.png"/>
       </ul>
     </a>
     </p>

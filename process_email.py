@@ -123,7 +123,7 @@ class ProcessEmail(object):
         self._attachments_from_ews = list()
         self._parsed_mail = None
         self._guid_to_hash = dict()
-        pass
+        self._tmp_dirs = list()
 
     def _get_file_contains(self, file_path):
 
@@ -175,7 +175,7 @@ class ProcessEmail(object):
         if ('>' in url):
             url = url[:url.find('>')]
 
-        url = url.rstrip(']')
+        url = url.rstrip('>),.]\r\n')
 
         return url.strip()
 
@@ -617,10 +617,10 @@ class ProcessEmail(object):
         email_headers = part.items()
 
         # TODO: the next 2 ifs can be condensed to use 'or'
-        if (charset is None):
+        if (not charset):
             charset = part.get_content_charset()
 
-        if (charset is None):
+        if (not charset):
             charset = 'utf8'
 
         if (not email_headers):
@@ -629,6 +629,14 @@ class ProcessEmail(object):
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
         [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+
+        # Convert "Cc" and "Bcc" fields to uppercase
+        # when the unify_cef_fields asset configuration parameter is set to True
+        if self._base_connector and self._base_connector._unify_cef_fields:
+            if headers.get("CC"):
+                headers["CC"] = headers.get("CC")
+            if headers.get("BCC"):
+                headers["BCC"] = headers.get("BCC")
 
         # Handle received seperately
         received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
@@ -725,7 +733,7 @@ class ProcessEmail(object):
 
         charset = mail.get_content_charset()
 
-        if (charset is None):
+        if (not charset):
             charset = 'utf8'
 
         # Extract fields and place it in a dictionary
@@ -853,7 +861,8 @@ class ProcessEmail(object):
 
         ret_val = phantom.APP_SUCCESS
 
-        tmp_dir = tempfile.mkdtemp(prefix='ph_email')
+        tmp_dir = tempfile.mkdtemp(prefix='ph_email_ewsonprem')
+        self._tmp_dirs.append(tmp_dir)
 
         try:
             ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
@@ -886,9 +895,14 @@ class ProcessEmail(object):
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
 
         if (not ret_val):
+            self._del_tmp_dirs()
             return (phantom.APP_ERROR, message)
 
-        self._parse_results(results, container_id)
+        try:
+            self._parse_results(results, container_id)
+        except Exception:
+            self._del_tmp_dirs()
+            raise
 
         return (phantom.APP_SUCCESS, "Email Processed")
 
@@ -1195,3 +1209,8 @@ class ProcessEmail(object):
             return None
 
         return hashlib.md5(input_dict_str).hexdigest()
+
+    def _del_tmp_dirs(self):
+        """Remove any tmp_dirs that were created."""
+        for tmp_dir in self._tmp_dirs:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
