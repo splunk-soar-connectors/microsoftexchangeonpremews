@@ -1,7 +1,5 @@
-# --
 # File: process_email.py
-#
-# Copyright (c) 2016-2020 Splunk Inc.
+# Copyright (c) 2016-2021 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -16,6 +14,7 @@ import re
 from bs4 import BeautifulSoup
 import phantom.app as phantom
 import phantom.utils as ph_utils
+import phantom.rules as phantom_rules
 import mimetypes
 import socket
 from email.header import decode_header
@@ -188,7 +187,9 @@ class ProcessEmail(object):
         try:
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
-            self._debug_print("Handled exception", e)
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            self._debug_print("Error occurred while extracting domains of the URLs. {0}".format(err))
             return
 
         uris = []
@@ -337,7 +338,10 @@ class ProcessEmail(object):
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
 
         # remove the 'Forwarded Message' from the email text and parse it
-        p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
+        if self._base_connector._python_version == 2:
+            p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
+        else:
+            p = re.compile(r'.*Forwarded Message.*\n(.*)', re.IGNORECASE)
         email_text = p.sub(r'\1', file_data.strip()[:500])
         mail = email.message_from_string(email_text)
 
@@ -417,7 +421,9 @@ class ProcessEmail(object):
             decoded_strings = [decode_header(x)[0] for x in encoded_strings]
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
-            self._debug_print("decoding: {0}".format(encoded_strings), e)
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            self._debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
@@ -453,7 +459,7 @@ class ProcessEmail(object):
 
                 # make new string insted of replacing in the input string because issue find in PAPP-9531
                 if value:
-                    new_str += UnicodeDammit(value).unicode_markup.encode('utf-8')
+                    new_str += UnicodeDammit(value).unicode_markup
                     new_str_create_count += 1
             except:
                 pass
@@ -540,10 +546,14 @@ class ProcessEmail(object):
         part_payload = part.get_payload(decode=True)
         if (not part_payload):
             return phantom.APP_SUCCESS
-        with open(file_path, 'wb') as f:
-            f.write(part_payload)
-            file_hash = hashlib.sha1(part_payload).hexdigest()
-        files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash, 'meta_info': attach_meta_info})
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(part_payload)
+                file_hash = hashlib.sha1(part_payload).hexdigest()
+            files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash, 'meta_info': attach_meta_info})
+        except Exception as e:
+            error_msg = self._base_connector._get_error_message_from_exception(e)
+            self._base_connector.debug_print("Error occurred while opening file. {}".format(error_msg))
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail, child=False):
 
@@ -573,8 +583,7 @@ class ProcessEmail(object):
             file_name = self._decode_uni_string(file_name, file_name)
 
         # Remove any chars that we don't want in the name
-        file_path = "{0}/{1}_{2}_{3}".format(tmp_dir, part_index,
-                file_name.translate(None, ''.join(['<', '>', ' '])), child)
+        file_path = "{0}/{1}_{2}_{3}".format(tmp_dir, part_index, file_name.replace('<', '').replace('>', '').replace(' ', ''), child)
 
         self._debug_print("file_path: {0}".format(file_path))
 
@@ -614,7 +623,7 @@ class ProcessEmail(object):
 
     def _get_email_headers_from_part(self, part, charset=None):
 
-        email_headers = part.items()
+        email_headers = list(part.items())
 
         # TODO: the next 2 ifs can be condensed to use 'or'
         if (not charset):
@@ -628,7 +637,12 @@ class ProcessEmail(object):
 
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
-        [headers.update({x[0]: unicode(x[1], charset)}) for x in email_headers]
+        try:
+            [headers.update({x[0]: self._base_connector._get_string(x[1], charset)}) for x in email_headers]
+        except Exception as e:
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error occurred while converting the header tuple into a dictionary"
+            self._base_connector.debug_print("{}. {}. {}".format(err, error_code, error_msg))
 
         # Convert "Cc" and "Bcc" fields to uppercase
         # when the unify_cef_fields asset configuration parameter is set to True
@@ -639,7 +653,13 @@ class ProcessEmail(object):
                 headers["BCC"] = headers.get("BCC")
 
         # Handle received seperately
-        received_headers = [unicode(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        try:
+            received_headers = list()
+            received_headers = [self._base_connector._get_string(x[1], charset) for x in email_headers if x[0].lower() == 'received']
+        except Exception as e:
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error occurred while handling the received header tuple separately"
+            self._base_connector.debug_print("{}. {}. {}".format(err, error_code, error_msg))
 
         if (received_headers):
             headers['Received'] = received_headers
@@ -647,8 +667,8 @@ class ProcessEmail(object):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if (subject):
-            if (type(subject) == unicode):
-                headers['decodedSubject'] = self._decode_uni_string(subject.encode('utf8'), subject)
+            if (type(subject) == str):
+                headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
         return headers
 
@@ -686,7 +706,7 @@ class ProcessEmail(object):
             self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
 
-        for curr_key in cef_artifact['emailHeaders'].keys():
+        for curr_key in list(cef_artifact['emailHeaders'].keys()):
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
@@ -827,7 +847,9 @@ class ProcessEmail(object):
             try:
                 self._handle_body(body, self._parsed_mail, i, email_id)
             except Exception as e:
-                self._debug_print("ErrorExp in _handle_body # {0}: {1}".format(i, str(e)))
+                error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+                err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                self._debug_print("Error occurred in _handle_body # {0}. {1}".format(i, err))
                 continue
 
         # Files
@@ -867,7 +889,9 @@ class ProcessEmail(object):
         try:
             ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
         except Exception as e:
-            message = "ErrorExp in self._handle_mail_object: {0}".format(e)
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            message = "Error occurred in _handle_mail_object. {0}".format(err)
             self._debug_print(message)
             return (phantom.APP_ERROR, message, [])
 
@@ -952,7 +976,7 @@ class ProcessEmail(object):
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        for artifact in list(filter(lambda x: not x.get('source_data_identifier'), container.get('artifacts', []))):
+        for artifact in list([x for x in container.get('artifacts', []) if not x.get('source_data_identifier')]):
             self._set_sdi(artifact)
 
         if files and container.get('artifacts'):
@@ -961,6 +985,8 @@ class ProcessEmail(object):
             container['artifacts'][-1]['run_automation'] = False
 
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
+        if message == "Duplicate container found" and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
+            self._base_connector._dup_emails += 1
 
         if (phantom.is_fail(ret_val)):
             message = "Failed to save ingested artifacts, error msg: {0}".format(message)
@@ -1057,7 +1083,10 @@ class ProcessEmail(object):
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
 
-        vault_info = Vault.get_file_info(vault_id=vault_id, container_id=container_id, method='and')
+        try:
+            success, message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
+        except:
+            return phantom.APP_ERROR, "Could not retrieve vault file"
 
         if (not vault_info):
             return (phantom.APP_ERROR, "Vault ID not found")
@@ -1091,7 +1120,12 @@ class ProcessEmail(object):
 
         file_name = curr_file.get('file_name')
 
-        if "file_hash" in curr_file and Vault.get_file_info(vault_id=curr_file['file_hash'], container_id=container_id, method='and'):
+        try:
+            success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
+        except:
+            return phantom.APP_ERROR, "Could not retrieve vault file"
+
+        if "file_hash" in curr_file and vault_info:
             self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
             return phantom.APP_SUCCESS, phantom.APP_SUCCESS
 
@@ -1105,7 +1139,7 @@ class ProcessEmail(object):
         if (not file_name):
             file_name = os.path.basename(local_file_path)
 
-        self._base_connector.debug_print("Vault file name: {0}".format(file_name))
+        self._base_connector.debug_print("Vault file name: {0}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
 
         vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
         vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
@@ -1117,7 +1151,9 @@ class ProcessEmail(object):
         try:
             vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
         except Exception as e:
-            self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(e))
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
             return (phantom.APP_ERROR, phantom.APP_ERROR)
 
         # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
@@ -1205,10 +1241,12 @@ class ProcessEmail(object):
         try:
             input_dict_str = json.dumps(input_dict, sort_keys=True)
         except Exception as e:
-            self._base_connector.debug_print('Handled exception in _create_dict_hash', e)
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
-        return hashlib.md5(input_dict_str).hexdigest()
+        return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 
     def _del_tmp_dirs(self):
         """Remove any tmp_dirs that were created."""

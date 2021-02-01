@@ -1,7 +1,5 @@
-# --
 # File: ewsonprem_view.py
-#
-# Copyright (c) 2016-2020 Splunk Inc.
+# Copyright (c) 2016-2021 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -139,5 +137,5 @@ def display_resolve_names(provides, all_app_runs, context):
                 continue
 
             results.append(ctx_result)
-    print context
+    print(context)
     return 'display_resolve_names.html'
