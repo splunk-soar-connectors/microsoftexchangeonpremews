@@ -898,7 +898,7 @@ class EWSOnPremConnector(BaseConnector):
             error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
-        if (type(resp_message) != dict):
+        if not isinstance(resp_message, dict):
             return (phantom.APP_SUCCESS, resp_message)
 
         resp_class = resp_message.get('@ResponseClass', '')
@@ -936,8 +936,8 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         # Set the status of the connector result
-        action_result.set_status(phantom.APP_SUCCESS)
-        return self.set_status_save_progress(phantom.APP_SUCCESS, EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        self.save_progress(EWSONPREM_SUCC_CONNECTIVITY_TEST)
+        return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_child_folder_infos(self, user, action_result, parent_folder_info):
 
@@ -966,7 +966,7 @@ class EWSOnPremConnector(BaseConnector):
             if not folders:
                 return (action_result.set_status(phantom.APP_ERROR, "Folder information not found in response, possibly not present"), None)
 
-            if (type(folders) != list):
+            if not isinstance(folders, list):
                 folders = [folders]
 
             folder_infos.extend([{
@@ -998,7 +998,7 @@ class EWSOnPremConnector(BaseConnector):
         if not input_dict:
             return input_dict
 
-        if (type(input_dict) != dict):
+        if not isinstance(input_dict, dict):
             return input_dict
 
         for k, v in list(input_dict.items()):
@@ -1006,9 +1006,9 @@ class EWSOnPremConnector(BaseConnector):
                 new_key = k.replace(':', '_')
                 input_dict[new_key] = v
                 del input_dict[k]
-            if (type(v) == dict):
+            if isinstance(v, dict):
                 input_dict[new_key] = self._cleanse_key_names(v)
-            if (type(v) == list):
+            if isinstance(v, list):
 
                 new_v = []
 
@@ -1150,7 +1150,7 @@ class EWSOnPremConnector(BaseConnector):
 
             items = resp_json.get('t:Items', {}).get('t:Message', [])
 
-            if (type(items) != list):
+            if not isinstance(items, list):
                 items = [items]
 
             items_matched += len(items)
@@ -1274,7 +1274,7 @@ class EWSOnPremConnector(BaseConnector):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
-        encoded_strings = re.findall(r'=\?.*?\?=', input_str, re.I)
+        encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
         if not encoded_strings:
@@ -1311,26 +1311,34 @@ class EWSOnPremConnector(BaseConnector):
                 continue
 
             try:
-                if (encoding != 'utf-8'):
-                    value = str(value, encoding)
+                # Some non-ascii characters were causing decoding issue with
+                # the UnicodeDammit and working correctly with the decode function.
+                # keeping previous logic in the except block incase of failure.
+                value = value.decode(encoding)
+                new_str += value
+                new_str_create_count += 1
             except:
-                pass
+                try:
+                    if (encoding != 'utf-8'):
+                        value = str(value, encoding)
+                except:
+                    pass
 
-            try:
-                # commenting the existing approach due to a new approach being deployed below
-                # substitute the encoded string with the decoded one
-                # input_str = input_str.replace(encoded_string, value)
+                try:
+                    # commenting the existing approach due to a new approach being deployed below
+                    # substitute the encoded string with the decoded one
+                    # input_str = input_str.replace(encoded_string, value)
 
-                # make new string insted of replacing in the input string because issue find in PAPP-9531
-                if value:
-                    new_str += UnicodeDammit(value).unicode_markup
-                    new_str_create_count += 1
-            except:
-                pass
+                    # make new string insted of replacing in the input string because issue find in PAPP-9531
+                    if value:
+                        new_str += UnicodeDammit(value).unicode_markup
+                        new_str_create_count += 1
+                except:
+                    pass
 
         # replace input string with new string because issue find in PAPP-9531
         if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assiging into input_str")
+            self.debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
             input_str = new_str
 
         return input_str
@@ -1373,7 +1381,7 @@ class EWSOnPremConnector(BaseConnector):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if subject:
-            if (type(subject) == str):
+            if isinstance(subject, str):
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
         return headers
@@ -1518,7 +1526,7 @@ class EWSOnPremConnector(BaseConnector):
 
             recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
 
-            if ((recipients_mailbox) and (type(recipients_mailbox) != list)):
+            if recipients_mailbox and (not isinstance(recipients_mailbox, list)):
                 message['t_ToRecipients']['t_Mailbox'] = [recipients_mailbox]
 
             summary = {'subject': message.get('t_Subject'),
@@ -1609,7 +1617,7 @@ class EWSOnPremConnector(BaseConnector):
 
         categories = message.get('t_Categories', {}).get('t_String')
         if categories:
-            if (type(categories) != list):
+            if not isinstance(categories, list):
                 categories = [categories]
             message['t_Categories'] = categories
 
@@ -1617,7 +1625,7 @@ class EWSOnPremConnector(BaseConnector):
 
         recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
 
-        if ((recipients_mailbox) and (type(recipients_mailbox) != list)):
+        if recipients_mailbox and (not isinstance(recipients_mailbox, list)):
             message['t_ToRecipients']['t_Mailbox'] = [recipients_mailbox]
 
         summary = {'subject': message.get('t_Subject'),
@@ -1654,7 +1662,7 @@ class EWSOnPremConnector(BaseConnector):
             self.add_action_result(action_result)
             return action_result.set_status(phantom.APP_ERROR, 'Result does not contain RootFolder key')
 
-        if (type(resp_json) != list):
+        if not isinstance(resp_json, list):
             resp_json = [resp_json]
 
         for msg_id, resp_message in zip(message_ids, resp_json):
@@ -1775,7 +1783,7 @@ class EWSOnPremConnector(BaseConnector):
             if not folder:
                 return (action_result.set_status(phantom.APP_ERROR, "Information about '{0}' not found in response, possibly not present".format(curr_valid_folder_path)), None)
 
-            if (type(folder) != list):
+            if not isinstance(folder, list):
                 folder = [folder]
 
             ret_val, folder = self._get_matching_folder_path(folder, folder_name, curr_valid_folder_path, action_result)
@@ -1895,7 +1903,7 @@ class EWSOnPremConnector(BaseConnector):
         if not resolution_set:
             return action_result.set_summary({'total_entries': 0})
 
-        if (type(resolution_set) != list):
+        if not isinstance(resolution_set, list):
             resolution_set = [resolution_set]
 
         action_result.update_summary({'total_entries': len(resolution_set)})
@@ -1908,7 +1916,7 @@ class EWSOnPremConnector(BaseConnector):
             if contact:
                 email_addresses = contact.get('t_EmailAddresses', {}).get('t_Entry', [])
                 if email_addresses:
-                    if (type(email_addresses) != list):
+                    if not isinstance(email_addresses, list):
                         email_addresses = [email_addresses]
                     contact['t_EmailAddresses'] = email_addresses
 
@@ -1950,7 +1958,7 @@ class EWSOnPremConnector(BaseConnector):
             action_result.set_summary({'total_entries': 0})
             return action_result.set_status(phantom.APP_SUCCESS)
 
-        if (type(mailboxes) != list):
+        if not isinstance(mailboxes, list):
             mailboxes = [mailboxes]
 
         action_result.update_summary({'total_entries': len(mailboxes)})
@@ -2044,7 +2052,7 @@ class EWSOnPremConnector(BaseConnector):
 
             attachment_data = attachments[curr_key]
 
-            if (type(attachment_data) != list):
+            if not isinstance(attachment_data, list):
                 attachment_data = [attachment_data]
 
             for curr_attachment in attachment_data:
@@ -2068,7 +2076,7 @@ class EWSOnPremConnector(BaseConnector):
         if (phantom.is_fail(ret_val)):
             return RetVal3(action_result.get_status())
 
-        if (type(resp_json) != list):
+        if not isinstance(resp_json, list):
             resp_json = [resp_json]
 
         for curr_attachment_data in resp_json:
@@ -2149,7 +2157,7 @@ class EWSOnPremConnector(BaseConnector):
             pass
 
         if extended_properties:
-            if (type(extended_properties) != list):
+            if not isinstance(extended_properties, list):
                 extended_properties = [extended_properties]
 
             for curr_ext_property in extended_properties:
@@ -2353,7 +2361,7 @@ class EWSOnPremConnector(BaseConnector):
 
         items = resp_json.get('t:Items', {}).get('t:Message', [])
 
-        if (type(items) != list):
+        if not isinstance(items, list):
             items = [items]
 
         email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime']} for x in items]
