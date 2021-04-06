@@ -976,7 +976,7 @@ class ProcessEmail(object):
                     if isinstance(con_disp_uni[value], str):
                         con_disp_decode = self._decode_uni_string(con_disp_uni[value], con_disp_uni[value])
                         if 'decodedContentDisposition' in file_info['meta_info']['headers']:
-                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_type_uni[value], con_type_decode)
+                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value], con_disp_decode)
                             file_info['meta_info']['headers']['decodedContentDisposition'] = decoded_disposition
                         else:
                             file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value], con_disp_decode)
