@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.0.2",
+    "app_version": "3.1.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
@@ -204,7 +204,7 @@
             "type": "investigate",
             "identifier": "run_query",
             "read_only": true,
-            "verbose": "The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx\">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>sender</b>, <b>internet_message_id</b> and <b>body</b> parmeters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx\">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent etc. will be searched, including the children (nested) folders.<br>The action supports searching a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>NOTE: In some cases search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>exchange email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>exchange email ID</b> of an email, which can be used as input for other actions.",
+            "verbose": "The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx\">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>sender</b>, <b>internet_message_id</b> and <b>body</b> parameters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href=\"https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx\">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent etc. will be searched, including the children (nested) folders.<br>The action supports searching a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>NOTE: In some cases search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>exchange email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like &lt;tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com&gt;. Use this as the value (including the &lt; and &gt; chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>exchange email ID</b> of an email, which can be used as input for other actions.",
             "parameters": {
                 "email": {
                     "description": "User's Email (Mailbox to search in)",
@@ -295,13 +295,19 @@
                 },
                 {
                     "data_path": "action_result.parameter.body",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test body"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
@@ -310,41 +316,67 @@
                     "contains": [
                         "mail folder",
                         "mail folder path"
+                    ],
+                    "example_values": [
+                        "Inbox"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.ignore_subfolders",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.internet_message_id",
                     "data_type": "string",
                     "contains": [
                         "internet message id"
+                    ],
+                    "example_values": [
+                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA="
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.is_public_folder",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.query",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Subject: test subject"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.range",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "0-10"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.sender",
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.subject",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Important updates"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.folder",
@@ -353,7 +385,10 @@
                     "contains": [
                         "mail folder"
                     ],
-                    "column_order": 3
+                    "column_order": 3,
+                    "example_values": [
+                        "Inbox"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.folder_path",
@@ -368,15 +403,24 @@
                     "data_path": "action_result.data.*.t_DateTimeReceived",
                     "data_type": "string",
                     "column_name": "Received Time",
-                    "column_order": 2
+                    "column_order": 2,
+                    "example_values": [
+                        "2017-10-03T21:31:05Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_InternetMessageId",
@@ -402,13 +446,19 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string",
                     "column_name": "Sender",
-                    "column_order": 1
+                    "column_order": 1,
+                    "example_values": [
+                        "Test"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Subject",
@@ -417,20 +467,60 @@
                     "column_order": 0
                 },
                 {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "EX"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "EX"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
                     "data_path": "action_result.summary.emails_matched",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Emails matched: 1"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -483,6 +573,9 @@
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
@@ -492,7 +585,10 @@
                         "exchange email id"
                     ],
                     "column_name": "Message ID",
-                    "column_order": 0
+                    "column_order": 0,
+                    "example_values": [
+                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA="
+                    ]
                 },
                 {
                     "data_path": "action_result.data",
@@ -506,15 +602,24 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Status Message",
-                    "column_order": 1
+                    "column_order": 1,
+                    "example_values": [
+                        "Email deleted"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -601,7 +706,11 @@
                 },
                 {
                     "data_path": "action_result.parameter.dont_impersonate",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.email",
@@ -610,7 +719,10 @@
                         "email"
                     ],
                     "column_name": "User Email",
-                    "column_order": 0
+                    "column_order": 0,
+                    "example_values": [
+                        "test@sample.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.folder",
@@ -620,7 +732,10 @@
                         "mail folder",
                         "mail folder path"
                     ],
-                    "column_order": 1
+                    "column_order": 1,
+                    "example_values": [
+                        "Inbox"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.id",
@@ -629,18 +744,28 @@
                         "exchange email id"
                     ],
                     "column_name": "Source Message ID",
-                    "column_order": 2
+                    "column_order": 2,
+                    "example_values": [
+                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA="
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.impersonate_email",
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.is_public_folder",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.new_email_id",
@@ -659,15 +784,24 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Status Message",
-                    "column_order": 4
+                    "column_order": 4,
+                    "example_values": [
+                        "Email copied"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -754,7 +888,11 @@
                 },
                 {
                     "data_path": "action_result.parameter.dont_impersonate",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.email",
@@ -763,7 +901,10 @@
                         "email"
                     ],
                     "column_name": "User Email",
-                    "column_order": 0
+                    "column_order": 0,
+                    "example_values": [
+                        "test@sample.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.folder",
@@ -773,7 +914,10 @@
                         "mail folder",
                         "mail folder path"
                     ],
-                    "column_order": 1
+                    "column_order": 1,
+                    "example_values": [
+                        "Inbox"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.id",
@@ -782,18 +926,28 @@
                         "exchange email id"
                     ],
                     "column_name": "Source Message ID",
-                    "column_order": 2
+                    "column_order": 2,
+                    "example_values": [
+                        "AAMkAGIyMTUxYTkzLWRjYjctNDFjMi04NTAxLTQzMDFkNDhlZmI5MQBGAAAAAACxQSnX8n2GS4cunBIQ2sV7BwCQhMsoV7EYSJF42ChR9SCxAAAAYCbsAACQhMsoV7EYSJF42ChR9SCxAAAAjh8bAAA="
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.impersonate_email",
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.is_public_folder",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.new_email_id",
@@ -812,15 +966,24 @@
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Status Message",
-                    "column_order": 4
+                    "column_order": 4,
+                    "example_values": [
+                        "Email moved"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -903,6 +1066,9 @@
                     "data_type": "numeric",
                     "contains": [
                         "phantom container id"
+                    ],
+                    "example_values": [
+                        1
                     ]
                 },
                 {
@@ -910,6 +1076,9 @@
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
@@ -919,21 +1088,35 @@
                         "exchange email id"
                     ],
                     "column_name": "Email ID",
-                    "column_order": 3
+                    "column_order": 3,
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhYAAABEgAQAAwVWunyyNdLvvCK9O44tTk="
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.ingest_email",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.use_current_container",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.vault_id",
                     "data_type": "string",
                     "contains": [
                         "vault id"
+                    ],
+                    "example_values": [
+                        "85735b9d35c6eccf3ee80f45648b9f7df613703c"
                     ]
                 },
                 {
@@ -985,7 +1168,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.Subject",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test subject"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.To",
@@ -1059,42 +1245,69 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_Body.#text",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test body."
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Body.@BodyType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Text"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_DateTimeCreated",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:05Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_DateTimeReceived",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:05Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_DateTimeSent",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-03T21:31:05Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_HasAttachments",
@@ -1113,7 +1326,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
-                    "data_type": "boolean"
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_IsRead",
@@ -1133,7 +1349,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_LastModifiedTime",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "2017-10-31T01:09:20Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_MimeContent.#text",
@@ -1141,7 +1360,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_MimeContent.@CharacterSet",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "UTF-8"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
@@ -1160,19 +1382,31 @@
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sensitivity",
@@ -1191,6 +1425,9 @@
                     "data_type": "string",
                     "contains": [
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
@@ -1203,6 +1440,199 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Body.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.#text",
+                    "data_type": "string",
+                    "example_values": [
+                        "This is a test email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@BodyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Text"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "String"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_filename"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "686"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentType",
+                    "data_type": "string",
+                    "example_values": [
+                        "text/rtf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhYAAABEgAQAAwVWunyyNdLvvCK9O44tTk="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsContactPhoto",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-03-03T11:20:20"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_filename"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "577"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentType",
+                    "data_type": "string",
+                    "example_values": [
+                        "text/rtf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhXAAABEgAQAFAEZruSqddCnoHkoKpp2Fw="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsContactPhoto",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-03-03T10:25:14"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Thread-Index",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Thread-Topic",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.decodedSubject",
+                    "data_type": "string",
+                    "example_values": [
+                        "test subject"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Has-Attach",
+                    "data_type": "string",
+                    "example_values": [
+                        "yes"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.Content-Language",
+                    "data_type": "string",
+                    "example_values": [
+                        "en-US"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-SCL",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-RecordReviewCfmType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentId",
                     "data_type": "string"
                 },
                 {
@@ -1239,15 +1669,24 @@
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Subject: Test subject, Create time: 2018-09-04T14:12:39Z, Sent time: 2018-09-04T14:13:48Z"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -1298,11 +1737,18 @@
                     "contains": [
                         "email",
                         "exchange distribution list"
+                    ],
+                    "example_values": [
+                        "Group"
                     ]
                 },
                 {
                     "data_path": "action_result.parameter.recursive",
-                    "data_type": "boolean"
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_EmailAddress",
@@ -1311,7 +1757,10 @@
                         "email"
                     ],
                     "column_name": "Email",
-                    "column_order": 0
+                    "column_order": 0,
+                    "example_values": [
+                        "test@sample.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_MailboxType",
@@ -1329,23 +1778,38 @@
                     "data_path": "action_result.data.*.t_RoutingType",
                     "data_type": "string",
                     "column_name": "Routing Type",
-                    "column_order": 2
+                    "column_order": 2,
+                    "example_values": [
+                        "SMTP"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.total_entries",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        3
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Total entries: 3"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -1391,6 +1855,9 @@
                     "contains": [
                         "exchange alias",
                         "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
                     ]
                 },
                 {
@@ -1411,7 +1878,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_Contact.t_EmailAddresses.*.#text",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "RnJvbTogUGhhbnRvbSBVc2VyIDxwaGFudG9t..."
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Contact.t_EmailAddresses.*.@Key",
@@ -1475,35 +1945,70 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_Mailbox.t_EmailAddress",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "test@sample.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Mailbox.t_MailboxType",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "OneOff"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Mailbox.t_Name",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Test"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_Culture",
+                    "data_type": "string",
+                    "example_values": [
+                        "en-GB"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_AssistantName",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.summary.total_entries",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Total entries: 1"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -1569,7 +2074,7 @@
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1699,7 +2204,7 @@
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1716,7 +2221,7 @@
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
                     "data_type": "string",
                     "example_values": [
-                        "Phantom"
+                        "Test"
                     ]
                 },
                 {
@@ -1807,7 +2312,7 @@
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1824,7 +2329,7 @@
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string",
                     "example_values": [
-                        "Phantom"
+                        "Test"
                     ]
                 },
                 {
@@ -1861,7 +2366,7 @@
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
-                        "phantom@sample.com"
+                        "test@sample.com"
                     ],
                     "contains": [
                         "email"
@@ -1878,7 +2383,7 @@
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
                     "data_type": "string",
                     "example_values": [
-                        "Phantom User"
+                        "Test User"
                     ]
                 },
                 {
@@ -1886,6 +2391,61 @@
                     "data_type": "string",
                     "example_values": [
                         "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Body.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.#text",
+                    "data_type": "string",
+                    "example_values": [
+                        "Test body."
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@BodyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Text"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyToItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyAllToItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "String"
                     ]
                 },
                 {
