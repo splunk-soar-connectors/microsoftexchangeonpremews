@@ -410,7 +410,7 @@ class ProcessEmail(object):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
-        encoded_strings = re.findall(r'=\?.*?\?=', input_str, re.I)
+        encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
         if (not encoded_strings):
@@ -447,26 +447,34 @@ class ProcessEmail(object):
                 continue
 
             try:
-                if (encoding != 'utf-8'):
-                    value = str(value, encoding)
+                # Some non-ascii characters were causing decoding issue with
+                # the UnicodeDammit and working correctly with the decode function.
+                # keeping previous logic in the except block incase of failure.
+                value = value.decode(encoding)
+                new_str += value
+                new_str_create_count += 1
             except:
-                pass
+                try:
+                    if (encoding != 'utf-8'):
+                        value = str(value, encoding)
+                except:
+                    pass
 
-            try:
-                # commenting the existing approach due to a new approach being deployed below
-                # substitute the encoded string with the decoded one
-                # input_str = input_str.replace(encoded_string, value)
+                try:
+                    # commenting the existing approach due to a new approach being deployed below
+                    # substitute the encoded string with the decoded one
+                    # input_str = input_str.replace(encoded_string, value)
 
-                # make new string insted of replacing in the input string because issue find in PAPP-9531
-                if value:
-                    new_str += UnicodeDammit(value).unicode_markup
-                    new_str_create_count += 1
-            except:
-                pass
+                    # make new string insted of replacing in the input string because issue find in PAPP-9531
+                    if value:
+                        new_str += UnicodeDammit(value).unicode_markup
+                        new_str_create_count += 1
+                except:
+                    pass
 
         # replace input string with new string because issue find in PAPP-9531
         if new_str and new_str_create_count == len(encoded_strings):
-            self._debug_print("Creating a new string entirely from the encoded_strings and assiging into input_str")
+            self._debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
             input_str = new_str
 
         return input_str
@@ -512,6 +520,12 @@ class ProcessEmail(object):
 
         return (phantom.APP_SUCCESS, False)
 
+    def remove_child_info(self, file_path):
+        if file_path.endswith('_True'):
+            return file_path.rstrip('_True')
+        else:
+            return file_path.rstrip('_False')
+
     def _handle_attachment(self, part, file_name, file_path):
 
         files = self._parsed_mail[PROC_EMAIL_JSON_FILES]
@@ -549,11 +563,30 @@ class ProcessEmail(object):
         try:
             with open(file_path, 'wb') as f:
                 f.write(part_payload)
-                file_hash = hashlib.sha1(part_payload).hexdigest()
-            files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash, 'meta_info': attach_meta_info})
+        except IOError as e:
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            try:
+                if "File name too long" in error_msg:
+                    new_file_name = "ph_long_file_name_temp"
+                    file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '').replace(' ', '')), new_file_name)
+                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+                    self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
+                    with open(file_path, 'wb') as long_file:
+                        long_file.write(part_payload)
+                else:
+                    self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+                    return
+            except Exception as e:
+                error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+                self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+                return
         except Exception as e:
-            error_msg = self._base_connector._get_error_message_from_exception(e)
-            self._base_connector.debug_print("Error occurred while opening file. {}".format(error_msg))
+            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+            return
+
+        file_hash = hashlib.sha1(part_payload).hexdigest()
+        files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash, 'meta_info': attach_meta_info})
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail, child=False):
 
@@ -667,7 +700,7 @@ class ProcessEmail(object):
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
         if (subject):
-            if (type(subject) == str):
+            if isinstance(subject, str):
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
         return headers
@@ -771,6 +804,7 @@ class ProcessEmail(object):
         if (mail.is_multipart()):
             child = False
             message_id = None
+            ret_val = None
             for i, part in enumerate(mail.walk()):
                 add_email_id = None
                 if (i == 0):
@@ -917,6 +951,35 @@ class ProcessEmail(object):
             pass
 
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
+
+        data = results[0].get('files', [])
+        if (data):
+            for file_info in data:
+                con_des = file_info.get('meta_info', {}).get('headers', {}).get('Content-Description')
+                if isinstance(con_des, str):
+                    file_info['meta_info']['headers']['decodedContentDescription'] = self._decode_uni_string(con_des, con_des)
+
+                con_type = file_info.get('meta_info', {}).get('headers', {}).get('Content-Type', '')
+                con_type_uni = re.findall(r'=\?.*\?=', con_type)
+                for value in range(len(con_type_uni)):
+                    if isinstance(con_type_uni[value], str):
+                        con_type_decode = self._decode_uni_string(con_type_uni[value], con_type_uni[value])
+                        if 'decodedContentType' in file_info['meta_info']['headers']:
+                            decoded_type = file_info['meta_info']['headers']['decodedContentType'].replace(con_type_uni[value], con_type_decode)
+                            file_info['meta_info']['headers']['decodedContentType'] = decoded_type
+                        else:
+                            file_info['meta_info']['headers']['decodedContentType'] = con_type.replace(con_type_uni[value], con_type_decode)
+
+                con_disp = file_info.get('meta_info', {}).get('headers', {}).get('Content-Disposition', '')
+                con_disp_uni = re.findall(r'=\?.*\?=', con_disp)
+                for value in range(len(con_disp_uni)):
+                    if isinstance(con_disp_uni[value], str):
+                        con_disp_decode = self._decode_uni_string(con_disp_uni[value], con_disp_uni[value])
+                        if 'decodedContentDisposition' in file_info['meta_info']['headers']:
+                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value], con_disp_decode)
+                            file_info['meta_info']['headers']['decodedContentDisposition'] = decoded_disposition
+                        else:
+                            file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value], con_disp_decode)
 
         if (not ret_val):
             self._del_tmp_dirs()
@@ -1118,7 +1181,7 @@ class ProcessEmail(object):
 
     def _handle_file(self, curr_file, vault_ids, container_id, artifact_id, run_automation=False):
 
-        file_name = curr_file.get('file_name')
+        file_name = self._decode_uni_string(curr_file.get('file_name'), curr_file.get('file_name'))
 
         try:
             success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
