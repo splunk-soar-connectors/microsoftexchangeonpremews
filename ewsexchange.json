@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.1.5",
+    "app_version": "3.2.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
@@ -418,6 +418,9 @@
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test"
                     ]
@@ -454,6 +457,9 @@
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "column_name": "Sender",
                     "column_order": 1,
                     "example_values": [
@@ -1298,6 +1304,9 @@
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test"
                     ]
@@ -1397,6 +1406,9 @@
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test"
                     ]
@@ -1436,7 +1448,10 @@
                 },
                 {
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_RoutingType",
@@ -1491,6 +1506,9 @@
                 {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "test_filename"
                     ]
@@ -1540,6 +1558,9 @@
                 {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "test_filename"
                     ]
@@ -1705,7 +1726,8 @@
                     "order": 0,
                     "contains": [
                         "email",
-                        "exchange distribution list"
+                        "exchange distribution list",
+                        "user name"
                     ],
                     "primary": true,
                     "required": true
@@ -1736,7 +1758,8 @@
                     "data_type": "string",
                     "contains": [
                         "email",
-                        "exchange distribution list"
+                        "exchange distribution list",
+                        "user name"
                     ],
                     "example_values": [
                         "Group"
@@ -1771,8 +1794,14 @@
                 {
                     "data_path": "action_result.data.*.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "column_name": "User Name",
-                    "column_order": 1
+                    "column_order": 1,
+                    "example_values": [
+                        "test"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_RoutingType",
@@ -1960,6 +1989,9 @@
                 {
                     "data_path": "action_result.data.*.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test"
                     ]
@@ -2147,6 +2179,9 @@
                 {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "test.msg"
                     ]
@@ -2220,6 +2255,9 @@
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test"
                     ]
@@ -2328,6 +2366,9 @@
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test"
                     ]
@@ -2382,6 +2423,9 @@
                 {
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_Name",
                     "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
                     "example_values": [
                         "Test User"
                     ]
