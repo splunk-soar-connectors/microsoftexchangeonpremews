@@ -131,6 +131,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._impersonate = False
         self._dup_emails = 0
+        self._group_list = list()
 
     def _handle_preprocess_scipts(self):
 
@@ -1522,6 +1523,11 @@ class EWSOnPremConnector(BaseConnector):
             """
 
             message = resp_json.get('m_Items', {}).get('t_Message', {})
+
+            # Remove mime content because it can be very large
+            if 't_MimeContent' in message:
+                message.pop('t_MimeContent')
+
             action_result.add_data(message)
 
             recipients_mailbox = message.get('t_ToRecipients', {}).get('t_Mailbox')
@@ -1933,6 +1939,7 @@ class EWSOnPremConnector(BaseConnector):
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
         group = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_GROUP])
+        self._group_list.append(group)
 
         self._impersonate = False
 
@@ -1964,7 +1971,8 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'total_entries': len(mailboxes)})
 
         for mailbox in mailboxes:
-            if param.get('recursive', False) and "DL" in mailbox['t:MailboxType']:
+            value = any(elem in [mailbox['t:EmailAddress'], mailbox['t:Name']] for elem in self._group_list)
+            if param.get('recursive', False) and "DL" in mailbox['t:MailboxType'] and not value:
                 param[EWSONPREM_JSON_GROUP] = mailbox['t:EmailAddress']
                 self._expand_dl(param)
             self._cleanse_key_names(mailbox)
