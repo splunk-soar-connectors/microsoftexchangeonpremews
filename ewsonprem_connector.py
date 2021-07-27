@@ -715,7 +715,7 @@ class EWSOnPremConnector(BaseConnector):
         # The host member extacts the host from the URL, is used in creating status messages
         self._host = self._base_url[self._base_url.find('//') + 2:]
 
-        self._impersonate = config[EWS_JSON_USE_IMPERSONATE]
+        self._impersonate = config.get(EWS_JSON_USE_IMPERSONATE, False)
 
         ret = self._handle_preprocess_scipts()
         if phantom.is_fail(ret):
@@ -2440,8 +2440,6 @@ class EWSOnPremConnector(BaseConnector):
         return self._process_email_ids(email_ids, action_result)
 
     def _get_restriction(self):
-
-        config = self.get_config()
 
         emails_after_key = 'last_ingested_format'
 
