@@ -328,9 +328,10 @@ class ProcessEmail(object):
             if artifact_name == 'URL Artifact':
 
                 try:
-                    parsed_url = urlparse(item.get('requestURL', ''))
+                    url_to_parse = item.get('requestURL', '')
+                    parsed_url = urlparse(url_to_parse)
                 except Exception as e:
-                    phantom.debug('Some exception when parsing the URL {}. Exception was: {}'.format(requestURL,e))
+                    phantom.debug('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
 
                 if not parsed_url.netloc:
                     continue

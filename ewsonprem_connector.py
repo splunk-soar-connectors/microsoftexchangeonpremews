@@ -32,37 +32,38 @@ import phantom.rules as phantom_rules
 from ewsonprem_consts import *
 import ews_soap
 
-import requests
-import json
-import xmltodict
 import os
+import re
+import imp
 import sys
+import time
 import uuid
-from requests.auth import AuthBase
-from requests.auth import HTTPBasicAuth
-from requests.structures import CaseInsensitiveDict
-try:
-    from urlparse import urlparse
-except:
-    from urllib.parse import urlparse
+import json
+import email
 import base64
+import requests
+import xmltodict
+from requests.auth import AuthBase
+from email.parser import HeaderParser
+from email.header import decode_header
+from process_email import ProcessEmail
+from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup, UnicodeDammit
-import re
-from process_email import ProcessEmail
-from email.parser import HeaderParser
-import email
-from email.header import decode_header
+from requests.structures import CaseInsensitiveDict
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
 
 try:
     import urllib
 except:
-    import urllib.parse, urllib.error, urllib.request
-import imp
+    import urllib.parse
+    import urllib.error
+    import urllib.request
 
-import time
-
-from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
+try:
+    from urlparse import urlparse
+except:
+    from urllib.parse import urlparse
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -2149,7 +2150,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return headers
 
-    def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):
+    def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):  # noqa
 
         if ('m:Items' not in resp_json):
             k = list(resp_json.keys())[0]
