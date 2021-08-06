@@ -2442,7 +2442,9 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_restriction(self):
 
-        emails_after_key = 'last_ingested_format'
+        config = self.get_config()
+
+        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
 
         date_time_string = self._state.get(emails_after_key)
 

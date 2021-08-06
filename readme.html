@@ -5,43 +5,44 @@
   without a valid written license from Splunk Inc. is PROHIBITED.
 -->
 <p>Use the Microsoft Exchange On-Premise EWS app to access a user's mailbox via EWS XML SOAP calls on an on-premise Exchange server. This can be done through impersonation, or high-level permissions. To use Splunk Phantom to organize and gain insights from email data, you need to install and connect Splunk Phantom to the Microsoft Exchange On-Premise EWS app.</p>
-<p><strong>Impersonation and privileges</strong></p>
+<h2>Impersonation and privileges</h2>
 <p>When using impersonation, the app uses the current user to impersonate the target user to perform commands in the mailboxes the target user has access to. This can be configured in the user interface. When using high level permissions, many organizations configure an Exchange administrator account that has access to certain mailboxes. To give access to a user's mailbox to another user, use the <strong>Add-MailboxPermission</strong> PowerShell cmdlet on the Exchange Server.</p>
-<p><strong>Install the Microsoft Exchange On-Premise EWS app</strong></p>
-<p>To install the Microsoft Exchange On-Premise EWS app, follow these steps:</p>
-<ul>
-<li><strong>Download EWS for Exchange from <a href="https://my.phantom.us/4.9/apps/">my.phantom.us</a></strong></li>
-<li>Log into your Splunk Phantom instance.</li>
-<li>From the main menu, click Apps.&nbsp;</li>
-<li>Click Install App.</li>
-<li>Upload the app and click Install. </li>
-</ul>
-<p><strong>Configure the Microsoft Exchange On-Premise EWS app on Splunk Phantom</strong></p>
-<p>To configure the Microsoft Exchange On-Premise EWS app, follow these steps:&nbsp;</p>
-<ol>
-<li>Search for the Microsoft Exchange On-Premise EWS app, then click <strong>Configure New Asset</strong>.&nbsp;</li>
-<li>Click <strong>Asset Settings.</strong></li>
-<li>Enter the following information:</li>
-</ol>
-<ul>
-<li>EWS URL: The URL configured by the person that set up the Exchange server.</li>
-<li>EWS Version: Ensure the version in the dropdown corresponds to the version of Exchange you have installed.&nbsp;</li>
-<li>Username and Password: Use the username and password that have the correct privileges to access other mailboxes.&nbsp;</li>
-<li>(Optional) User Email Mailbox: The mailbox you will ingest data from if you use polling and to test connectivity.&nbsp;</li>
-<li>On poll information: Configure your desired on poll settings. For example, how to ingest, the number of emails to poll, what type of information you want to extract, and once extracted, your desired level of container severity. For more information on using on poll data ingestion, see Use on poll data ingestion.&nbsp;</li>
-</ul>
-<p><strong>Set up and use on poll data ingestion&nbsp;</strong></p>
-<p>Using on poll data ingestion to schedule data ingestion from various emails. With this app, one container is created per email that is ingested. Artifacts are created within the container based on what the email contains; for example if the email included an IP address, an artifact of the IP address is created. To set up and use on poll data ingestion, follow these steps:&nbsp;</p>
-<ol>
-<li>On the Microsoft Exchange On-Premise EWS app, asset configuration page, click <strong>Ingest Settings</strong>.&nbsp;</li>
-<li>Select a label to apply to objects from your data source.&nbsp;</li>
-<li>Select a polling interval or schedule to configure polling on this asset. Select<strong> Interval </strong>to poll within a certain interval of time for example, every 60 minutes. Select <strong>Scheduled </strong>to more specifically schedule polling to the day, month, year, or hour.&nbsp;</li>
-<li>Click <strong>Save</strong>.</li>
-<li>Click <strong>Poll Now</strong> and select the maximum number of containers and artifacts you want created.&nbsp;</li>
-<li>Click <strong>Poll Now</strong> to confirm.&nbsp;</li>
-<li>Click <strong>Asset Settings &gt; Test Connectivity</strong> to ensure your settings pass.&nbsp;</li>
-</ol>
-<p><strong>Use the copy email command&nbsp;</strong></p>
+<h2>Configuration</h2>
+    <ul>
+        <li>EWS URL: The URL configured by the person that set up the Exchange server.</li>
+        <li>EWS Version: Ensure the version in the dropdown corresponds to the version of Exchange you have installed.&nbsp;</li>
+        <li>Username and Password: Use the username and password that have the correct privileges to access other mailboxes.&nbsp;</li>
+        <li>(Optional) User Email Mailbox: The mailbox you will ingest data from if you use polling and to test connectivity.&nbsp;</li>
+        <li>On poll information: Configure your desired on poll settings. For example, how to ingest, the number of emails to poll, what type of information you want to extract, and once extracted, your desired level of container severity. For more information on using on poll data ingestion, see Use on poll data ingestion.&nbsp;</li>
+    </ul>
+<h2 id="poll_now">POLL NOW</h2>
+    <p>
+    POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine the oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example, if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
+    </p>
+<h2 id="scheduled_polling">Scheduled Polling</h2>
+    <p>This mode is used to schedule a polling action on the asset at regular intervals, which is configured via the INGEST SETTINGS tab of the asset. It makes use of the following asset configuration parameters (among others):</p>
+    <ul>
+        <li>Maximum emails to poll the first time</li>
+            The app detects the first time it is polling an asset and will ingest this number of emails (at the most).
+        <li>Maximum emails to poll</li>
+            For all scheduled polls after the first, the app will ingest this number of emails.
+        <li>How to ingest</li>
+            Should the app be ingesting the latest emails or the oldest.
+    </ul>
+    <p>In the case of Scheduled Polling, on every poll, the app remembers the last email that it has ingested and will pick up from the next one in the next scheduled poll.</p>
+    <h3>How to ingest</h3>
+    <p>The app allows the user to configure how it should ingest emails on every scheduled poll either in the <i>oldest first</i> or the <i>latest first</i> order. Depending upon the scheduled interval and how busy the folder is, one of the following could potentially happen</p>
+    <ul>
+        <li>oldest first</li>
+            If the app is configured to poll too slowly and the folder is so busy that on every poll the maximum ingested emails is less than the number of new emails, the app will never catch up.
+        <li>latest first</li>
+            If the app is configured to poll too slowly and the folder is so busy that on every poll the maximum ingested emails is less than the number of new emails, the app will drop the older emails since it is ingesting the latest emails that came into the mailbox.
+    </ul>
+    <p>For best results, keep the poll interval and <i>Maximum emails to poll</i> values close to the number of emails you would get within a time interval. This way, every poll will end up ingesting all the new emails.</p>
+    <br>
+    <p>In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum number of emails to poll</i> configured should be greater than the maximum number of emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.</p>
+
+    <h2>Copy Email</h2>
 <p>To use the copy email command, follow these steps:</p>
 <ol>
 <li>Navigate to the Investigation page.&nbsp;</li>
