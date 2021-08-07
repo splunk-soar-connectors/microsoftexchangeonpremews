@@ -27,6 +27,7 @@ from builtins import str
 import magic
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
+from urllib.parse import urlparse
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -323,6 +324,17 @@ class ProcessEmail(object):
             # ignore empty entries
             if (not item):
                 continue
+
+            if artifact_name == 'URL Artifact':
+
+                try:
+                    url_to_parse = item.get('requestURL', '')
+                    parsed_url = urlparse(url_to_parse)
+                except Exception as e:
+                    phantom.debug('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
+
+                if not parsed_url.netloc:
+                    continue
 
             artifact = {}
             artifact.update(_artifact_common)
