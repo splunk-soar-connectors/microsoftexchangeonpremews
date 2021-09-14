@@ -48,7 +48,7 @@
        The app will create the following type of artifacts:
       <ul>
       <li>Email Artifact</li>
-      The email addresses that are found in the ingested email will be added as a separate artifact. Any attached email will also be scanned and the address present in the attached email will be added as a separate artifact. The emails are added as custom strings in the cef structure in the following manner.
+      The email addresses that are found in the ingested email will be added as a separate artifact. Any attached email will also be scanned and the address present in the attached email will be added as a separate artifact. The emails are added as custom strings in the CEF structure in the following manner.
     <br>
       <table style="width:100%">
         <tr>
@@ -73,7 +73,7 @@
     <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png">
         <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png"/>
     </a>
-    <li>IP Artifact
+    <li>IP Artifact - cef.sourceAddress</li>
         <ul>
             <li>If <b>extract_ips</b> is enabled, any IPv4 or IPv6 found in the email body will be added, with one CEF per IP.</li>
             <li>Any IP addresses found in the email are added to the CEF structure of an artifact.</li>
@@ -89,8 +89,8 @@
     </li>
     <li>URL Artifact - cef.requestURL</li>
         <ul>
-            <li>If <b>extract_urls</b> is enabled, any url found in the email body will be added, with one CEF per url.</li>
-            <li>Any URLs or hyperlink found are added to the CEF structure of an artifact.</li>
+            <li>If <b>extract_urls</b> is enabled, any URL found in the email body will be added, with one CEF per url.</li>
+            <li>Any URLs or hyperlinks found are added to the CEF structure of an artifact.</li>
             <li>The CEF for a URL is cef.requestURL.</li>
         </ul>
     </li>
@@ -98,7 +98,7 @@
         <ul>
             <li>If <b>extract_domains</b> is enabled, any domain found in the email body will be added, with one CEF per domain.</li>
             <li>Domains that are part of a URL, a hyperlink or an email address are added to the CEF structure of an artifact.</li>
-            <li>The CEF for a URL is cef.destinationDnsDomain.</li>
+            <li>The CEF for a Domain is cef.destinationDnsDomain.</li>
         </ul>
     </li>
       <li>Vault Artifact
