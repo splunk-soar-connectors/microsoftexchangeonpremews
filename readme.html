@@ -43,6 +43,114 @@
     <br>
     <p>In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum number of emails to poll</i> configured should be greater than the maximum number of emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.</p>
 
+    <h2>Artifacts created</h2>
+    <p>
+       The app will create the following type of artifacts:
+      <ul>
+      <li>Email Artifact</li>
+      The email addresses that are found in the ingested email will be added as a separate artifact. Any attached email will also be scanned and the address present in the attached email will be added as a separate artifact. The emails are added as custom strings in the cef structure in the following manner.
+    <br>
+      <table style="width:100%">
+        <tr>
+          <td><b>Artifact Field</b></td>
+          <td><b>Value Details</b></td>
+        </tr>
+        <tr>
+          <td>fromEmail</td>
+          <td>The email address of the sender</td>
+        </tr>
+        <tr>
+          <td>toEmail</td>
+          <td>The email address of the receiver of the email</td>
+        </tr>
+        <tr>
+          <td>emailHeaders</td>
+          <td>A dictionary containing each email header as a key and its value as the key-value</td>
+        </tr>
+      </table>
+    <br>
+
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/email_artifact.png"/>
+    </a>
+    <li>IP Artifact
+        <ul>
+            <li>If <b>extract_ips</b> is enabled, any IPv4 or IPv6 found in the email body will be added, with one CEF per IP.</li>
+            <li>Any IP addresses found in the email are added to the CEF structure of an artifact.</li>
+            <li>The CEF for an IP is cef.sourceAddress.</li>
+        </ul>
+    </li>
+    <li>Hash Artifact - cef.fileHash</li>
+        <ul>
+            <li>If <b>extract_hashes</b> is enabled, any hash found in the email body will be added, with one CEF per hash.</li>
+            <li>Any Hashes found in the email are added to the CEF structure of an artifact.</li>
+            <li>The CEF for a hash is cef.fileHash.</li>
+        </ul>
+    </li>
+    <li>URL Artifact - cef.requestURL</li>
+        <ul>
+            <li>If <b>extract_urls</b> is enabled, any url found in the email body will be added, with one CEF per url.</li>
+            <li>Any URLs or hyperlink found are added to the CEF structure of an artifact.</li>
+            <li>The CEF for a URL is cef.requestURL.</li>
+        </ul>
+    </li>
+    <li>Domain Artifact - cef.destinationDnsDomain</li>
+        <ul>
+            <li>If <b>extract_domains</b> is enabled, any domain found in the email body will be added, with one CEF per domain.</li>
+            <li>Domains that are part of a URL, a hyperlink or an email address are added to the CEF structure of an artifact.</li>
+            <li>The CEF for a URL is cef.destinationDnsDomain.</li>
+        </ul>
+    </li>
+      <li>Vault Artifact
+        <ul>
+          <li>If the email contains any attachments, these are extracted (if <b>extract_attachments</b> is enabled) and added to the vault of the Container.</li>
+          <li>At the same time, the vault ID and file name of this item is represented by a Vault Artifact.</li>
+          <li>The same file can be added to the vault multiple times. In this scenario, the file name of the item added the second time onwards will be slightly different, but the vault ID will still be the same. However, there will be multiple artifacts created.</li>
+          <li>Do note that the system does <i>not</i> duplicate the file bytes, only the metadata in the database.
+          <table style="width:100%">
+            <tr>
+              <td><b>Artifact Field</b></td>
+              <td><b>Value Details</b></td>
+            </tr>
+            <tr>
+              <td>Source ID</td>
+              <td>Email ID set on the server</td>
+            </tr>
+            <tr>
+              <td>cef.vaultId</tdLavel>
+              <td>Vault ID of the attachment</td>
+            </tr>
+            <tr>
+              <td>cef.fileHashMd5</td>
+              <td>Hash MD5 of the attachment</td>
+            </tr>
+            <tr>
+              <td>cef.fileHashSha1</td>
+              <td>Hash SHA1 of the attachment</td>
+            </tr>
+            <tr>
+              <td>cef.fileHashSha256</td>
+              <td>Hash SHA256 of the attachment</td>
+            </tr>
+            <tr>
+              <td>cef.fileName</td>
+              <td>File name of the attachment</td>
+            </tr>
+            <tr>
+              <td>cef.headers</td>
+              <td>A dictionary containing each file header as a key and its value as the key-value</td>
+            </tr>
+          </table></li>
+            <li>You will notice additional CEF fields <b>cs6</b> (value is the Vault ID) and <b>cs6Label</b>. These are added for backward compatibility only and will be deprecated in future releases. Please don't use these keys in playbooks.</li>
+        </ul>
+      </li>
+    <a href="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/vault_artifact.png">
+        <img src="/app_resource/microsoftexchangeonpremiseews_badc5252-4a82-4a6d-bc53-d1e503857124/img/vault_artifact.png"/>
+      </ul>
+    </a>
+    </p>
+
+
     <h2>Copy Email</h2>
 <p>To use the copy email command, follow these steps:</p>
 <ol>
