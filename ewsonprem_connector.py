@@ -869,8 +869,11 @@ class EWSOnPremConnector(BaseConnector):
         if (not (200 <= r.status_code <= 399)):
             # error
             detail = self._get_http_error_details(r)
+            if detail:
+                return (result.set_status(phantom.APP_ERROR,
+                    "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
             return (result.set_status(phantom.APP_ERROR,
-                "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
+                "Call failed with HTTP Code: {0}. Reason: {1}".format(r.status_code, r.reason)), None)
 
         # Try a xmltodict parse
         try:
@@ -932,7 +935,7 @@ class EWSOnPremConnector(BaseConnector):
             self.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
-            self.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
+            action_result.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             # return error
             return phantom.APP_ERROR
