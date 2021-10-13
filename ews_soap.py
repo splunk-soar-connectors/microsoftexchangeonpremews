@@ -33,13 +33,13 @@ EXTENDED_PROPERTY_BODY_HTML = '0x1013'
 # WARNING: pylint is disabled for the whole file due to ElementMaker
 # pylint: skip-file
 
-def xml_get_restriction(greater_than_time=None, message_id=None):
+def xml_get_restriction(greater_than_time=None, message_id=None, field_uri="LastModifiedTime"):
 
     filters = []
 
     if (greater_than_time):
         greater_than_time = T.IsGreaterThan(
-                T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
+                T.FieldURI({'FieldURI': 'item:{}'.format(field_uri)}),
                 T.FieldURIOrConstant(T.Constant({'Value': greater_than_time})))
         filters.append(greater_than_time)
 
@@ -60,12 +60,13 @@ def xml_get_restriction(greater_than_time=None, message_id=None):
     return restriction
 
 
-def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction):
+def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction, field_uri="LastModifiedTime"):
 
     elements = []
 
     additional_properties = T.AdditionalProperties(
-            T.FieldURI({'FieldURI': 'item:LastModifiedTime'}))
+            T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
+            T.FieldURI({'FieldURI': 'item:DateTimeCreated'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -86,7 +87,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction):
     sort_order = M.SortOrder(
             T.FieldOrder(
                 {'Order': order},
-                T.FieldURI({'FieldURI': 'item:LastModifiedTime'})))
+                T.FieldURI({'FieldURI': 'item:{}'.format(field_uri)})))
 
     elements.append(sort_order)
 
