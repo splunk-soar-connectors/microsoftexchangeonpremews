@@ -5,18 +5,18 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.4.3",
+    "app_version": "3.5.5",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
         "Exchange Server(on-prem) 2016"
     ],
-    "utctime_updated": "2021-09-09T05:09:35.000000Z",
+    "utctime_updated": "2021-10-13T07:53:49.000000Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.9.39220",
+    "min_phantom_version": "4.10.0.40961",
     "python_version": "3",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
@@ -134,10 +134,20 @@
             "default": "medium",
             "order": 13
         },
+        "ingest_time": {
+            "data_type": "string",
+            "description": "Sort mails by",
+            "order": 14,
+            "value_list": [
+                "updated time",
+                "created time"
+            ],
+            "default": "updated time"
+        },
         "extract_attachments": {
             "data_type": "boolean",
             "description": "Extract Attachments",
-            "order": 14,
+            "order": 16,
             "default": true
         },
         "extract_urls": {
@@ -149,7 +159,7 @@
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
-            "order": 16,
+            "order": 18,
             "default": true
         },
         "extract_domains": {
@@ -161,7 +171,7 @@
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
-            "order": 18,
+            "order": 20,
             "default": true
         },
         "extract_email_addresses": {
@@ -173,7 +183,7 @@
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add email body to the Email Artifact",
-            "order": 20,
+            "order": 22,
             "default": false
         },
         "preprocess_script": {
@@ -184,7 +194,7 @@
         "unify_cef_fields": {
             "data_type": "boolean",
             "description": "Unify CC/BCC CEF fields (to uppercase)",
-            "order": 22
+            "order": 23
         }
     },
     "actions": [
