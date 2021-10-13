@@ -869,8 +869,11 @@ class EWSOnPremConnector(BaseConnector):
         if (not (200 <= r.status_code <= 399)):
             # error
             detail = self._get_http_error_details(r)
+            if detail:
+                return (result.set_status(phantom.APP_ERROR,
+                    "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
             return (result.set_status(phantom.APP_ERROR,
-                "Call failed with HTTP Code: {0}. Reason: {1}. Details: {2}".format(r.status_code, r.reason, detail)), None)
+                "Call failed with HTTP Code: {0}. Reason: {1}".format(r.status_code, r.reason)), None)
 
         # Try a xmltodict parse
         try:
@@ -932,7 +935,7 @@ class EWSOnPremConnector(BaseConnector):
             self.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
-            self.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
+            action_result.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             # return error
             return phantom.APP_ERROR
@@ -2317,7 +2320,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _get_email_infos_to_process(self, offset, max_emails, action_result, restriction=None):
+    def _get_email_infos_to_process(self, offset, max_emails, action_result, restriction=None, field_uri="LastModifiedTime"):
 
         config = self.get_config()
 
@@ -2344,7 +2347,15 @@ class EWSOnPremConnector(BaseConnector):
         if (manner == EWS_INGEST_LATEST_EMAILS):
             order = "Descending"
 
-        data = ews_soap.xml_get_email_ids(poll_user, order=order, offset=offset, max_emails=max_emails, folder_id=folder_id, restriction=restriction)
+        data = ews_soap.xml_get_email_ids(
+            poll_user,
+            order=order,
+            offset=offset,
+            max_emails=max_emails,
+            folder_id=folder_id,
+            restriction=restriction,
+            field_uri=field_uri
+        )
 
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_find_response)
 
@@ -2373,7 +2384,7 @@ class EWSOnPremConnector(BaseConnector):
         if not isinstance(items, list):
             items = [items]
 
-        email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime']} for x in items]
+        email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime'], 'created_time': x['t:DateTimeCreated']} for x in items]
 
         return (phantom.APP_SUCCESS, email_infos)
 
@@ -2427,7 +2438,8 @@ class EWSOnPremConnector(BaseConnector):
         if not email_id:
 
             self.save_progress("POLL NOW Getting {0} '{1}' email ids".format(max_emails, config[EWS_JSON_INGEST_MANNER]))
-            ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result)
+            sort_on = "DateTimeCreated" if config.get(EWS_JSON_INGEST_TIME, "") == "created time" else "LastModifiedTime"
+            ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, field_uri=sort_on)
 
             if (phantom.is_fail(ret_val)):
                 return action_result.get_status()
@@ -2440,18 +2452,27 @@ class EWSOnPremConnector(BaseConnector):
 
         return self._process_email_ids(email_ids, action_result)
 
-    def _get_restriction(self):
+    def _get_restriction(self, field_uri="LastModifiedTime", emails_after="last_email_format"):
+        """
+
+        Args:
+            field_uri (str, optional): [Sorting field for the email data]
+            emails_after (str, optional): [Key to fetch latest ingestion date from the state file]
+
+        Returns:
+            [Restriction]: [Restriction to be used in the soap call]
+        """
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else 'last_email_format'
+        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else emails_after
 
         date_time_string = self._state.get(emails_after_key)
 
         if not date_time_string:
             return None
 
-        return ews_soap.xml_get_restriction(date_time_string)
+        return ews_soap.xml_get_restriction(date_time_string, field_uri=field_uri)
 
     def _on_poll(self, param):
 
@@ -2492,15 +2513,26 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
+        sort_on = None
+        emails_after = None
+
+        # Create sort field and key for last ingested time, based on the asset configuration
+        if config.get(EWS_JSON_INGEST_TIME, "") == "created time":
+            sort_on = "DateTimeCreated"
+            emails_after = "last_created_format"
+        else:
+            sort_on = "LastModifiedTime"
+            emails_after = "last_email_format"
+
         while True:
 
             self._dup_emails = 0
 
-            restriction = self._get_restriction()
+            restriction = self._get_restriction(field_uri=sort_on, emails_after=emails_after)
 
-            ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction)
+            ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction, field_uri=sort_on)
 
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
             if not email_infos:
@@ -2510,9 +2542,11 @@ class EWSOnPremConnector(BaseConnector):
             # The last email is the latest in the list returned
             email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
 
+            # Store all the times to the state file for the next cycle
             utc_now = datetime.utcnow()
-            self._state['last_ingested_format'] = utc_now.strftime("%Y-%m-%dT%H:%M:%SZ")
+            self._state['last_ingested_format'] = utc_now.strftime(DATETIME_FORMAT)
             self._state['last_email_format'] = email_infos[email_index]['last_modified_time']
+            self._state['last_created_format'] = email_infos[email_index]['created_time']
 
             email_ids = [x['id'] for x in email_infos]
 
@@ -2525,10 +2559,12 @@ class EWSOnPremConnector(BaseConnector):
             if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS or total_ingested == run_limit:
                 break
 
+            # In case of duplicate emails, find the count of duplicate emails and run the cycle again
+            sort_field = "created_time" if config.get(EWS_JSON_INGEST_TIME, "") == "created time" else "last_modified_time"
             next_cycle_repeat_emails = 0
-            last_modified_time_last_email = email_infos[email_index]['last_modified_time']
+            last_email_time = email_infos[email_index][sort_field]
             for email_info in reversed(email_infos):
-                if email_info['last_modified_time'] == last_modified_time_last_email:
+                if email_info[sort_field] == last_email_time:
                     next_cycle_repeat_emails += 1
                 else:
                     break
@@ -2543,7 +2579,7 @@ class EWSOnPremConnector(BaseConnector):
         # Get the action that we are supposed to carry out, set it in the connection result object
         action = self.get_action_identifier()
 
-        # Intialize it to success
+        # Initialize it to success
         ret_val = phantom.APP_SUCCESS
 
         # Bunch if if..elif to process actions
