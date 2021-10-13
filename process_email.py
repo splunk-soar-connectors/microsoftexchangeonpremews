@@ -1006,30 +1006,40 @@ class ProcessEmail(object):
         return (phantom.APP_SUCCESS, "Email Processed")
 
     def _save_ingested(self, container, using_dummy):
-        if using_dummy:
-            cid = container['id']
-            artifacts = container['artifacts']
-            for artifact in artifacts:
-                artifact['container_id'] = cid
-            ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
-            self._base_connector.debug_print(
-                "save_artifacts returns, value: {0}, reason: {1}".format(
-                    ret_val,
-                    message
-                )
-            )
 
+        artifacts = container.pop('artifacts')
+
+        container_message = ""
+        artifact_message = ""
+        if using_dummy:
+            self._debug_print("using dummy")
+            cid = container['id']
         else:
-            ret_val, message, cid = self._base_connector.save_container(container)
+            self._debug_print("without using dummy")
+            ret_val, container_message, cid = self._base_connector.save_container(container)
             self._base_connector.debug_print(
                 "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
                     ret_val,
-                    message,
+                    container_message,
                     cid
                 )
             )
+            if phantom.is_fail(ret_val):
+                return ret_val, container_message, cid
 
-        return ret_val, message, cid
+        for artifact in artifacts:
+            artifact['container_id'] = cid
+        ret_val, artifact_message, ids = self._base_connector.save_artifacts(artifacts)
+        self._base_connector.debug_print(
+            "save_artifacts returns, value: {0}, reason: {1}".format(
+                ret_val,
+                artifact_message
+            )
+        )
+
+        container['artifacts'] = artifacts
+
+        return ret_val, "{}. {}".format(container_message, artifact_message), cid
 
     def _handle_save_ingested(self, artifacts, container, container_id, files):
         # One of either container or container_id will be set to None
@@ -1060,7 +1070,7 @@ class ProcessEmail(object):
             container['artifacts'][-1]['run_automation'] = False
 
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
-        if message == "Duplicate container found" and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
+        if "Duplicate container found" in message and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
 
         if (phantom.is_fail(ret_val)):

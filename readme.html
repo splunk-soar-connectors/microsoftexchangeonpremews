@@ -17,7 +17,7 @@
     </ul>
 <h2 id="poll_now">POLL NOW</h2>
     <p>
-    POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine the oldest or latest is what EWS calls <b>item:LastModifiedTime</b>. This value is different than the mail creation time. For example, if an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
+    POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine the oldest or latest is what EWS calls <b>item:LastModifiedTime</b> and <b>item:DateTimeCreated</b>, which is dependent on the parameter <i>Sort mails by</i>. If an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved. But, its DateTimeCreated will be the same.
     <br/> <br/> <b>Note</b>: "Mailbox folder to be polled" parameter is case-sensitive.
     </p>
 <h2 id="scheduled_polling">Scheduled Polling</h2>
@@ -40,6 +40,14 @@
             If the app is configured to poll too slowly and the folder is so busy that on every poll the maximum ingested emails is less than the number of new emails, the app will drop the older emails since it is ingesting the latest emails that came into the mailbox.
     </ul>
     <p>For best results, keep the poll interval and <i>Maximum emails to poll</i> values close to the number of emails you would get within a time interval. This way, every poll will end up ingesting all the new emails.</p>
+    <h3>Sort mails by</h3>
+    <p>This parameter defines on which email attribute, the order <i>latest first</i>/<i>oldest first</i> should be applied. The user can configure it to any of the below values.</p>
+    <ul>
+        <li>updated time</li>
+            The application will fetch and ingest emails with the latest updated time field of the email attribute.
+        <li>created time</li>
+            The application will fetch and ingest emails with the created time field of the email attribute. Be careful while using this option, as the application fetches the emails by the created time, any update made on the email after ingestion, will not be reflected in the phantom container.
+    </ul>
     <br>
     <p>In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum number of emails to poll</i> configured should be greater than the maximum number of emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.</p>
 
@@ -122,15 +130,15 @@
             </tr>
             <tr>
               <td>cef.fileHashMd5</td>
-              <td>Hash MD5 of the attachment</td>
+              <td>MD5 hash of the attachment</td>
             </tr>
             <tr>
               <td>cef.fileHashSha1</td>
-              <td>Hash SHA1 of the attachment</td>
+              <td>SHA1 hash of the attachment</td>
             </tr>
             <tr>
               <td>cef.fileHashSha256</td>
-              <td>Hash SHA256 of the attachment</td>
+              <td>SHA256 hash of the attachment</td>
             </tr>
             <tr>
               <td>cef.fileName</td>

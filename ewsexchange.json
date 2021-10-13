@@ -134,10 +134,20 @@
             "default": "medium",
             "order": 13
         },
+        "ingest_time": {
+            "data_type": "string",
+            "description": "Sort mails by",
+            "order": 14,
+            "value_list": [
+                "updated time",
+                "created time"
+            ],
+            "default": "updated time"
+        },
         "extract_attachments": {
             "data_type": "boolean",
             "description": "Extract Attachments",
-            "order": 14,
+            "order": 16,
             "default": true
         },
         "extract_urls": {
@@ -149,7 +159,7 @@
         "extract_ips": {
             "data_type": "boolean",
             "description": "Extract IPs",
-            "order": 16,
+            "order": 18,
             "default": true
         },
         "extract_domains": {
@@ -161,7 +171,7 @@
         "extract_hashes": {
             "data_type": "boolean",
             "description": "Extract Hashes",
-            "order": 18,
+            "order": 20,
             "default": true
         },
         "extract_email_addresses": {
@@ -173,7 +183,7 @@
         "add_body_to_header_artifacts": {
             "data_type": "boolean",
             "description": "Add email body to the Email Artifact",
-            "order": 20,
+            "order": 22,
             "default": false
         },
         "preprocess_script": {
@@ -184,7 +194,7 @@
         "unify_cef_fields": {
             "data_type": "boolean",
             "description": "Unify CC/BCC CEF fields (to uppercase)",
-            "order": 22
+            "order": 23
         }
     },
     "actions": [
