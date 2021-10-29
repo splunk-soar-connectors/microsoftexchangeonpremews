@@ -29,13 +29,13 @@ from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
 from urllib.parse import urlparse
 
-_container_common = {
-    "run_automation": False  # Don't run any playbooks, when this artifact is added
-}
+# _container_common = {
+#     "run_automation": False  # Don't run any playbooks, when this artifact is added
+# }
 
-_artifact_common = {
-    "run_automation": False  # Don't run any playbooks, when this artifact is added
-}
+# _artifact_common = {
+#     "run_automation": False  # Don't run any playbooks, when this artifact is added
+# }
 
 FILE_EXTENSIONS = {
     '.vmsn': ['os memory dump', 'vm snapshot file'],
@@ -337,7 +337,7 @@ class ProcessEmail(object):
                     continue
 
             artifact = {}
-            artifact.update(_artifact_common)
+            # artifact.update(_artifact_common)
             artifact['source_data_identifier'] = start_index + added_artifacts
             artifact['cef'] = item
             artifact['name'] = artifact_name
@@ -776,7 +776,7 @@ class ProcessEmail(object):
                 cef_types.update({'emailId': self._email_id_contains})
 
         artifact = {}
-        artifact.update(_artifact_common)
+        # artifact.update(_artifact_common)
         artifact['name'] = 'Email Artifact'
         artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
@@ -864,12 +864,11 @@ class ProcessEmail(object):
 
         # Add the container
         # first save the container, to do that copy things from parsed_mail to a new object
-        container = {}
         container_data = dict(self._parsed_mail)
 
         # delete the header info, we dont make it a part of the container json
         del(container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
-        container.update(_container_common)
+        # container.update(_container_common)
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
         self._container['data'] = {'raw_email': rfc822_email}
@@ -1005,42 +1004,6 @@ class ProcessEmail(object):
 
         return (phantom.APP_SUCCESS, "Email Processed")
 
-    def _save_ingested(self, container, using_dummy):
-
-        artifacts = container.pop('artifacts')
-
-        container_message = ""
-        artifact_message = ""
-        if using_dummy:
-            self._debug_print("using dummy")
-            cid = container['id']
-        else:
-            self._debug_print("without using dummy")
-            ret_val, container_message, cid = self._base_connector.save_container(container)
-            self._base_connector.debug_print(
-                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
-                    ret_val,
-                    container_message,
-                    cid
-                )
-            )
-            if phantom.is_fail(ret_val):
-                return ret_val, container_message, cid
-
-        for artifact in artifacts:
-            artifact['container_id'] = cid
-        ret_val, artifact_message, ids = self._base_connector.save_artifacts(artifacts)
-        self._base_connector.debug_print(
-            "save_artifacts returns, value: {0}, reason: {1}".format(
-                ret_val,
-                artifact_message
-            )
-        )
-
-        container['artifacts'] = artifacts
-
-        return ret_val, "{}. {}".format(container_message, artifact_message), cid
-
     def _handle_save_ingested(self, artifacts, container, container_id, files):
         # One of either container or container_id will be set to None
         using_dummy = False
@@ -1051,30 +1014,27 @@ class ProcessEmail(object):
             container = {
                 'name': 'Dummy Container',
                 'dummy': True,
-                'id': container_id,
-                'artifacts': artifacts,
+                'id': container_id
             }
-        else:
-            # Create a new container
-            container['artifacts'] = artifacts
 
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        for artifact in list([x for x in container.get('artifacts', []) if not x.get('source_data_identifier')]):
-            self._set_sdi(artifact)
+        if not using_dummy:
+            ret_val, message, container_id = self._base_connector.save_container(container)
+            self._base_connector.debug_print(
+                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
+                    ret_val,
+                    message,
+                    container_id
+                )
+            )
 
-        if files and container.get('artifacts'):
-            # Make sure the playbook only runs once
-            # We will instead set run_automation on the last vault artifact which is added
-            container['artifacts'][-1]['run_automation'] = False
-
-        ret_val, message, container_id = self._save_ingested(container, using_dummy)
-        if "Duplicate container found" in message and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
+        if message == "Duplicate container found" and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
 
         if (phantom.is_fail(ret_val)):
-            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+            message = "Failed to save ingested container, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
             return
 
@@ -1083,19 +1043,105 @@ class ProcessEmail(object):
             self._base_connector.debug_print(message)
             return
 
-        vault_ids = list()
-
-        vault_artifacts_added = 0
-
-        last_file = len(files) - 1
+        vault_artifacts = list()
         for i, curr_file in enumerate(files):
-            run_automation = True if i == last_file else False
-            ret_val, added_to_vault = self._handle_file(
-                curr_file, vault_ids, container_id, vault_artifacts_added, run_automation
-            )
 
-            if (added_to_vault):
-                vault_artifacts_added += 1
+            file_name = self._decode_uni_string(curr_file.get('file_name'), curr_file.get('file_name'))
+
+            try:
+                success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
+            except:
+                return phantom.APP_ERROR, "Could not retrieve vault file"
+
+            if "file_hash" in curr_file and vault_info:
+                self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
+                return phantom.APP_SUCCESS, phantom.APP_SUCCESS
+
+            local_file_path = curr_file['file_path']
+
+            contains = self._get_file_contains(local_file_path)
+
+            # lets move the data into the vault
+            vault_attach_dict = {}
+
+            if (not file_name):
+                file_name = os.path.basename(local_file_path)
+
+            self._base_connector.debug_print("Vault file name: {0}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+
+            vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
+            vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
+
+            vault_ret = {}
+
+            file_name = self._decode_uni_string(file_name, file_name)
+
+            try:
+                vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
+            except Exception as e:
+                error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+                err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
+                return (phantom.APP_ERROR, phantom.APP_ERROR)
+
+            if (not vault_ret.get('succeeded')):
+                self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(vault_ret)))
+                return (phantom.APP_ERROR, phantom.APP_ERROR)
+
+            # add the vault id artifact to the container
+            cef_artifact = curr_file.get('meta_info', {})
+            if (file_name):
+                cef_artifact.update({'fileName': file_name})
+
+            if (phantom.APP_JSON_HASH in vault_ret):
+                cef_artifact.update({'vaultId': vault_ret[phantom.APP_JSON_HASH],
+                    'cs6': vault_ret[phantom.APP_JSON_HASH],
+                    'cs6Label': 'Vault ID'})
+
+                # now get the rest of the hashes and add them to the cef artifact
+                self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
+
+            if (not cef_artifact):
+                return (phantom.APP_SUCCESS, phantom.APP_ERROR)
+
+            artifact = {}
+            # artifact.update(_artifact_common)
+            artifact['container_id'] = container_id
+            artifact['name'] = 'Vault Artifact'
+            # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
+            # The container picks up the severity of any artifact that is higher than it's own
+            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
+            artifact['cef'] = cef_artifact
+            # artifact['run_automation'] = run_automation
+            if (contains):
+                artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
+            self._set_sdi(artifact)
+
+            if ('parentGuid' in cef_artifact):
+                parent_guid = cef_artifact.pop('parentGuid')
+                cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
+                self._debug_print("The value of parentSourceDataIdentifier in cef_artifact of is: {}".format(
+                    cef_artifact.get('parentSourceDataIdentifier')))
+
+            vault_artifacts.append(artifact)
+
+        if vault_artifacts:
+            artifacts.extend(vault_artifacts)
+
+        for artifact in artifacts:
+            artifact['container_id'] = container_id
+        ret_val, message, container_id = self._base_connector.save_artifacts(artifacts)
+        self._base_connector.debug_print(
+            "save_artifacts returns, value: {0}, reason: {1}".format(
+                ret_val,
+                message
+            )
+        )
+
+        if (phantom.is_fail(ret_val)):
+            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+            self._base_connector.debug_print(message)
+            return
 
         return
 
@@ -1121,8 +1167,6 @@ class ProcessEmail(object):
                 if (not container):
                     continue
 
-                container.update(_container_common)
-
             else:
                 container = None
 
@@ -1138,17 +1182,10 @@ class ProcessEmail(object):
             if (not artifacts):
                 continue
 
-            len_artifacts = len(artifacts)
-
             for j, artifact in enumerate(artifacts):
 
                 if (not artifact):
                     continue
-
-                # if it is the last artifact of the last container
-                if ((j + 1) == len_artifacts):
-                    # mark it such that active playbooks get executed
-                    artifact['run_automation'] = True
 
                 cef_artifact = artifact.get('cef')
                 if ('parentGuid' in cef_artifact):
@@ -1200,92 +1237,6 @@ class ProcessEmail(object):
             pass
 
         return (phantom.APP_SUCCESS, "Mapped hash values")
-
-    def _handle_file(self, curr_file, vault_ids, container_id, artifact_id, run_automation=False):
-
-        file_name = self._decode_uni_string(curr_file.get('file_name'), curr_file.get('file_name'))
-
-        try:
-            success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
-        except:
-            return phantom.APP_ERROR, "Could not retrieve vault file"
-
-        if "file_hash" in curr_file and vault_info:
-            self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
-            return phantom.APP_SUCCESS, phantom.APP_SUCCESS
-
-        local_file_path = curr_file['file_path']
-
-        contains = self._get_file_contains(local_file_path)
-
-        # lets move the data into the vault
-        vault_attach_dict = {}
-
-        if (not file_name):
-            file_name = os.path.basename(local_file_path)
-
-        self._base_connector.debug_print("Vault file name: {0}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
-
-        vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
-        vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
-
-        vault_ret = {}
-
-        file_name = self._decode_uni_string(file_name, file_name)
-
-        try:
-            vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
-        except Exception as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
-            return (phantom.APP_ERROR, phantom.APP_ERROR)
-
-        # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
-
-        if (not vault_ret.get('succeeded')):
-            self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(vault_ret)))
-            return (phantom.APP_ERROR, phantom.APP_ERROR)
-
-        # add the vault id artifact to the container
-        cef_artifact = curr_file.get('meta_info', {})
-        if (file_name):
-            cef_artifact.update({'fileName': file_name})
-
-        if (phantom.APP_JSON_HASH in vault_ret):
-            cef_artifact.update({'vaultId': vault_ret[phantom.APP_JSON_HASH],
-                'cs6': vault_ret[phantom.APP_JSON_HASH],
-                'cs6Label': 'Vault ID'})
-
-            # now get the rest of the hashes and add them to the cef artifact
-            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
-
-        if (not cef_artifact):
-            return (phantom.APP_SUCCESS, phantom.APP_ERROR)
-
-        artifact = {}
-        artifact.update(_artifact_common)
-        artifact['container_id'] = container_id
-        artifact['name'] = 'Vault Artifact'
-        # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
-        # The container picks up the severity of any artifact that is higher than it's own
-        artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
-        artifact['cef'] = cef_artifact
-        artifact['run_automation'] = run_automation
-        if (contains):
-            artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
-        self._set_sdi(artifact)
-
-        if ('parentGuid' in cef_artifact):
-            parent_guid = cef_artifact.pop('parentGuid')
-            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
-            self._debug_print("The value of parentSourceDataIdentifier in cef_artifact of process_email._handle_file is: {}".format(
-                cef_artifact.get('parentSourceDataIdentifier')))
-
-        ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
-        self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
-
-        return (phantom.APP_SUCCESS, ret_val)
 
     def _set_sdi(self, input_dict):
 
