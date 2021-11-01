@@ -1075,7 +1075,7 @@ class ProcessEmail(object):
             file_name = self._decode_uni_string(file_name, file_name)
 
             try:
-                success, message, vault_id  = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
+                success, message, vault_id = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
             except Exception as e:
                 error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
                 err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
