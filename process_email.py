@@ -1072,20 +1072,18 @@ class ProcessEmail(object):
             vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
             vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
 
-            vault_ret = {}
-
             file_name = self._decode_uni_string(file_name, file_name)
 
             try:
-                vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
+                success, message, vault_id  = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
             except Exception as e:
                 error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
                 err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
                 return (phantom.APP_ERROR, phantom.APP_ERROR)
 
-            if (not vault_ret.get('succeeded')):
-                self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(vault_ret)))
+            if not success:
+                self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(message)))
                 return (phantom.APP_ERROR, phantom.APP_ERROR)
 
             # add the vault id artifact to the container
@@ -1093,13 +1091,13 @@ class ProcessEmail(object):
             if (file_name):
                 cef_artifact.update({'fileName': file_name})
 
-            if (phantom.APP_JSON_HASH in vault_ret):
-                cef_artifact.update({'vaultId': vault_ret[phantom.APP_JSON_HASH],
-                    'cs6': vault_ret[phantom.APP_JSON_HASH],
+            if vault_id:
+                cef_artifact.update({'vaultId': vault_id,
+                    'cs6': vault_id,
                     'cs6Label': 'Vault ID'})
 
                 # now get the rest of the hashes and add them to the cef artifact
-                self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
+                self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
 
             if (not cef_artifact):
                 return (phantom.APP_SUCCESS, phantom.APP_ERROR)
