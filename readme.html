@@ -13,6 +13,7 @@
         <li>EWS Version: Ensure the version in the dropdown corresponds to the version of Exchange you have installed.&nbsp;</li>
         <li>Username and Password: Use the username and password that have the correct privileges to access other mailboxes.&nbsp;</li>
         <li>(Optional) User Email Mailbox: The mailbox you will ingest data from if you use polling and to test connectivity.&nbsp;</li>
+        <li>(Optional) Script with functions to preprocess containers and artifacts: The user can add a script file in the configuration parameter. The script must contain a function with the name <b>preprocess_container</b> (to pre-process the containers and the artifacts) else it will throw an error. The script should not contain <b>run_automation</b>(or any other logic to trigger active playbooks), as the app automatically handles the triggering.&nbsp;</li>
         <li>On poll information: Configure your desired on poll settings. For example, how to ingest, the number of emails to poll, what type of information you want to extract, and once extracted, your desired level of container severity. For more information on using on poll data ingestion, see Use on poll data ingestion.&nbsp;</li>
     </ul>
 <h2 id="poll_now">POLL NOW</h2>
