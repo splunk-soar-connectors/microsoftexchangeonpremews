@@ -18,7 +18,6 @@ import phantom.rules as phantom_rules
 import mimetypes
 import socket
 from email.header import decode_header
-from phantom.vault import Vault
 import shutil
 import hashlib
 import json
@@ -29,13 +28,6 @@ from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
 from urllib.parse import urlparse
 
-# _container_common = {
-#     "run_automation": False  # Don't run any playbooks, when this artifact is added
-# }
-
-# _artifact_common = {
-#     "run_automation": False  # Don't run any playbooks, when this artifact is added
-# }
 
 FILE_EXTENSIONS = {
     '.vmsn': ['os memory dump', 'vm snapshot file'],
@@ -337,7 +329,6 @@ class ProcessEmail(object):
                     continue
 
             artifact = {}
-            # artifact.update(_artifact_common)
             artifact['source_data_identifier'] = start_index + added_artifacts
             artifact['cef'] = item
             artifact['name'] = artifact_name
@@ -776,7 +767,6 @@ class ProcessEmail(object):
                 cef_types.update({'emailId': self._email_id_contains})
 
         artifact = {}
-        # artifact.update(_artifact_common)
         artifact['name'] = 'Email Artifact'
         artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
@@ -868,7 +858,6 @@ class ProcessEmail(object):
 
         # delete the header info, we dont make it a part of the container json
         del(container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
-        # container.update(_container_common)
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
         self._container['data'] = {'raw_email': rfc822_email}
@@ -1023,7 +1012,7 @@ class ProcessEmail(object):
         if not using_dummy:
             ret_val, message, container_id = self._base_connector.save_container(container)
             self._base_connector.debug_print(
-                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
+                "save_container (without artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
                     ret_val,
                     message,
                     container_id
@@ -1051,11 +1040,11 @@ class ProcessEmail(object):
             try:
                 success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
             except:
-                return phantom.APP_ERROR, "Could not retrieve vault file"
+                continue
 
             if "file_hash" in curr_file and vault_info:
                 self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
-                return phantom.APP_SUCCESS, phantom.APP_SUCCESS
+                continue
 
             local_file_path = curr_file['file_path']
 
@@ -1100,17 +1089,15 @@ class ProcessEmail(object):
                 self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
 
             if (not cef_artifact):
-                return (phantom.APP_SUCCESS, phantom.APP_ERROR)
+                continue
 
             artifact = {}
-            # artifact.update(_artifact_common)
-            artifact['container_id'] = container_id
             artifact['name'] = 'Vault Artifact'
             # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
             # The container picks up the severity of any artifact that is higher than it's own
             artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
             artifact['cef'] = cef_artifact
-            # artifact['run_automation'] = run_automation
+
             if (contains):
                 artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
             self._set_sdi(artifact)
@@ -1133,7 +1120,7 @@ class ProcessEmail(object):
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        ret_val, message, ids = self._base_connector.save_artifacts(container['artifacts'])
+        ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
         self._base_connector.debug_print(
             "save_artifacts returns, value: {0}, reason: {1}".format(
                 ret_val,
