@@ -1075,16 +1075,16 @@ class ProcessEmail(object):
             file_name = self._decode_uni_string(file_name, file_name)
 
             try:
-                success, message, vault_id = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
+                success, message, vault_id = phantom_rules.vault_add(file_location=local_file_path, container=container_id, file_name=file_name, metadata=vault_attach_dict)
             except Exception as e:
                 error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
                 err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
-                return (phantom.APP_ERROR, phantom.APP_ERROR)
+                continue
 
             if not success:
                 self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(message)))
-                return (phantom.APP_ERROR, phantom.APP_ERROR)
+                continue
 
             # add the vault id artifact to the container
             cef_artifact = curr_file.get('meta_info', {})
@@ -1128,7 +1128,12 @@ class ProcessEmail(object):
 
         for artifact in artifacts:
             artifact['container_id'] = container_id
-        ret_val, message, container_id = self._base_connector.save_artifacts(artifacts)
+
+        container['artifacts'] = artifacts
+        if (hasattr(self._base_connector, '_preprocess_container')):
+            container = self._base_connector._preprocess_container(container)
+
+        ret_val, message, ids = self._base_connector.save_artifacts(container['artifacts'])
         self._base_connector.debug_print(
             "save_artifacts returns, value: {0}, reason: {1}".format(
                 ret_val,
