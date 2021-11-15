@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.5.8",
+    "app_version": "3.5.9",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",

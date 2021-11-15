@@ -1113,14 +1113,16 @@ class ProcessEmail(object):
         if vault_artifacts:
             artifacts.extend(vault_artifacts)
 
-        for artifact in artifacts:
-            artifact['container_id'] = container_id
-
         container['artifacts'] = artifacts
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
-        ret_val, message, ids = self._base_connector.save_artifacts(artifacts)
+        artifacts_list = container['artifacts']
+
+        for artifact in artifacts_list:
+            artifact['container_id'] = container_id
+
+        ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
         self._base_connector.debug_print(
             "save_artifacts returns, value: {0}, reason: {1}".format(
                 ret_val,
