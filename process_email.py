@@ -996,6 +996,7 @@ class ProcessEmail(object):
     def _handle_save_ingested(self, artifacts, container, container_id, files):
         # One of either container or container_id will be set to None
         using_dummy = False
+        duplicate_container = False
 
         if container_id:
             # We are adding artifacts to an existing container
@@ -1018,8 +1019,9 @@ class ProcessEmail(object):
                     container_id
                 )
             )
+            duplicate_container = (message == "Duplicate container found")
 
-        if message == "Duplicate container found" and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
+        if duplicate_container and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
 
         if (phantom.is_fail(ret_val)):
@@ -1121,6 +1123,12 @@ class ProcessEmail(object):
 
         for artifact in artifacts_list:
             artifact['container_id'] = container_id
+            artifact['run_automation'] = False
+
+        if duplicate_container:
+            artifacts[-1]['run_automation'] = self._config.get('automation_on_duplicate', True)
+        else:
+            artifacts[-1]['run_automation'] = True
 
         ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
         self._base_connector.debug_print(
@@ -1133,7 +1141,6 @@ class ProcessEmail(object):
         if (phantom.is_fail(ret_val)):
             message = "Failed to save ingested artifacts, error msg: {0}".format(message)
             self._base_connector.debug_print(message)
-            return
 
         return
 
