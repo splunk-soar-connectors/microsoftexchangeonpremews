@@ -27,6 +27,7 @@ import magic
 from requests.structures import CaseInsensitiveDict
 from copy import deepcopy
 from urllib.parse import urlparse
+from ewsonprem_consts import *
 
 
 FILE_EXTENSIONS = {
@@ -1031,6 +1032,11 @@ class ProcessEmail(object):
 
         if (not container_id):
             message = "save_container did not return a container_id"
+            self._base_connector.debug_print(message)
+            return
+
+        if duplicate_container and self._config.get(EWS_JSON_INGEST_TIME, "") == "created time":
+            message = "Skipping the process of save_artifacts because when the created_time is selected, new artifacts should not be ingested for duplicate container"
             self._base_connector.debug_print(message)
             return
 
