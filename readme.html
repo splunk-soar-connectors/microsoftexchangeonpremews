@@ -51,6 +51,8 @@
     </ul>
     <br>
     <p>In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum number of emails to poll</i> configured should be greater than the maximum number of emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.</p>
+    <h3>Run automation on duplicate event</h3>
+    <p>Set this parameter to run the automation, when there is a modification in the email which is already ingested. If you don't want to trigger the automation for such small changes (in case of re-ingestion), this parameter can be set to FALSE.</p>
 
     <h2>Artifacts created</h2>
     <p>
