@@ -5,13 +5,13 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.6.0",
+    "app_version": "3.7.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
         "Exchange Server(on-prem) 2016"
     ],
-    "utctime_updated": "2021-10-19T10:54:27.000000Z",
+    "utctime_updated": "2021-11-25T08:46:57.000000Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
@@ -425,6 +425,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_MailboxType",
                     "data_type": "string",
                     "example_values": [
@@ -439,6 +446,13 @@
                     ],
                     "example_values": [
                         "Test"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "EX"
                     ]
                 },
                 {
@@ -464,6 +478,13 @@
                     "column_order": 6
                 },
                 {
+                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_MailboxType",
                     "data_type": "string",
                     "example_values": [
@@ -483,26 +504,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_Subject",
-                    "data_type": "string",
-                    "column_name": "Subject",
-                    "column_order": 0
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_RoutingType",
-                    "data_type": "string",
-                    "example_values": [
-                        "EX"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
-                    "data_type": "string",
-                    "example_values": [
-                        "test@sample.com"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_RoutingType",
                     "data_type": "string",
                     "example_values": [
@@ -510,11 +511,10 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
+                    "data_path": "action_result.data.*.t_Subject",
                     "data_type": "string",
-                    "example_values": [
-                        "test@sample.com"
-                    ]
+                    "column_name": "Subject",
+                    "column_order": 0
                 },
                 {
                     "data_path": "action_result.summary.emails_matched",
@@ -1142,6 +1142,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.Content-Language",
+                    "data_type": "string",
+                    "example_values": [
+                        "en-US"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.Content-Type",
                     "data_type": "string"
                 },
@@ -1196,6 +1203,14 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.Thread-Index",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.Thread-Topic",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.To",
                     "data_type": "string"
                 },
@@ -1205,6 +1220,25 @@
                 },
                 {
                     "data_path": "action_result.data.*.X-CTCH-RefID",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-RecordReviewCfmType",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-SCL",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-Has-Attach",
+                    "data_type": "string",
+                    "example_values": [
+                        "yes"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
                     "data_type": "string"
                 },
                 {
@@ -1266,6 +1300,125 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.decodedSubject",
+                    "data_type": "string",
+                    "example_values": [
+                        "test subject"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhXAAABEgAQAFAEZruSqddCnoHkoKpp2Fw="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentType",
+                    "data_type": "string",
+                    "example_values": [
+                        "text/rtf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsContactPhoto",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-03-03T10:25:14"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Name",
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
+                    "example_values": [
+                        "test_filename"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "577"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhYAAABEgAQAAwVWunyyNdLvvCK9O44tTk="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentType",
+                    "data_type": "string",
+                    "example_values": [
+                        "text/rtf"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsContactPhoto",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2019-03-03T11:20:20"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
+                    "example_values": [
+                        "test_filename"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "686"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Body.#text",
                     "data_type": "string",
                     "example_values": [
@@ -1277,6 +1430,41 @@
                     "data_type": "string",
                     "example_values": [
                         "Text"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Body.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "example_values": [
+                        "user1@e2016.local"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Mailbox"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "user1"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_CcRecipients.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
                     ]
                 },
                 {
@@ -1299,6 +1487,21 @@
                     "example_values": [
                         "2017-10-03T21:31:05Z"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "String"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
@@ -1449,6 +1652,27 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.t_TextBody.#text",
+                    "data_type": "string",
+                    "example_values": [
+                        "This is a test email"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@BodyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Text"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
                     "data_type": "string",
                     "contains": [
@@ -1475,202 +1699,6 @@
                     "example_values": [
                         "SMTP"
                     ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Body.@IsTruncated",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_TextBody.#text",
-                    "data_type": "string",
-                    "example_values": [
-                        "This is a test email"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_TextBody.@BodyType",
-                    "data_type": "string",
-                    "example_values": [
-                        "Text"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_TextBody.@IsTruncated",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
-                    "data_type": "string",
-                    "example_values": [
-                        "String"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Name",
-                    "data_type": "string",
-                    "contains": [
-                        "user name"
-                    ],
-                    "example_values": [
-                        "test_filename"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_Size",
-                    "data_type": "string",
-                    "example_values": [
-                        "686"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsInline",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentType",
-                    "data_type": "string",
-                    "example_values": [
-                        "text/rtf"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_AttachmentId.@Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhYAAABEgAQAAwVWunyyNdLvvCK9O44tTk="
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_IsContactPhoto",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_LastModifiedTime",
-                    "data_type": "string",
-                    "example_values": [
-                        "2019-03-03T11:20:20"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Name",
-                    "data_type": "string",
-                    "contains": [
-                        "user name"
-                    ],
-                    "example_values": [
-                        "test_filename"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_Size",
-                    "data_type": "string",
-                    "example_values": [
-                        "577"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsInline",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentType",
-                    "data_type": "string",
-                    "example_values": [
-                        "text/rtf"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
-                    "data_type": "string",
-                    "example_values": [
-                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAEMAAAcmY5GSia4RK5DAQM4jsrZAADYNGhXAAABEgAQAFAEZruSqddCnoHkoKpp2Fw="
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_IsContactPhoto",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_LastModifiedTime",
-                    "data_type": "string",
-                    "example_values": [
-                        "2019-03-03T10:25:14"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.t_ContentId",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Thread-Index",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.Thread-Topic",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.decodedSubject",
-                    "data_type": "string",
-                    "example_values": [
-                        "test subject"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Has-Attach",
-                    "data_type": "string",
-                    "example_values": [
-                        "yes"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.Content-Language",
-                    "data_type": "string",
-                    "example_values": [
-                        "en-US"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-TNEF-Correlator",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-SCL",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.X-MS-Exchange-Organization-RecordReviewCfmType",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_ContentId",
-                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.summary.container_id",
@@ -1906,12 +1934,23 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Contact.t_AssistantName",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_Contact.t_CompanyName",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.t_Contact.t_ContactSource",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Contact.t_Culture",
+                    "data_type": "string",
+                    "example_values": [
+                        "en-GB"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Contact.t_Department",
@@ -2018,17 +2057,6 @@
                     "example_values": [
                         "SMTP"
                     ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_Culture",
-                    "data_type": "string",
-                    "example_values": [
-                        "en-GB"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Contact.t_AssistantName",
-                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.summary.total_entries",
@@ -2224,6 +2252,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Body.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Categories",
                     "data_type": "string",
                     "example_values": [
@@ -2250,6 +2285,21 @@
                     "example_values": [
                         "2017-10-03T21:31:20Z"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "String"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.t_From.t_Mailbox.t_EmailAddress",
@@ -2363,6 +2413,18 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyAllToItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyToItem",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
@@ -2420,6 +2482,27 @@
                     "column_order": 0
                 },
                 {
+                    "data_path": "action_result.data.*.t_TextBody.#text",
+                    "data_type": "string",
+                    "example_values": [
+                        "Test body."
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@BodyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Text"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_TextBody.@IsTruncated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress",
                     "data_type": "string",
                     "example_values": [
@@ -2451,61 +2534,6 @@
                     "data_type": "string",
                     "example_values": [
                         "SMTP"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_Body.@IsTruncated",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_TextBody.#text",
-                    "data_type": "string",
-                    "example_values": [
-                        "Test body."
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_TextBody.@BodyType",
-                    "data_type": "string",
-                    "example_values": [
-                        "Text"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_TextBody.@IsTruncated",
-                    "data_type": "string",
-                    "example_values": [
-                        "false"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyToItem",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyAllToItem",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_Value",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyType",
-                    "data_type": "string",
-                    "example_values": [
-                        "String"
                     ]
                 },
                 {
