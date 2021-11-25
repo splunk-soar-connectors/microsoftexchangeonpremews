@@ -1048,10 +1048,11 @@ class ProcessEmail(object):
         if duplicate_container and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
 
-        if (phantom.is_fail(ret_val)):
-            message = "Failed to save ingested container, error msg: {0}".format(message)
-            self._base_connector.debug_print(message)
-            return
+        if not using_dummy:
+            if (phantom.is_fail(ret_val)):
+                message = "Failed to save ingested container, error msg: {0}".format(message)
+                self._base_connector.debug_print(message)
+                return
 
         if (not container_id):
             message = "save_container did not return a container_id"
