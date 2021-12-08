@@ -1152,16 +1152,20 @@ class EWSOnPremConnector(BaseConnector):
                 self.debug_print('Result does not contain RootFolder key')
                 continue
 
-            items = resp_json.get('t:Items')
+            resp_items = resp_json.get('t:Items')
 
-            if items is None:
+            if resp_items is None:
                 self.debug_print("items is None")
                 continue
 
-            items = resp_json.get('t:Items', {}).get('t:Message', [])
-
-            if not isinstance(items, list):
-                items = [items]
+            items = []
+            for key, value in list(resp_items.items()):
+                if isinstance(value, dict):
+                    items.append(value)
+                elif isinstance(value, list):
+                    items.extend(value)
+                else:
+                    self.debug_print("Skipping the {} key with value {} as it is not in the expected format".format(key, value))
 
             items_matched += len(items)
 
@@ -1531,7 +1535,11 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, 'Result does not contain rfc822 data')
             """
 
-            message = resp_json.get('m_Items', {}).get('t_Message', {})
+            resp_items = resp_json.get('m_Items')
+            if not resp_items:
+                message = {}
+            else:
+                message = list(resp_items.values())[0]
 
             # Remove mime content because it can be very large
             if 't_MimeContent' in message:
@@ -1599,7 +1607,7 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         try:
-            change_key = resp_json['m:Items']['t:Message']['t:ItemId']['@ChangeKey']
+            change_key = list(resp_json['m:Items'].values())[0]['t:ItemId']['@ChangeKey']
         except:
             return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
 
@@ -1628,7 +1636,11 @@ class EWSOnPremConnector(BaseConnector):
 
         self._cleanse_key_names(resp_json)
 
-        message = resp_json.get('m_Items', {}).get('t_Message', {})
+        resp_items = resp_json.get('m_Items')
+        if not resp_items:
+            message = {}
+        else:
+            message = list(resp_items.values())[0]
 
         categories = message.get('t_Categories', {}).get('t_String')
         if categories:
@@ -1877,7 +1889,7 @@ class EWSOnPremConnector(BaseConnector):
         action_verb = 'copied' if (action == "copy") else 'moved'
 
         try:
-            new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
+            new_email_id = list(resp_json['m:Items'].values())[0]['t:ItemId']['@Id']
         except:
             return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
@@ -2050,7 +2062,6 @@ class EWSOnPremConnector(BaseConnector):
             resp_json['m:Items'] = resp_json.pop(k)
             for key in EWSONPREM_ATTACHMENT_KEYS:
                 resp_json['m:Items'].pop(key, None)
-
 
         # Get the attachments
         try:
@@ -2398,7 +2409,7 @@ class EWSOnPremConnector(BaseConnector):
             elif isinstance(value, list):
                 items.extend(value)
             else:
-                self.debug_print("Skipping the {} key with value {} as it is not in the expected format".format(key,value))
+                self.debug_print("Skipping the {} key with value {} as it is not in the expected format".format(key, value))
 
         email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime'], 'created_time': x['t:DateTimeCreated']} for x in items]
 
