@@ -13,27 +13,27 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 import email
-import tempfile
-from collections import OrderedDict
-import os
-import re
-from bs4 import BeautifulSoup
-import phantom.app as phantom
-import phantom.utils as ph_utils
-import phantom.rules as phantom_rules
-import mimetypes
-import socket
-from email.header import decode_header
-from phantom.vault import Vault
-import shutil
 import hashlib
 import json
-from bs4 import UnicodeDammit
+import mimetypes
+import os
+import re
+import shutil
+import socket
+import tempfile
 from builtins import str
-import magic
-from requests.structures import CaseInsensitiveDict
+from collections import OrderedDict
 from copy import deepcopy
+from email.header import decode_header
 from urllib.parse import urlparse
+
+import magic
+import phantom.app as phantom
+import phantom.rules as phantom_rules
+import phantom.utils as ph_utils
+from bs4 import BeautifulSoup, UnicodeDammit
+from phantom.vault import Vault
+from requests.structures import CaseInsensitiveDict
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added

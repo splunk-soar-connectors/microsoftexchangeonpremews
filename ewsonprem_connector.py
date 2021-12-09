@@ -36,28 +36,26 @@ import re
 import sys
 import time
 import requests
+from email.header import decode_header
+from email.parser import HeaderParser
+from requests.auth import AuthBase
+from requests.auth import HTTPBasicAuth
+from requests.structures import CaseInsensitiveDict
+
+import phantom.app as phantom
+import phantom.rules as phantom_rules
+import phantom.utils as ph_utils
 import uuid
 import xmltodict
 from bs4 import BeautifulSoup, UnicodeDammit
 from datetime import datetime, timedelta
-from email.header import decode_header
-from email.parser import HeaderParser
-from process_email import ProcessEmail
-from requests.auth import AuthBase
-from requests.auth import HTTPBasicAuth
-from requests.structures import CaseInsensitiveDict
-from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
-
-# Phantom imports
-import phantom.app as phantom
-import phantom.rules as phantom_rules
-import phantom.utils as ph_utils
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
-# THIS Connector imports
 import ews_soap
 from ewsonprem_consts import *
+from process_email import ProcessEmail
+from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
 
 try:
     import urllib
@@ -2627,8 +2625,9 @@ class EWSOnPremConnector(BaseConnector):
 
 if __name__ == '__main__':
 
-    import pudb
     import argparse
+
+    import pudb
 
     pudb.set_trace()
     in_json = None
