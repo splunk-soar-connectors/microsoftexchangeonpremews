@@ -13,28 +13,28 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 import email
-import tempfile
-from collections import OrderedDict
-import os
-import re
-from bs4 import BeautifulSoup
-import phantom.app as phantom
-import phantom.utils as ph_utils
-import phantom.rules as phantom_rules
-import mimetypes
-import socket
-from email.header import decode_header
-import shutil
 import hashlib
 import json
-from bs4 import UnicodeDammit
+import mimetypes
+import os
+import re
+import shutil
+import socket
+import tempfile
 from builtins import str
-import magic
-from requests.structures import CaseInsensitiveDict
+from collections import OrderedDict
 from copy import deepcopy
+from email.header import decode_header
 from urllib.parse import urlparse
-from ewsonprem_consts import *
 
+import magic
+import phantom.app as phantom
+import phantom.rules as phantom_rules
+import phantom.utils as ph_utils
+from bs4 import BeautifulSoup, UnicodeDammit
+from requests.structures import CaseInsensitiveDict
+
+from ewsonprem_consts import *
 
 FILE_EXTENSIONS = {
     '.vmsn': ['os memory dump', 'vm snapshot file'],
