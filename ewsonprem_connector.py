@@ -26,43 +26,44 @@
 # Remove-MailboxPermission -Identity Test1 -User Test2 -AccessRights FullAccess -InheritanceType All
 # This example removes user Administrator's full access rights to user Phantom's mailbox.
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
-# Phantom imports
-import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
-import phantom.utils as ph_utils
-import phantom.rules as phantom_rules
 
-# THIS Connector imports
-from ewsonprem_consts import *
-import ews_soap
-
+import base64
+import email
+import imp
+import json
 import os
 import re
-import imp
 import sys
 import time
-import uuid
-import json
-import email
-import base64
 import requests
+import uuid
 import xmltodict
-from requests.auth import AuthBase
-from email.parser import HeaderParser
-from email.header import decode_header
-from process_email import ProcessEmail
-from requests.auth import HTTPBasicAuth
-from datetime import datetime, timedelta
 from bs4 import BeautifulSoup, UnicodeDammit
+from datetime import datetime, timedelta
+from email.header import decode_header
+from email.parser import HeaderParser
+from process_email import ProcessEmail
+from requests.auth import AuthBase
+from requests.auth import HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
 from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
+
+# Phantom imports
+import phantom.app as phantom
+import phantom.rules as phantom_rules
+import phantom.utils as ph_utils
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
+
+# THIS Connector imports
+import ews_soap
+from ewsonprem_consts import *
 
 try:
     import urllib
 except:
-    import urllib.parse
     import urllib.error
+    import urllib.parse
     import urllib.request
 
 try:
