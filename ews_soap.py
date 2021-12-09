@@ -122,7 +122,9 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
+    return M.ResolveNames(
+        {'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8'))
+    )
 
 
 def get_expand_dl(email):
@@ -211,12 +213,13 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
 
     # Item Shape
     additional_properties = T.AdditionalProperties(
-            T.FieldURI({'FieldURI': 'item:Subject'}),
-            T.FieldURI({'FieldURI': 'message:From'}),
-            T.FieldURI({'FieldURI': 'message:Sender'}),
-            T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
-            T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+        T.FieldURI({'FieldURI': 'item:Subject'}),
+        T.FieldURI({'FieldURI': 'message:From'}),
+        T.FieldURI({'FieldURI': 'message:Sender'}),
+        T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+        T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
+        T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}),
+    )
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -273,12 +276,13 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
 
     # Item Shape
     additional_properties = T.AdditionalProperties(
-            T.FieldURI({'FieldURI': 'item:Subject'}),
-            T.FieldURI({'FieldURI': 'message:From'}),
-            T.FieldURI({'FieldURI': 'message:Sender'}),
-            T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
-            T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+        T.FieldURI({'FieldURI': 'item:Subject'}),
+        T.FieldURI({'FieldURI': 'message:From'}),
+        T.FieldURI({'FieldURI': 'message:Sender'}),
+        T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+        T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
+        T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}),
+    )
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
