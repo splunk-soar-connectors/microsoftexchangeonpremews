@@ -17,7 +17,6 @@ import os
 
 import encryption_helper
 import requests
-
 from django.http import HttpResponse
 
 

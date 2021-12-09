@@ -35,22 +35,21 @@ import os
 import re
 import sys
 import time
-import requests
+import uuid
+from datetime import datetime, timedelta
 from email.header import decode_header
 from email.parser import HeaderParser
-from requests.auth import AuthBase
-from requests.auth import HTTPBasicAuth
-from requests.structures import CaseInsensitiveDict
 
 import phantom.app as phantom
 import phantom.rules as phantom_rules
 import phantom.utils as ph_utils
-import uuid
+import requests
 import xmltodict
 from bs4 import BeautifulSoup, UnicodeDammit
-from datetime import datetime, timedelta
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
+from requests.auth import AuthBase, HTTPBasicAuth
+from requests.structures import CaseInsensitiveDict
 
 import ews_soap
 from ewsonprem_consts import *
