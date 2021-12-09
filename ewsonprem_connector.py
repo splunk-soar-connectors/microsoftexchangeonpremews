@@ -2196,7 +2196,7 @@ class EWSOnPremConnector(BaseConnector):
                 if not property_tag:
                     continue
 
-                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                if property_tag.lower() in [ews_soap.EXTENDED_PROPERTY_HEADERS.lower(), ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()]:
                     email_headers = self._extract_email_headers(value)
                     if email_headers is not None:
                         headers.update(email_headers)
