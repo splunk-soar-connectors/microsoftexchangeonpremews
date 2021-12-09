@@ -55,8 +55,8 @@ import ews_soap
 # THIS Connector imports
 from ewsonprem_consts import *
 from process_email import ProcessEmail
-from request_handler import (RequestStateHandler,  # noqa
-                             _get_dir_name_from_app_name)
+from request_handler import RequestStateHandler  # noqa
+from request_handler import _get_dir_name_from_app_name
 
 try:
     import urllib
