@@ -261,7 +261,7 @@ and limitations under the License.
 <p>
   {{ result.data.email_text }}
 </p>
-{% else %}
+{% elif result.data.email_data %}
 <h4 class="wf-h4-style">Raw Email</h4>
 <p>
   {{ result.data.email_data }}
