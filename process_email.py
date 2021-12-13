@@ -583,8 +583,8 @@ class ProcessEmail(object):
                     file_path = \
                         "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<',
                                       '').replace('>', '').replace(' ', '')), new_file_name)
-                    self._base_connector.debug_print("Original \
-                                                      filename: {}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+                    self._base_connector.debug_print("Original filename: {}"
+                                                      .format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
                     self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
                     with open(file_path, 'wb') as long_file:
                         long_file.write(part_payload)
@@ -1073,8 +1073,8 @@ class ProcessEmail(object):
             return
 
         if duplicate_container and (not self._base_connector.is_poll_now()) and self._config.get(EWS_JSON_INGEST_TIME, "") == "created time":
-            message = "Skipping the process of save_artifacts because when \
-                       the created_time is selected, new artifacts should not be ingested for duplicate container"
+            message = "Skipping the process of save_artifacts because when " \
+                       "the created_time is selected, new artifacts should not be ingested for duplicate container"
             self._base_connector.debug_print(message)
             return
 

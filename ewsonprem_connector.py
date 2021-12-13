@@ -181,8 +181,8 @@ class EWSOnPremConnector(BaseConnector):
             ret_val += "<wsse:To s:mustUnderstand='1'>"
             ret_val += config[EWS_JSON_FED_PING_URL].split('?')[0]
             ret_val += "</wsse:To>"
-            ret_val += "<o:Security s:mustUnderstand='1' \
-                xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
+            ret_val += "<o:Security s:mustUnderstand='1'" \
+                "xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
             ret_val += "<u:Timestamp>"
             ret_val += "<u:Created>"
 
@@ -1048,8 +1048,8 @@ class EWSOnPremConnector(BaseConnector):
 
         if (maxi > EWSONPREM_MAX_END_OFFSET_VAL):
             return action_result.set_status(phantom.APP_ERROR,
-                                            "Invalid range value. The max_offset value cannot \
-                                            be greater than {0}".format(EWSONPREM_MAX_END_OFFSET_VAL))
+                                            "Invalid range value. The max_offset value cannot "
+                                            "be greater than {0}".format(EWSONPREM_MAX_END_OFFSET_VAL))
 
         return (phantom.APP_SUCCESS)
 
