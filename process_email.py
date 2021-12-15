@@ -13,27 +13,27 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 import email
-import tempfile
-from collections import OrderedDict
-import os
-import re
-from bs4 import BeautifulSoup
-import phantom.app as phantom
-import phantom.utils as ph_utils
-import phantom.rules as phantom_rules
-import mimetypes
-import socket
-from email.header import decode_header
-from phantom.vault import Vault
-import shutil
 import hashlib
 import json
-from bs4 import UnicodeDammit
+import mimetypes
+import os
+import re
+import shutil
+import socket
+import tempfile
 from builtins import str
-import magic
-from requests.structures import CaseInsensitiveDict
+from collections import OrderedDict
 from copy import deepcopy
+from email.header import decode_header
 from urllib.parse import urlparse
+
+import magic
+import phantom.app as phantom
+import phantom.rules as phantom_rules
+import phantom.utils as ph_utils
+from bs4 import BeautifulSoup, UnicodeDammit
+from phantom.vault import Vault
+from requests.structures import CaseInsensitiveDict
 
 _container_common = {
     "run_automation": False  # Don't run any playbooks, when this artifact is added
@@ -99,12 +99,14 @@ HASH_REGEX = r"\b[0-9a-fA-F]{32}\b|\b[0-9a-fA-F]{40}\b|\b[0-9a-fA-F]{64}\b"
 IP_REGEX = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
 IPV6_REGEX = r'\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|'
 IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))'
-IPV6_REGEX += r'|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*'
+IPV6_REGEX += r'|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|'
+IPV6_REGEX += r'[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|'
+IPV6_REGEX += r'[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|'
+IPV6_REGEX += r'((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
+IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|'
+IPV6_REGEX += r'2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|'
+IPV6_REGEX += r'2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|'
+IPV6_REGEX += r'((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*'
 
 
 uri_regexc = re.compile(URI_REGEX)
@@ -586,8 +588,10 @@ class ProcessEmail(object):
             try:
                 if "File name too long" in error_msg:
                     new_file_name = "ph_long_file_name_temp"
-                    file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '').replace(' ', '')), new_file_name)
-                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+                    file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '')
+                            .replace(' ', '')), new_file_name)
+                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector
+                            ._handle_py_ver_compat_for_input_str(file_name)))
                     self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
                     with open(file_path, 'wb') as long_file:
                         long_file.write(part_payload)
@@ -1017,10 +1021,12 @@ class ProcessEmail(object):
                     if isinstance(con_disp_uni[value], str):
                         con_disp_decode = self._decode_uni_string(con_disp_uni[value], con_disp_uni[value])
                         if 'decodedContentDisposition' in file_info['meta_info']['headers']:
-                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value], con_disp_decode)
+                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value],
+                                    con_disp_decode)
                             file_info['meta_info']['headers']['decodedContentDisposition'] = decoded_disposition
                         else:
-                            file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value], con_disp_decode)
+                            file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value],
+                                    con_disp_decode)
 
         if (not ret_val):
             self._del_tmp_dirs()
@@ -1099,7 +1105,9 @@ class ProcessEmail(object):
             container['artifacts'][-1]['run_automation'] = False
 
         ret_val, message, container_id = self._save_ingested(container, using_dummy)
-        if "Duplicate container found" in message and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
+
+        not_poll_or_get = not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"
+        if "Duplicate container found" in message and not_poll_or_get:
             self._base_connector._dup_emails += 1
 
         if (phantom.is_fail(ret_val)):
