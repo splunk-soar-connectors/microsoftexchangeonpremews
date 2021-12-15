@@ -21,6 +21,7 @@
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
     "license": "Copyright (c) 2016-2021 Splunk Inc.",
+    "fips_compliant": true,
     "pip_dependencies": {
         "wheel": [
             {
