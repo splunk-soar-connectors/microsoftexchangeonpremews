@@ -332,7 +332,7 @@ class ProcessEmail(object):
                     url_to_parse = item.get('requestURL', '')
                     parsed_url = urlparse(url_to_parse)
                 except Exception as e:
-                    phantom.debug('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
+                    self._base_connector.debug_print('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
 
                 if not parsed_url.netloc:
                     continue
