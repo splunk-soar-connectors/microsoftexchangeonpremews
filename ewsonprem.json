@@ -2489,7 +2489,11 @@
                 }
             },
             "render": {
-                "type": "table"
+                "width": 12,
+                "title": "Update Email",
+                "type": "custom",
+                "view": "ewsonprem_view.update_email",
+                "height": 5
             },
             "output": [
                 {
@@ -2525,9 +2529,7 @@
                     ],
                     "contains": [
                         "exchange email id"
-                    ],
-                    "column_name": "Message ID",
-                    "column_order": 1
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.subject",
@@ -3017,9 +3019,7 @@
                     "data_type": "string",
                     "example_values": [
                         "Both value are modified"
-                    ],
-                    "column_name": "Subject",
-                    "column_order": 0
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_TextBody.#text",

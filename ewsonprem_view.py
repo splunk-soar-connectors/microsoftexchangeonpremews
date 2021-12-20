@@ -143,5 +143,20 @@ def display_resolve_names(provides, all_app_runs, context):
                 continue
 
             results.append(ctx_result)
-    print(context)
+
     return 'display_resolve_names.html'
+
+
+def update_email(provides, all_app_runs, context):
+
+    context['results'] = results = []
+    for summary, action_results in all_app_runs:
+        for result in action_results:
+
+            ctx_result = _get_ctx_result(result)
+            if (not ctx_result):
+                continue
+
+            results.append(ctx_result)
+
+    return 'update_email.html'
