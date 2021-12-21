@@ -51,7 +51,6 @@ from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
 
 import ews_soap
-# THIS Connector imports
 from ewsonprem_consts import *
 from process_email import ProcessEmail
 from request_handler import RequestStateHandler  # noqa
