@@ -213,13 +213,13 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
 
     # Item Shape
     additional_properties = T.AdditionalProperties(
-        T.FieldURI({'FieldURI': 'item:Subject'}),
-        T.FieldURI({'FieldURI': 'message:From'}),
-        T.FieldURI({'FieldURI': 'message:Sender'}),
-        T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
-        T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-        T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}),
-    )
+            T.FieldURI({'FieldURI': 'item:Subject'}),
+            T.FieldURI({'FieldURI': 'message:From'}),
+            T.FieldURI({'FieldURI': 'message:Sender'}),
+            T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+            T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -276,13 +276,13 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
 
     # Item Shape
     additional_properties = T.AdditionalProperties(
-        T.FieldURI({'FieldURI': 'item:Subject'}),
-        T.FieldURI({'FieldURI': 'message:From'}),
-        T.FieldURI({'FieldURI': 'message:Sender'}),
-        T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
-        T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-        T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}),
-    )
+            T.FieldURI({'FieldURI': 'item:Subject'}),
+            T.FieldURI({'FieldURI': 'message:From'}),
+            T.FieldURI({'FieldURI': 'message:Sender'}),
+            T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
+            T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),

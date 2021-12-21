@@ -580,11 +580,10 @@ class ProcessEmail(object):
             try:
                 if "File name too long" in error_msg:
                     new_file_name = "ph_long_file_name_temp"
-                    file_path = \
-                        "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<',
-                                      '').replace('>', '').replace(' ', '')), new_file_name)
-                    self._base_connector.debug_print("Original filename: {}"
-                                                      .format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+                    file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '')
+                            .replace(' ', '')), new_file_name)
+                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector
+                            ._handle_py_ver_compat_for_input_str(file_name)))
                     self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
                     with open(file_path, 'wb') as long_file:
                         long_file.write(part_payload)
@@ -1012,11 +1011,11 @@ class ProcessEmail(object):
                         con_disp_decode = self._decode_uni_string(con_disp_uni[value], con_disp_uni[value])
                         if 'decodedContentDisposition' in file_info['meta_info']['headers']:
                             decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value],
-                                                                                                                         con_disp_decode)
+                                    con_disp_decode)
                             file_info['meta_info']['headers']['decodedContentDisposition'] = decoded_disposition
                         else:
                             file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value],
-                                                                                                              con_disp_decode)
+                                    con_disp_decode)
 
         if (not ret_val):
             self._del_tmp_dirs()

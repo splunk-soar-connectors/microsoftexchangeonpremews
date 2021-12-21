@@ -26,7 +26,6 @@
 # Remove-MailboxPermission -Identity Test1 -User Test2 -AccessRights FullAccess -InheritanceType All
 # This example removes user Administrator's full access rights to user Phantom's mailbox.
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
-# Phantom imports
 import base64
 import email
 import imp
@@ -181,8 +180,8 @@ class EWSOnPremConnector(BaseConnector):
             ret_val += "<wsse:To s:mustUnderstand='1'>"
             ret_val += config[EWS_JSON_FED_PING_URL].split('?')[0]
             ret_val += "</wsse:To>"
-            ret_val += "<o:Security s:mustUnderstand='1'" \
-                "xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
+            ret_val += "<o:Security s:mustUnderstand='1' "
+            ret_val += "xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
             ret_val += "<u:Timestamp>"
             ret_val += "<u:Created>"
 
@@ -234,8 +233,8 @@ class EWSOnPremConnector(BaseConnector):
 
         for required_param in required_params:
             if required_param not in config:
-                return (None,
-                        "ERROR: {0} is a required parameter for Azure/Federated Authentication, please specify one.".format(required_param))
+                return (None, "ERROR: {0} is a required parameter for Azure/Federated Authentication, please specify one."
+                        .format(required_param))
 
         client_id = config[EWS_JSON_CLIENT_ID]
 
@@ -1047,9 +1046,8 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, "Invalid range value, min_offset greater than max_offset")
 
         if (maxi > EWSONPREM_MAX_END_OFFSET_VAL):
-            return action_result.set_status(phantom.APP_ERROR,
-                                            "Invalid range value. The max_offset value cannot "
-                                            "be greater than {0}".format(EWSONPREM_MAX_END_OFFSET_VAL))
+            return action_result.set_status(phantom.APP_ERROR, "Invalid range value. The max_offset value cannot be greater than {0}"
+                    .format(EWSONPREM_MAX_END_OFFSET_VAL))
 
         return (phantom.APP_SUCCESS)
 
@@ -1239,10 +1237,6 @@ class EWSOnPremConnector(BaseConnector):
         if not email_data:
             return RetVal3(action_result.set_status(phantom.APP_ERROR,
                 "Container does not seem to be created by the same app, raw_email data not found."), None, None)
-
-        if ((not email_id.endswith('=')) and (not ph_utils.is_sha1(email_id))):
-            return RetVal3(action_result.set_status(phantom.APP_ERROR,
-                "Container does not seem to be created by the same app, email id not in proper format."), None, None)
 
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
@@ -2223,8 +2217,7 @@ class EWSOnPremConnector(BaseConnector):
                 if not property_tag:
                     continue
 
-                if (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS.lower()) \
-                        or (property_tag.lower() == ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()):
+                if property_tag.lower() in [ews_soap.EXTENDED_PROPERTY_HEADERS.lower(), ews_soap.EXTENDED_PROPERTY_HEADERS_RESPONSE.lower()]:
                     email_headers = self._extract_email_headers(value)
                     if email_headers is not None:
                         headers.update(email_headers)
