@@ -61,15 +61,12 @@ EWSONPREM_ERR_MESSAGE = "Error message unavailable. Please check the asset confi
 TYPE_ERR_MESSAGE = "Error occurred while connecting to the EWS server. Please check the asset configuration and|or the action parameters."
 EWSONPREM_VALIDATE_INTEGER_MESSAGE = "Please provide a valid integer value in the {key} parameter"
 
-EWSONPREM_ATTACHMENT_KEYS = [
-    "t:AttachmentId",
-    "t:Name",
-    "t:ContentType",
-    "t:ContentId",
-    "t:ContentLocation",
-    "t:Size",
-    "t:LastModifiedTime",
-    "t:IsInline",
+EWSONPREM_MAIL_TYPES = [
+    "t:Message",
+    "t:MeetingRequest",
+    "t:MeetingResponse",
+    "t:MeetingMessage",
+    "t:MeetingCancellation"
 ]
 EWSONPREM_MAX_END_OFFSET_VAL = 2147483646
 EWS_O365_RESOURCE = "https://outlook.office365.com"

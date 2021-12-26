@@ -345,8 +345,8 @@ class EWSOnPremConnector(BaseConnector):
 
         phantom_base_url = resp_json.get('base_url')
         if not phantom_base_url:
-            return (action_result.set_status(phantom.APP_ERROR,
-                    "Phantom Base URL is not configured, please configure it in System Settings"), None)
+            return (action_result.set_status(phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"),
+                    None)
 
         return (phantom.APP_SUCCESS, phantom_base_url)
 
@@ -573,8 +573,8 @@ class EWSOnPremConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, EWSONPREM_VALIDATE_INTEGER_MESSAGE.format(key=key)), None
 
         if parameter < 0:
-            return action_result.set_status(phantom.APP_ERROR,
-                                            'Please provide a valid non-negative integer value in the "{}" parameter'.format(key)), None
+            return action_result.set_status(phantom.APP_ERROR, 'Please provide a valid non-negative integer value in the "{}" parameter'
+                    .format(key)), None
         if not allow_zero and parameter == 0:
             return action_result.set_status(phantom.APP_ERROR, "Please provide a positive integer value in the '{}' parameter".format(key)), None
 
@@ -1270,13 +1270,13 @@ class EWSOnPremConnector(BaseConnector):
             mail = email.message_from_string(email_data)
         except:
             return RetVal2(action_result.set_status(phantom.APP_ERROR,
-                           "Unable to create email object from data. Does not seem to be valid email"), None)
+                    "Unable to create email object from data. Does not seem to be valid email"), None)
 
         headers = mail.__dict__.get('_headers')
 
         if not headers:
             return RetVal2(action_result.set_status(phantom.APP_ERROR,
-                           "Could not extract header info from email object data. Does not seem to be valid email"), None)
+                    "Could not extract header info from email object data. Does not seem to be valid email"), None)
 
         ret_val = {}
         for header in headers:
@@ -1520,8 +1520,8 @@ class EWSOnPremConnector(BaseConnector):
 
             # Process errors
             if (phantom.is_fail(ret_val)):
-                id = self._handle_py_ver_compat_for_input_str(email_id)
-                message = "Error while getting email data for id {0}. Error: {1}".format(id, action_result.get_message())
+                message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id),
+                        action_result.get_message())
                 self.debug_print(message)
                 self.send_progress(message)
                 return phantom.APP_ERROR
@@ -1538,7 +1538,7 @@ class EWSOnPremConnector(BaseConnector):
             """
 
             resp_items = resp_json.get('m_Items')
-            if not resp_items:
+            if not resp_items or not isinstance(resp_items, dict):
                 message = {}
             else:
                 message = list(resp_items.values())[0]
@@ -1603,8 +1603,8 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if (phantom.is_fail(ret_val)):
-            id = self._handle_py_ver_compat_for_input_str(email_id)
-            message = "Error while getting email data for id {0}. Error: {1}".format(id, action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id),
+                    action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
@@ -1640,7 +1640,7 @@ class EWSOnPremConnector(BaseConnector):
         self._cleanse_key_names(resp_json)
 
         resp_items = resp_json.get('m_Items')
-        if not resp_items:
+        if not resp_items or not isinstance(resp_items, dict):
             message = {}
         else:
             message = list(resp_items.values())[0]
@@ -1763,16 +1763,16 @@ class EWSOnPremConnector(BaseConnector):
         """
 
         if not folder_list:
-            return (action_result(phantom.APP_ERROR,
-                    "Unable to find info about folder '{0}'. Returned info list empty".format(folder_name)), None)
+            return (action_result(phantom.APP_ERROR, "Unable to find info about folder '{0}'. Returned info list empty"
+                    .format(folder_name)), None)
 
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
             if (self._handle_py_ver_compat_for_input_str(curr_folder_path) == folder_path):
                 return (phantom.APP_SUCCESS, curr_folder)
 
-        return (action_result.set_status(phantom.APP_ERROR,
-                "Folder paths did not match while searching for folder: '{0}'".format(folder_path)), None)
+        return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'"
+                .format(folder_path)), None)
 
     def _get_folder_info(self, user, folder_path, action_result, is_public_folder=False):
         # hindsight is always 20-20, set the folder path separator to be '/', thinking folder names allow '\' as a char.
@@ -1808,14 +1808,14 @@ class EWSOnPremConnector(BaseConnector):
             total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
             if (total_items == '0'):
-                return (action_result.set_status(phantom.APP_ERROR,
-                        "Folder '{0}' not found, possibly not present".format(curr_valid_folder_path)), None)
+                return (action_result.set_status(phantom.APP_ERROR, "Folder '{0}' not found, possibly not present"
+                        .format(curr_valid_folder_path)), None)
 
             folder = resp_json.get('m:RootFolder', {}).get('t:Folders', {}).get('t:Folder')
 
             if not folder:
-                return (action_result.set_status(phantom.APP_ERROR,
-                        "Information about '{0}' not found in response, possibly not present".format(curr_valid_folder_path)), None)
+                return (action_result.set_status(phantom.APP_ERROR, "Information about '{0}' not found in response, possibly not present"
+                        .format(curr_valid_folder_path)), None)
 
             if not isinstance(folder, list):
                 folder = [folder]
@@ -2067,12 +2067,14 @@ class EWSOnPremConnector(BaseConnector):
         if ('m:Items' not in resp_json):
             k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
-            for key in EWSONPREM_ATTACHMENT_KEYS:
-                resp_json['m:Items'].pop(key, None)
 
+        data = None
         # Get the attachments
         try:
-            data = list(resp_json['m:Items'].values())[0]
+            attachment_keys = resp_json['m:Items'].keys()
+            for key in EWSONPREM_MAIL_TYPES:
+                if key in attachment_keys:
+                    data = resp_json['m:Items'][key]
             attachments = data['t:Attachments']
         except:
             return RetVal3(phantom.APP_SUCCESS)
@@ -2142,16 +2144,12 @@ class EWSOnPremConnector(BaseConnector):
                 # This is a file attachment, we most probably already have the info from the resp_json
                 # But update it with the call to the xml_get_attachments_data(..) There might be more info
                 # that has to be updated
-                curr_attach_meta_info = self._get_attachment_meta_info(
-                    curr_attachment_data['m:Items'],
-                    't:FileAttachment',
-                    internet_message_id,
-                    email_guid,
-                )
+                curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment',
+                        internet_message_id, email_guid)
                 if curr_attach_meta_info:
                     # find the attachment in the list and update it
                     matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'),
-                                                    attach_meta_info_ret))
+                            attach_meta_info_ret))
                     matched_meta_info[0].update(curr_attach_meta_info)
 
         return (phantom.APP_SUCCESS, email_headers_ret, attach_meta_info_ret)
@@ -2191,15 +2189,17 @@ class EWSOnPremConnector(BaseConnector):
         if ('m:Items' not in resp_json):
             k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
-            for key in EWSONPREM_ATTACHMENT_KEYS:
-                resp_json['m:Items'].pop(key, None)
 
         headers = dict()
         extended_properties = list()
 
+        data = None
         # Get the Extended Properties
         try:
-            data = list(resp_json['m:Items'].values())[0]
+            item_keys = resp_json['m:Items'].keys()
+            for key in EWSONPREM_MAIL_TYPES:
+                if key in item_keys:
+                    data = resp_json['m:Items'][key]
             extended_properties = data['t:ExtendedProperty']
         except:
             pass
@@ -2331,16 +2331,8 @@ class EWSOnPremConnector(BaseConnector):
             attach_meta_info_list.extend(attach_meta_info)
 
         process_email = ProcessEmail()
-        return process_email.process_email(
-            self,
-            rfc822_email,
-            email_id,
-            self.get_config(),
-            epoch,
-            target_container_id,
-            email_headers=email_header_list,
-            attachments_data=attach_meta_info_list,
-        )
+        return process_email.process_email(self, rfc822_email, email_id, self.get_config(), epoch, target_container_id,
+                email_headers=email_header_list, attachments_data=attach_meta_info_list)
 
     def _process_email_id(self, email_id, target_container_id=None):
 
@@ -2432,9 +2424,8 @@ class EWSOnPremConnector(BaseConnector):
             else:
                 self.debug_print("Skipping the {} key with value {} as it is not in the expected format".format(key, value))
 
-        email_infos = [{'id': x['t:ItemId']['@Id'],
-                       'last_modified_time': x['t:LastModifiedTime'],
-                       'created_time': x['t:DateTimeCreated']} for x in items]
+        email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime'],
+                'created_time': x['t:DateTimeCreated']} for x in items]
 
         return (phantom.APP_SUCCESS, email_infos)
 

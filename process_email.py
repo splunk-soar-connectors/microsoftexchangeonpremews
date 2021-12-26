@@ -331,11 +331,10 @@ class ProcessEmail(object):
                 try:
                     url_to_parse = item.get('requestURL', '')
                     parsed_url = urlparse(url_to_parse)
+                    if not parsed_url.netloc:
+                        continue
                 except Exception as e:
                     self._base_connector.debug_print('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
-
-                if not parsed_url.netloc:
-                    continue
 
             artifact = {}
             artifact['source_data_identifier'] = start_index + added_artifacts

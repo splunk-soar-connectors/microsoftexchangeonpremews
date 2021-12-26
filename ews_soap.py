@@ -122,9 +122,8 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames(
-        {'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8'))
-    )
+    return M.ResolveNames({'ReturnFullContactData': "true"},
+            M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
 
 
 def get_expand_dl(email):
