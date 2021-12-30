@@ -1029,6 +1029,17 @@ class ProcessEmail(object):
         return (phantom.APP_SUCCESS, "Email Processed")
 
     def _handle_save_ingested(self, artifacts, container, container_id, files):
+        """ This method is used to save all the ingested data as artifacts into a container along with saving the container.
+        This method will first create a container and save it using save_container.
+        As artifacts contains all the artifacts except the Vault artifacts, this method creates vault_artifacts from files.
+        Along with adding vault_artifacts to the list of artifacts, this method saves vaults to container.
+        Once all artifacts are created, this method saves all the artifacts in the container that was created before.
+
+        :param:
+        artifacts: List of all artifacts except Vault artifacts
+        files: List of all ingested files
+        """
+
         # One of either container or container_id will be set to None
         using_dummy = False
         duplicate_container = False
