@@ -1056,6 +1056,7 @@ class ProcessEmail(object):
         if (hasattr(self._base_connector, '_preprocess_container')):
             container = self._base_connector._preprocess_container(container)
 
+        # save the container without adding the artifacts into the container
         if not using_dummy:
             ret_val, message, container_id = self._base_connector.save_container(container)
             self._base_connector.debug_print(
@@ -1087,6 +1088,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print(message)
             return
 
+        # create a list of all the vault artifacts from the ingested files
         vault_artifacts = list()
         for i, curr_file in enumerate(files):
 
@@ -1168,6 +1170,7 @@ class ProcessEmail(object):
 
             vault_artifacts.append(artifact)
 
+        # add all the vault artifacts to the list of other artifacts ingested to save them together
         if vault_artifacts:
             artifacts.extend(vault_artifacts)
 
@@ -1186,6 +1189,7 @@ class ProcessEmail(object):
         else:
             artifacts[-1]['run_automation'] = True
 
+        # save all the artifacts(Vault, IP, domain, etc.) in a single save_artifacts call
         ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
         self._base_connector.debug_print(
             "save_artifacts returns, value: {0}, reason: {1}".format(
