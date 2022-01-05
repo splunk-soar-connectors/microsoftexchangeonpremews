@@ -1,6 +1,6 @@
 # File: ewsonprem_consts.py
 #
-# Copyright (c) 2016-2021 Splunk Inc.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,6 +61,13 @@ EWSONPREM_ERR_MESSAGE = "Error message unavailable. Please check the asset confi
 TYPE_ERR_MESSAGE = "Error occurred while connecting to the EWS server. Please check the asset configuration and|or the action parameters."
 EWSONPREM_VALIDATE_INTEGER_MESSAGE = "Please provide a valid integer value in the {key} parameter"
 
+EWSONPREM_MAIL_TYPES = [
+    "t:Message",
+    "t:MeetingRequest",
+    "t:MeetingResponse",
+    "t:MeetingMessage",
+    "t:MeetingCancellation"
+]
 EWSONPREM_MAX_END_OFFSET_VAL = 2147483646
 EWS_O365_RESOURCE = "https://outlook.office365.com"
 EWS_LOGIN_URL = "https://login.windows.net"

@@ -10,7 +10,7 @@
 {% block widget_content %} <!-- Main Start Block -->
 
 <!-- File: display_email.html
-  Copyright (c) 2016-2021 Splunk Inc.
+  Copyright (c) 2016-2022 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -261,7 +261,7 @@ and limitations under the License.
 <p>
   {{ result.data.email_text }}
 </p>
-{% else %}
+{% elif result.data.email_data %}
 <h4 class="wf-h4-style">Raw Email</h4>
 <p>
   {{ result.data.email_data }}

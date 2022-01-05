@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2021 Splunk Inc.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@
 # Remove-MailboxPermission -Identity Test1 -User Test2 -AccessRights FullAccess -InheritanceType All
 # This example removes user Administrator's full access rights to user Phantom's mailbox.
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
-
 import base64
 import email
 import imp
@@ -54,7 +53,8 @@ from requests.structures import CaseInsensitiveDict
 import ews_soap
 from ewsonprem_consts import *
 from process_email import ProcessEmail
-from request_handler import RequestStateHandler, _get_dir_name_from_app_name  # noqa
+from request_handler import RequestStateHandler  # noqa
+from request_handler import _get_dir_name_from_app_name
 
 try:
     import urllib
@@ -1155,16 +1155,20 @@ class EWSOnPremConnector(BaseConnector):
                 self.debug_print('Result does not contain RootFolder key')
                 continue
 
-            items = resp_json.get('t:Items')
+            resp_items = resp_json.get('t:Items')
 
-            if items is None:
+            if resp_items is None:
                 self.debug_print("items is None")
                 continue
 
-            items = resp_json.get('t:Items', {}).get('t:Message', [])
-
-            if not isinstance(items, list):
-                items = [items]
+            items = []
+            for key, value in list(resp_items.items()):
+                if isinstance(value, dict):
+                    items.append(value)
+                elif isinstance(value, list):
+                    items.extend(value)
+                else:
+                    self.debug_print("Skipping the {} key with value {} as it is not in the expected format".format(key, value))
 
             items_matched += len(items)
 
@@ -1533,7 +1537,11 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, 'Result does not contain rfc822 data')
             """
 
-            message = resp_json.get('m_Items', {}).get('t_Message', {})
+            resp_items = resp_json.get('m_Items')
+            if not resp_items or not isinstance(resp_items, dict):
+                message = {}
+            else:
+                message = list(resp_items.values())[0]
 
             # Remove mime content because it can be very large
             if 't_MimeContent' in message:
@@ -1602,7 +1610,7 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         try:
-            change_key = resp_json['m:Items']['t:Message']['t:ItemId']['@ChangeKey']
+            change_key = list(resp_json['m:Items'].values())[0]['t:ItemId']['@ChangeKey']
         except:
             return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
 
@@ -1631,7 +1639,11 @@ class EWSOnPremConnector(BaseConnector):
 
         self._cleanse_key_names(resp_json)
 
-        message = resp_json.get('m_Items', {}).get('t_Message', {})
+        resp_items = resp_json.get('m_Items')
+        if not resp_items or not isinstance(resp_items, dict):
+            message = {}
+        else:
+            message = list(resp_items.values())[0]
 
         categories = message.get('t_Categories', {}).get('t_String')
         if categories:
@@ -1884,7 +1896,7 @@ class EWSOnPremConnector(BaseConnector):
         action_verb = 'copied' if (action == "copy") else 'moved'
 
         try:
-            new_email_id = resp_json['m:Items']['t:Message']['t:ItemId']['@Id']
+            new_email_id = list(resp_json['m:Items'].values())[0]['t:ItemId']['@Id']
         except:
             return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
@@ -2056,9 +2068,14 @@ class EWSOnPremConnector(BaseConnector):
             k = list(resp_json.keys())[0]
             resp_json['m:Items'] = resp_json.pop(k)
 
+        data = None
         # Get the attachments
         try:
-            attachments = resp_json['m:Items']['t:Message']['t:Attachments']
+            attachment_keys = resp_json['m:Items'].keys()
+            for key in EWSONPREM_MAIL_TYPES:
+                if key in attachment_keys:
+                    data = resp_json['m:Items'][key]
+            attachments = data['t:Attachments']
         except:
             return RetVal3(phantom.APP_SUCCESS)
 
@@ -2066,7 +2083,7 @@ class EWSOnPremConnector(BaseConnector):
 
         internet_message_id = None
         try:
-            internet_message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+            internet_message_id = data['t:InternetMessageId']
         except:
             internet_message_id = None
 
@@ -2130,7 +2147,7 @@ class EWSOnPremConnector(BaseConnector):
                 curr_attach_meta_info = self._get_attachment_meta_info(curr_attachment_data['m:Items'], 't:FileAttachment',
                         internet_message_id, email_guid)
                 if curr_attach_meta_info:
-                    # find the attachmetn in the list and update it
+                    # find the attachment in the list and update it
                     matched_meta_info = list(filter(lambda x: x.get('attachmentId', 'foo1') == curr_attach_meta_info.get('attachmentId', 'foo2'),
                             attach_meta_info_ret))
                     matched_meta_info[0].update(curr_attach_meta_info)
@@ -2176,9 +2193,14 @@ class EWSOnPremConnector(BaseConnector):
         headers = dict()
         extended_properties = list()
 
+        data = None
         # Get the Extended Properties
         try:
-            extended_properties = resp_json['m:Items']['t:Message']['t:ExtendedProperty']
+            item_keys = resp_json['m:Items'].keys()
+            for key in EWSONPREM_MAIL_TYPES:
+                if key in item_keys:
+                    data = resp_json['m:Items'][key]
+            extended_properties = data['t:ExtendedProperty']
         except:
             pass
 
@@ -2204,12 +2226,12 @@ class EWSOnPremConnector(BaseConnector):
 
         # now parse the body in the main resp_json
         try:
-            body_text = resp_json['m:Items']['t:Message']['t:Body']['#text']
+            body_text = data['t:Body']['#text']
         except:
             body_text = None
 
         try:
-            body_type = resp_json['m:Items']['t:Message']['t:Body']['@BodyType']
+            body_type = data['t:Body']['@BodyType']
         except:
             body_type = None
 
@@ -2225,12 +2247,12 @@ class EWSOnPremConnector(BaseConnector):
             # try to find body text if it retrived in the response json
             try:
                 self.debug_print("Extracting body text from t:TextBody key from the response")
-                body_text = resp_json['m:Items']['t:Message']['t:TextBody']['#text']
+                body_text = data['t:TextBody']['#text']
             except:
                 body_text = None
 
             # if body text not found into the response json
-            # then, try to create body text from fetched body HTML using Beautilful soup parser
+            # then, try to create body text from fetched body HTML using Beautiful soup parser
             if body_text is None and 'bodyHtml' in headers:
                 self.debug_print("Extracting body text from bodyHtml key from the headers")
                 try:
@@ -2254,7 +2276,7 @@ class EWSOnPremConnector(BaseConnector):
         message_id = headers_ci.get('message-id')
         if message_id is None:
             try:
-                message_id = resp_json['m:Items']['t:Message']['t:InternetMessageId']
+                message_id = data['t:InternetMessageId']
                 headers['Message-ID'] = message_id
             except:
                 pass
@@ -2275,7 +2297,7 @@ class EWSOnPremConnector(BaseConnector):
     def _parse_email(self, resp_json, email_id, target_container_id):
 
         try:
-            mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
+            mime_content = list(resp_json['m:Items'].values())[0]['t:MimeContent']['#text']
         except:
             return (phantom.APP_ERROR, "Email MimeContent missing in response.")
 
@@ -2387,16 +2409,20 @@ class EWSOnPremConnector(BaseConnector):
         if not resp_json:
             return (action_result.set_status(phantom.APP_ERROR, 'Result does not contain required RootFolder key'), None)
 
-        items = resp_json.get('t:Items')
+        resp_items = resp_json.get('t:Items')
 
-        if items is None:
+        if resp_items is None:
             self.debug_print("items is None")
             return (action_result.set_status(phantom.APP_SUCCESS, 'Result does not contain items key. Possibly no emails in folder'), None)
 
-        items = resp_json.get('t:Items', {}).get('t:Message', [])
-
-        if not isinstance(items, list):
-            items = [items]
+        items = []
+        for key, value in list(resp_items.items()):
+            if isinstance(value, dict):
+                items.append(value)
+            elif isinstance(value, list):
+                items.extend(value)
+            else:
+                self.debug_print("Skipping the {} key with value {} as it is not in the expected format".format(key, value))
 
         email_infos = [{'id': x['t:ItemId']['@Id'], 'last_modified_time': x['t:LastModifiedTime'],
                 'created_time': x['t:DateTimeCreated']} for x in items]

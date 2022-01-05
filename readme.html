@@ -1,5 +1,5 @@
 <!-- File: readme.html
-  Copyright (c) 2016-2021 Splunk Inc.
+  Copyright (c) 2016-2022 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ and limitations under the License.
         <li>EWS Version: Ensure the version in the dropdown corresponds to the version of Exchange you have installed.&nbsp;</li>
         <li>Username and Password: Use the username and password that have the correct privileges to access other mailboxes.&nbsp;</li>
         <li>(Optional) User Email Mailbox: The mailbox you will ingest data from if you use polling and to test connectivity.&nbsp;</li>
+        <li>(Optional) Script with functions to preprocess containers and artifacts: The user can add a script file in the configuration parameter. The script must contain a function with the name <b>preprocess_container</b> (to pre-process the containers and the artifacts) else it will throw an error. The script should not contain <b>run_automation</b>(or any other logic to trigger active playbooks), as the app automatically handles the triggering. The code is implemented such that the container is first processed according to the script and then saved. The artifacts are then added to the container, after which the artifacts are processed and saved. Hence, when adding the script to process the artifacts, keep a check of if the artifacts are present in the container, then and then only modify it.&nbsp;</li>
         <li>On poll information: Configure your desired on poll settings. For example, how to ingest, the number of emails to poll, what type of information you want to extract, and once extracted, your desired level of container severity. For more information on using on poll data ingestion, see Use on poll data ingestion.&nbsp;</li>
     </ul>
 <h2 id="poll_now">POLL NOW</h2>
@@ -58,6 +59,8 @@ and limitations under the License.
     </ul>
     <br>
     <p>In case the asset is configured to poll <b>oldest first</b>, it becomes important that the <i>Maximum number of emails to poll</i> configured should be greater than the maximum number of emails generated <b>per second</b>. If the app detects it got the maximum configured emails and all occurred in the same second, it will start polling from the next second in the next polling cycle.</p>
+    <h3>Run automation on duplicate event</h3>
+    <p>Set this parameter to run the automation, when there is a modification in the email which is already ingested. If you don't want to trigger the automation for such small changes (in case of re-ingestion), this parameter can be set to FALSE.</p>
 
     <h2>Artifacts created</h2>
     <p>
@@ -239,3 +242,24 @@ In this example, many of the URLs have 'https://secure.contoso.com/link' appende
 These URL artifacts will be tough to use in a playbook without additional processing. On top of that, all
 of the associated domain artifacts will be incorrect as well, since they will all point to 'secure.contoso.com'.
 </p>
+<h2>Port Information</h2>
+  <p>
+    The app uses HTTP/HTTPS protocol for communicating with the Microsoft Exchange On-Premise EWS Server. Below are the default ports used by Splunk SOAR.
+    <table>
+      <tr class=plain>
+        <th>Service Name</th>
+        <th>Transport Protocol</th>
+        <th>Port</th>
+      </tr>
+      <tr>
+        <td>http</td>
+        <td>tcp</td>
+        <td>80</td>
+      </tr>
+      <tr>
+        <td>https</td>
+        <td>tcp</td>
+        <td>443</td>
+      </tr>
+    </table>
+  </p>

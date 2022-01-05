@@ -1,5 +1,5 @@
 [comment]: # " File: readme.md"
-[comment]: # "  Copyright (c) 2016-2021 Splunk Inc."
+[comment]: # "  Copyright (c) 2016-2022 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
@@ -286,3 +286,11 @@ In this example, many of the URLs have 'https://secure.contoso.com/link' appende
 them. These URL artifacts will be tough to use in a playbook without additional processing. On top
 of that, all of the associated domain artifacts will be incorrect as well, since they will all point
 to 'secure.contoso.com'.
+
+## Port Information
+The app uses HTTP/HTTPS protocol for communicating with the Microsoft Exchange On-Premise EWS Server. Below are the default ports used by Splunk SOAR.
+
+SERVICE NAME | TRANSPORT PROTOCOL | PORT
+------------ | ------------------ | ----
+**http** | tcp | 80
+**https** | tcp | 443

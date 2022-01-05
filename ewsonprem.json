@@ -21,12 +21,12 @@
     "python_version": "3",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
-    "license": "Copyright (c) 2016-2021 Splunk Inc.",
+    "license": "Copyright (c) 2016-2022 Splunk Inc.",
     "pip_dependencies": {
         "wheel": [
             {
                 "module": "Django",
-                "input_file": "wheels/Django-3.2.5-py3-none-any.whl"
+                "input_file": "wheels/Django-3.2.10-py3-none-any.whl"
             },
             {
                 "module": "asgiref",
@@ -264,6 +264,12 @@
             "data_type": "boolean",
             "description": "Unify CC/BCC CEF fields (to uppercase)",
             "order": 23
+        },
+        "automation_on_duplicate": {
+            "data_type": "boolean",
+            "description": "Run automation on duplicate event",
+            "default": true,
+            "order": 24
         }
     },
     "actions": [
@@ -1205,6 +1211,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.CC",
+                    "data_type": "string",
+                    "example_values": [
+                        "Test <test@sample.com>"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.Content-Language",
                     "data_type": "string",
                     "example_values": [
@@ -1370,6 +1383,27 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_AdjacentMeetingCount",
+                    "data_type": "string",
+                    "example_values": [
+                        "0"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_AssociatedCalendarItemId.@ChangeKey",
+                    "data_type": "string",
+                    "example_values": [
+                        "DwAAABYAAAAcmY5GSia4RK5DAQM4jsrZAAF/yWMW"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_AssociatedCalendarItemId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAENAAAcmY5GSia4RK5DAQM4jsrZAAF/xerCAAA="
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Attachments.t_FileAttachment.*.t_AttachmentId.@Id",
                     "data_type": "string",
                     "example_values": [
@@ -1482,6 +1516,87 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.*.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAF/xJHpAAAcmY5GSia4RK5DAQM4jsrZAAGp8gueAAABEgAQANfKOfHITtpGoin5+WHGFes="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.*.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.*.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-12-06T10:16:41"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.*.t_Name",
+                    "data_type": "string",
+                    "example_values": [
+                        "Project discussion"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.*.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "10944"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_AttachmentId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADdjMTIzMWQ3LTZjNWMtNDY1YS05NWQxLTNjYWEyZmQ3YzM1NABGAAAAAAAJSwjkHb8oQah/TEDLmhZUBwAkoMp0B6/1Tp1ZFVDIcuRVAAAAQCMBAAAkoMp0B6/1Tp1ZFVDIcuRVAAABk685AAABBgAEAAAAAAA="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_ContentId",
+                    "data_type": "string",
+                    "example_values": [
+                        "055B64DA80B87347B158187A516CB65A@sample.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_ContentType",
+                    "data_type": "string",
+                    "example_values": [
+                        "message/rfc822"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_IsInline",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_LastModifiedTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2020-06-03T12:33:51"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_Name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Attachments.t_ItemAttachment.t_Size",
+                    "data_type": "string",
+                    "example_values": [
+                        "923"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Body.#text",
                     "data_type": "string",
                     "example_values": [
@@ -1500,6 +1615,13 @@
                     "data_type": "string",
                     "example_values": [
                         "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Categories.t_String",
+                    "data_type": "string",
+                    "example_values": [
+                        "Processing"
                     ]
                 },
                 {
@@ -1531,6 +1653,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_ConflictingMeetingCount",
+                    "data_type": "string",
+                    "example_values": [
+                        "0"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_DateTimeCreated",
                     "data_type": "string",
                     "example_values": [
@@ -1550,6 +1679,31 @@
                     "example_values": [
                         "2017-10-03T21:31:05Z"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_End",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-11-27T16:30:00Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.*.t_ExtendedFieldURI.@PropertyTag",
+                    "data_type": "string",
+                    "example_values": [
+                        "0x7d"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.*.t_ExtendedFieldURI.@PropertyType",
+                    "data_type": "string",
+                    "example_values": [
+                        "String"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ExtendedProperty.*.t_Value",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.t_ExtendedProperty.t_ExtendedFieldURI.@PropertyTag",
@@ -1605,6 +1759,20 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.t_HasBeenProcessed",
+                    "data_type": "string",
+                    "example_values": [
+                        "true"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IntendedFreeBusyStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Busy"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_InternetMessageId",
                     "data_type": "string",
                     "contains": [
@@ -1616,10 +1784,24 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.t_IsDelegated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
                     "data_type": "string",
                     "example_values": [
                         "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsOutOfDate",
+                    "data_type": "string",
+                    "example_values": [
+                        "true"
                     ]
                 },
                 {
@@ -1646,6 +1828,17 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Location",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_MeetingRequestType",
+                    "data_type": "string",
+                    "example_values": [
+                        "NewMeetingRequest"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_MimeContent.#text",
                     "data_type": "string"
                 },
@@ -1657,7 +1850,94 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Mailbox"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
+                    "example_values": [
+                        "user"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Mailbox"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
+                    "example_values": [
+                        "user"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_ResponseType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Unknown"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_AcceptItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_DeclineItem",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ProposeNewTime",
                     "data_type": "string"
                 },
                 {
@@ -1667,6 +1947,17 @@
                 {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyToItem",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_TentativelyAcceptItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseType",
+                    "data_type": "string",
+                    "example_values": [
+                        "NoResponseReceived"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
@@ -1709,6 +2000,13 @@
                 {
                     "data_path": "action_result.data.*.t_Size",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_Start",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-11-27T16:00:00Z"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Subject",
@@ -2191,7 +2489,11 @@
                 }
             },
             "render": {
-                "type": "table"
+                "width": 12,
+                "title": "Update Email",
+                "type": "custom",
+                "view": "ewsonprem_view.update_email",
+                "height": 5
             },
             "output": [
                 {
@@ -2227,15 +2529,34 @@
                     ],
                     "contains": [
                         "exchange email id"
-                    ],
-                    "column_name": "Message ID",
-                    "column_order": 1
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.subject",
                     "data_type": "string",
                     "example_values": [
                         "Both value are modified"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_AdjacentMeetingCount",
+                    "data_type": "string",
+                    "example_values": [
+                        "0"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_AssociatedCalendarItemId.@ChangeKey",
+                    "data_type": "string",
+                    "example_values": [
+                        "DwAAABYAAAAcmY5GSia4RK5DAQM4jsrZAAGp9bBK"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_AssociatedCalendarItemId.@Id",
+                    "data_type": "string",
+                    "example_values": [
+                        "AAMkADMzMGJmYzM0LThjZjYtNDQzMC04ZjNhLWNkYzYwYmViZDU2ZABGAAAAAAAYish+ZMlDQ6wcIrPHA5WYBwAcmY5GSia4RK5DAQM4jsrZAAAAAAENAAAcmY5GSia4RK5DAQM4jsrZAAGp8gO+AAA="
                     ]
                 },
                 {
@@ -2329,6 +2650,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_ConflictingMeetingCount",
+                    "data_type": "string",
+                    "example_values": [
+                        "1"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_DateTimeCreated",
                     "data_type": "string",
                     "example_values": [
@@ -2347,6 +2675,13 @@
                     "data_type": "string",
                     "example_values": [
                         "2017-10-03T21:31:20Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_End",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-12-02T13:30:00Z"
                     ]
                 },
                 {
@@ -2406,6 +2741,20 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_HasBeenProcessed",
+                    "data_type": "string",
+                    "example_values": [
+                        "true"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IntendedFreeBusyStatus",
+                    "data_type": "string",
+                    "example_values": [
+                        "Busy"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_InternetMessageId",
                     "data_type": "string",
                     "example_values": [
@@ -2420,7 +2769,21 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_IsDelegated",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_IsDeliveryReceiptRequested",
+                    "data_type": "string",
+                    "example_values": [
+                        "false"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_IsOutOfDate",
                     "data_type": "string",
                     "example_values": [
                         "false"
@@ -2462,6 +2825,17 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Location",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_MeetingRequestType",
+                    "data_type": "string",
+                    "example_values": [
+                        "NewMeetingRequest"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_MimeContent.#text",
                     "data_type": "string",
                     "example_values": [
@@ -2476,7 +2850,94 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Mailbox"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
+                    "example_values": [
+                        "user"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_Organizer.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_EmailAddress",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "example_values": [
+                        "test@sample.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_MailboxType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Mailbox"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_Name",
+                    "data_type": "string",
+                    "contains": [
+                        "user name"
+                    ],
+                    "example_values": [
+                        "user"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_Mailbox.t_RoutingType",
+                    "data_type": "string",
+                    "example_values": [
+                        "SMTP"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_RequiredAttendees.t_Attendee.*.t_ResponseType",
+                    "data_type": "string",
+                    "example_values": [
+                        "Unknown"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_AcceptItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_DeclineItem",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ForwardItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_ProposeNewTime",
                     "data_type": "string"
                 },
                 {
@@ -2486,6 +2947,17 @@
                 {
                     "data_path": "action_result.data.*.t_ResponseObjects.t_ReplyToItem",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseObjects.t_TentativelyAcceptItem",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.t_ResponseType",
+                    "data_type": "string",
+                    "example_values": [
+                        "NoResponseReceived"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_Sender.t_Mailbox.t_EmailAddress",
@@ -2536,13 +3008,18 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.t_Start",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-12-02T12:30:00Z"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.t_Subject",
                     "data_type": "string",
                     "example_values": [
                         "Both value are modified"
-                    ],
-                    "column_name": "Subject",
-                    "column_order": 0
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.t_TextBody.#text",
