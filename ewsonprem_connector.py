@@ -256,7 +256,10 @@ class EWSOnPremConnector(BaseConnector):
 
         # POST the request
         try:
-            r = requests.post(url, data=fed_request_xml, headers=headers, verify=config[EWS_JSON_FED_VERIFY_CERT])
+            r = requests.post(url,  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+                              data=fed_request_xml,
+                              headers=headers,
+                              verify=config[EWS_JSON_FED_VERIFY_CERT])
         except Exception as e:
             return (None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, str(e)))
 
@@ -296,7 +299,7 @@ class EWSOnPremConnector(BaseConnector):
                 'scope': 'openid' }
 
         try:
-            r = requests.post(url, data=data, headers=headers)
+            r = requests.post(url, data=data, headers=headers)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
         except Exception as e:
             return (None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(url, str(e)))
 
@@ -321,7 +324,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _make_rest_calls_to_phantom(self, action_result, url):
 
-        r = requests.get(url, verify=False)
+        r = requests.get(url, verify=False)  # nosemgrep
         if not r:
             message = 'Status Code: {0}'.format(r.status_code)
             if r.text:
@@ -446,7 +449,7 @@ class EWSOnPremConnector(BaseConnector):
             'refresh_token': refresh_token
         }
         try:
-            r = requests.post(request_url, data=body)
+            r = requests.post(request_url, data=body)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
         except Exception as e:
             return (None, "Error refreshing token: {}".format(str(e)))
 
@@ -1194,7 +1197,7 @@ class EWSOnPremConnector(BaseConnector):
         url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
-            r = requests.get(url, verify=False)
+            r = requests.get(url, verify=False)  # nosemgrep
             resp_json = r.json()
         except Exception as e:
             error_code, error_msg = self._get_error_message_from_exception(e)
@@ -2679,7 +2682,7 @@ if __name__ == '__main__':
     if (username and password):
         try:
             print("Accessing the Login page")
-            r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)
+            r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)  # nosemgrep
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -2692,11 +2695,11 @@ if __name__ == '__main__':
             headers['Referer'] = BaseConnector._get_phantom_base_url() + 'login'
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)
+            r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)  # nosemgrep
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: " + str(e))
-            exit(1)
+            sys.exit(1)
 
     with open(args.input_test_json) as f:
 
@@ -2717,7 +2720,7 @@ if __name__ == '__main__':
                 in_json['user_session_token'] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
             print(result)
-            exit(0)
+            sys.exit(0)
 
         if (data):
             raw_email = data.get('raw_email')
@@ -2734,4 +2737,4 @@ if __name__ == '__main__':
             process_email = ProcessEmail()
             ret_val, message = process_email.process_email(connector, raw_email, "manual_parsing", config, None)
 
-    exit(0)
+    sys.exit(0)

@@ -59,7 +59,7 @@ class Office365RequestHandler():
         }
 
         try:
-            r = requests.post(
+            r = requests.post(  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
                 request_url + '/token',
                 data=body
             )
