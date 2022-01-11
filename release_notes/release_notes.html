@@ -1,5 +1,15 @@
-<b>Microsoft Exchange On-Premise EWS Release Notes - Published by Splunk December 1, 2021</b>
+<b>Microsoft Exchange On-Premise EWS Release Notes - Published by Splunk January 11, 2022</b>
 <br><br>
+<b>Version 3.7.6 - Released January 11, 2022</b>
+<ul>
+<li>Fixed active playbook triggering which was not running for some containers [PAPP-18376]</li>
+<li>Fixed a bug for 'Sort mails by' asset parameter using 'created time' value [PAPP-21323]</li>
+<li>Added the support for calendar event emails of type meeting request, meeting response, meeting message and meeting cancellation [PAPP-21990]</li>
+<li>Added custom view for the 'update email' action</li>
+<li>Added a new configuration parameter 'Run automation on duplicate event' to control active playbook triggering on duplicate event [PAPP-21323]</li>
+<li>Changed the hashing algorithm from MD5 to SHA-256 [PAPP-20323]</li>
+<li>Fixed a bug in the 'get email' action [PAPP-21528]</li>
+</ul>
 <b>Version 3.6.2 - Released December 1, 2021</b>
 <ul>
 <li>Added ability to ingest the actual email as a vault item [PAPP-21368]</li>
