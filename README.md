@@ -2,7 +2,7 @@
 # Microsoft Exchange On\-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3\.7\.8  
+Connector Version: 3\.7\.9  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): "\.\*"  
@@ -50,11 +50,10 @@ use the **Add-MailboxPermission** PowerShell cmdlet on the Exchange Server.
     script file in the configuration parameter. The script must contain a function with the name
     **preprocess_container** (to pre-process the containers and the artifacts) else it will throw an
     error. The script should not contain **run_automation** (or any other logic to trigger active
-    playbooks), as the app automatically handles the triggering. The code is implemented such that
-    the container is first processed according to the script and then saved. The artifacts are then
-    added to the container, after which the artifacts are processed and saved. Hence, when adding
-    the script to process the artifacts, keep a check of if the artifacts are present in the
-    container, then and then only modify it. 
+    playbooks) since the app automatically handles the triggering. The implementation will first
+    process the container according to the script and save it. The artifacts are then added to the
+    container, processed, and saved in that order. Hence, when adding a script to process artifacts,
+    verify if artifacts are present in the container before modifying them. 
 -   On poll information: Configure your desired on poll settings. For example, how to ingest, the
     number of emails to poll, what type of information you want to extract, and once extracted, your
     desired level of container severity. For more information on using on poll data ingestion, see
@@ -316,7 +315,7 @@ to 'secure.contoso.com'.
 
 ## Port Information
 
-The app uses HTTP/HTTPS protocol for communicating with the Microsoft Exchange On-Premise EWS
+The app uses the HTTP/HTTPS protocol for communicating with the Microsoft Exchange On-Premise EWS
 Server. Below are the default ports used by Splunk SOAR.
 
 | Service Name | Transport Protocol | Port |
