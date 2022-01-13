@@ -1,15 +1,22 @@
 # File: request_handler.py
-# Copyright (c) 2016-2021 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
-# --
-import os
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
 import json
-import requests
-import encryption_helper
+import os
 
+import encryption_helper
+import requests
 from django.http import HttpResponse
 
 
@@ -20,7 +27,7 @@ def handle_request(request, path_parts):
 def _get_dir_name_from_app_name(app_name):
     app_name = ''.join([x for x in app_name if x.isalnum()])
     app_name = app_name.lower()
-    if (not app_name):
+    if not app_name:
         app_name = "app_for_phantom"
     return app_name
 
@@ -52,7 +59,7 @@ class Office365RequestHandler():
         }
 
         try:
-            r = requests.post(
+            r = requests.post(  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
                 request_url + '/token',
                 data=body
             )

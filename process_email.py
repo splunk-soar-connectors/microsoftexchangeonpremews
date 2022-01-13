@@ -1,41 +1,40 @@
 # File: process_email.py
-# Copyright (c) 2016-2021 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
-# --
-
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
 import email
-import tempfile
-from collections import OrderedDict
-import os
-import re
-from bs4 import BeautifulSoup
-import phantom.app as phantom
-import phantom.utils as ph_utils
-import phantom.rules as phantom_rules
-import mimetypes
-import socket
-from email.header import decode_header
-from phantom.vault import Vault
-import shutil
 import hashlib
 import json
-from bs4 import UnicodeDammit
+import mimetypes
+import os
+import re
+import shutil
+import socket
+import tempfile
 from builtins import str
-import magic
-from requests.structures import CaseInsensitiveDict
+from collections import OrderedDict
 from copy import deepcopy
+from email.header import decode_header
 from urllib.parse import urlparse
 
-_container_common = {
-    "run_automation": False  # Don't run any playbooks, when this artifact is added
-}
+import magic
+import phantom.app as phantom
+import phantom.rules as phantom_rules
+import phantom.utils as ph_utils
+from bs4 import BeautifulSoup, UnicodeDammit
+from requests.structures import CaseInsensitiveDict
 
-_artifact_common = {
-    "run_automation": False  # Don't run any playbooks, when this artifact is added
-}
+from ewsonprem_consts import *
 
 FILE_EXTENSIONS = {
     '.vmsn': ['os memory dump', 'vm snapshot file'],
@@ -93,12 +92,14 @@ HASH_REGEX = r"\b[0-9a-fA-F]{32}\b|\b[0-9a-fA-F]{40}\b|\b[0-9a-fA-F]{64}\b"
 IP_REGEX = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
 IPV6_REGEX = r'\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|'
 IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))'
-IPV6_REGEX += r'|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|'
-IPV6_REGEX += r'(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*'
+IPV6_REGEX += r'|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d))'
+IPV6_REGEX += r'{3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)'
+IPV6_REGEX += r'(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:'
+IPV6_REGEX += r'((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}'
+IPV6_REGEX += r'(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)'
+IPV6_REGEX += r'(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:'
+IPV6_REGEX += r'((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|'
+IPV6_REGEX += r'((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*'
 
 
 uri_regexc = re.compile(URI_REGEX)
@@ -139,10 +140,10 @@ class ProcessEmail(object):
 
     def _is_ip(self, input_ip):
 
-        if (ph_utils.is_ip(input_ip)):
+        if ph_utils.is_ip(input_ip):
             return True
 
-        if (self.is_ipv6(input_ip)):
+        if self.is_ipv6(input_ip):
             return True
 
         return False
@@ -158,7 +159,7 @@ class ProcessEmail(object):
 
     def _debug_print(self, *args):
 
-        if (self._base_connector) and (hasattr(self._base_connector, 'debug_print')):
+        if self._base_connector and hasattr(self._base_connector, 'debug_print'):
             self._base_connector.debug_print(*args)
 
         return
@@ -169,10 +170,10 @@ class ProcessEmail(object):
 
         # Check before splicing, find returns -1 if not found
         # _and_ you will end up splicing on -1 (incorrectly)
-        if ('<' in url):
+        if '<' in url:
             url = url[:url.find('<')]
 
-        if ('>' in url):
+        if '>' in url:
             url = url[:url.find('>')]
 
         url = url.rstrip('>),.]\r\n')
@@ -181,7 +182,7 @@ class ProcessEmail(object):
 
     def _extract_urls_domains(self, file_data, urls, domains, parent_id=None):
 
-        if ((not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]) and (not self._config[PROC_EMAIL_JSON_EXTRACT_URLS])):
+        if not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] and not self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             return
 
         # try to load the email
@@ -196,24 +197,24 @@ class ProcessEmail(object):
         uris = []
         # get all tags that have hrefs
         links = soup.find_all(href=True)
-        if (links):
+        if links:
             # it's html, so get all the urls
             uris = [x['href'] for x in links if (not x['href'].startswith('mailto:'))]
             # work on the text part of the link, they might be http links different from the href
             # and were either missed by the uri_regexc while parsing text or there was no text counterpart
             # in the email
             uri_text = [self._clean_url(x.get_text()) for x in links]
-            if (uri_text):
+            if uri_text:
                 uri_text = [x for x in uri_text if x.startswith('http')]
-                if (uri_text):
+                if uri_text:
                     uris.extend(uri_text)
         else:
             # Parse it as a text file
             uris = re.findall(uri_regexc, file_data)
-            if (uris):
+            if uris:
                 uris = [self._clean_url(x) for x in uris]
 
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_URLS]):
+        if self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             # add the uris to the urls
             unique_uris = set(uris)
             unique_uris = list(unique_uris)
@@ -221,18 +222,18 @@ class ProcessEmail(object):
                 uri_dict = {'requestURL': uri, 'parentInternetMessageId': parent_id}
                 urls.append(uri_dict)
 
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]):
+        if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]:
             for uri in uris:
                 domain = phantom.get_host_from_url(uri)
-                if (domain) and (not self._is_ip(domain)):
+                if domain and not self._is_ip(domain):
                     domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
             # work on any mailto urls if present
-            if (links):
+            if links:
                 mailtos = [x['href'] for x in links if (x['href'].startswith('mailto:'))]
                 for curr_email in mailtos:
                     domain = curr_email[curr_email.find('@') + 1:]
-                    if (domain) and (not self._is_ip(domain)):
-                        if ('?' in domain):
+                    if domain and not self._is_ip(domain):
+                        if '?' in domain:
                             domain = domain[:domain.find('?')]
                         domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
 
@@ -244,18 +245,18 @@ class ProcessEmail(object):
         ips_in_mail = re.findall(ip_regexc, file_data)
         ip6_in_mail = re.findall(ipv6_regexc, file_data)
 
-        if (ip6_in_mail):
+        if ip6_in_mail:
             for ip6_tuple in ip6_in_mail:
                 ip6s = [x for x in ip6_tuple if x]
                 ips_in_mail.extend(ip6s)
 
         # Now validate them
-        if (ips_in_mail):
+        if ips_in_mail:
             ips_in_mail = set(ips_in_mail)
             # match it with a slower and difficult regex.
             # TODO: Fix this with a one step approach.
             ips_in_mail = [x for x in ips_in_mail if self._is_ip(x)]
-            if (ips_in_mail):
+            if ips_in_mail:
                 unique_ips = set(ips_in_mail)
                 for ip in unique_ips:
                     ips.append({'sourceAddress': ip, 'parentInternetMessageId': parent_id})
@@ -283,12 +284,12 @@ class ProcessEmail(object):
         with open(local_file_path, 'r') as f:
             file_data = f.read()
 
-        if ((file_data is None) or (len(file_data) == 0)):
+        if file_data is None or len(file_data) == 0:
             return phantom.APP_ERROR
 
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] or self._config[PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES]):
+        if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] or self._config[PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES]:
             emails = []
             emails.extend(re.findall(email_regexc, file_data))
             emails.extend(re.findall(email_regexc2, file_data))
@@ -300,17 +301,17 @@ class ProcessEmail(object):
 
                 if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]:
                     domain = curr_email[curr_email.rfind('@') + 1:]
-                    if (domain) and (not ph_utils.is_ip(domain)):
+                    if domain and not ph_utils.is_ip(domain):
                         domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
 
         self._extract_urls_domains(file_data, urls, domains, parent_id)
 
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_IPS]):
+        if self._config[PROC_EMAIL_JSON_EXTRACT_IPS]:
             self._get_ips(file_data, ips, parent_id)
 
-        if (self._config[PROC_EMAIL_JSON_EXTRACT_HASHES]):
+        if self._config[PROC_EMAIL_JSON_EXTRACT_HASHES]:
             hashs_in_mail = re.findall(hash_regexc, file_data)
-            if (hashs_in_mail):
+            if hashs_in_mail:
                 unique_hashes = set(hashs_in_mail)
                 for hash in unique_hashes:
                     hashes.append({'fileHash': hash, 'parentInternetMessageId': parent_id})
@@ -322,7 +323,7 @@ class ProcessEmail(object):
         added_artifacts = 0
         for item in input_set:
             # ignore empty entries
-            if (not item):
+            if not item:
                 continue
 
             if artifact_name == 'URL Artifact':
@@ -330,14 +331,12 @@ class ProcessEmail(object):
                 try:
                     url_to_parse = item.get('requestURL', '')
                     parsed_url = urlparse(url_to_parse)
+                    if not parsed_url.netloc:
+                        continue
                 except Exception as e:
-                    phantom.debug('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
-
-                if not parsed_url.netloc:
-                    continue
+                    self._base_connector.debug_print('An exception occurred when parsing the URL {0}: {1}'.format(url_to_parse, e))
 
             artifact = {}
-            artifact.update(_artifact_common)
             artifact['source_data_identifier'] = start_index + added_artifacts
             artifact['cef'] = item
             artifact['name'] = artifact_name
@@ -425,7 +424,7 @@ class ProcessEmail(object):
         encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
-        if (not encoded_strings):
+        if not encoded_strings:
             return input_str
 
         # get the decoded strings
@@ -447,14 +446,14 @@ class ProcessEmail(object):
 
             decoded_string = decoded_strings.get(i)
 
-            if (not decoded_string):
+            if not decoded_string:
                 # nothing to replace with
                 continue
 
             value = decoded_string.get('value')
             encoding = decoded_string.get('encoding')
 
-            if (not encoding or not value):
+            if not encoding or not value:
                 # nothing to replace with
                 continue
 
@@ -467,7 +466,7 @@ class ProcessEmail(object):
                 new_str_create_count += 1
             except:
                 try:
-                    if (encoding != 'utf-8'):
+                    if encoding != 'utf-8':
                         value = str(value, encoding)
                 except:
                     pass
@@ -500,7 +499,7 @@ class ProcessEmail(object):
         subject = parsed_mail.get(PROC_EMAIL_JSON_SUBJECT)
 
         # if no subject then return the default
-        if (not subject):
+        if not subject:
             return def_cont_name
 
         return self._decode_uni_string(subject, def_cont_name)
@@ -510,19 +509,19 @@ class ProcessEmail(object):
         process_as_body = False
 
         # if content disposition is None then assume that it is
-        if (content_disp is None):
+        if content_disp is None:
             process_as_body = True
         # if content disposition is inline
-        elif (content_disp.lower().strip() == 'inline'):
-            if ('text/html' in content_type) or ('text/plain' in content_type):
+        elif content_disp.lower().strip() == 'inline':
+            if 'text/html' in content_type or 'text/plain' in content_type:
                 process_as_body = True
 
-        if (not process_as_body):
+        if not process_as_body:
             return (phantom.APP_SUCCESS, True)
 
         part_payload = part.get_payload(decode=True)
 
-        if (not part_payload):
+        if not part_payload:
             return (phantom.APP_SUCCESS, False)
 
         with open(file_path, 'wb') as f:
@@ -542,7 +541,7 @@ class ProcessEmail(object):
 
         files = self._parsed_mail[PROC_EMAIL_JSON_FILES]
 
-        if (not self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]):
+        if not self._config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]:
             return phantom.APP_SUCCESS
 
         part_base64_encoded = part.get_payload()
@@ -551,12 +550,12 @@ class ProcessEmail(object):
 
         attach_meta_info = dict()
 
-        if (headers):
+        if headers:
             attach_meta_info = {'headers': dict(headers)}
 
         for curr_attach in self._attachments_from_ews:
 
-            if (curr_attach.get('should_ignore', False)):
+            if curr_attach.get('should_ignore', False):
                 continue
 
             try:
@@ -564,13 +563,13 @@ class ProcessEmail(object):
             except:
                 continue
 
-            if (attach_content.strip().replace('\r\n', '') == part_base64_encoded.strip().replace('\r\n', '')):
+            if attach_content.strip().replace('\r\n', '') == part_base64_encoded.strip().replace('\r\n', ''):
                 attach_meta_info.update(dict(curr_attach))
                 del attach_meta_info['content']
                 curr_attach['should_ignore'] = True
 
         part_payload = part.get_payload(decode=True)
-        if (not part_payload):
+        if not part_payload:
             return phantom.APP_SUCCESS
         try:
             with open(file_path, 'wb') as f:
@@ -580,8 +579,10 @@ class ProcessEmail(object):
             try:
                 if "File name too long" in error_msg:
                     new_file_name = "ph_long_file_name_temp"
-                    file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '').replace(' ', '')), new_file_name)
-                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+                    file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '')
+                            .replace(' ', '')), new_file_name)
+                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector
+                            ._handle_py_ver_compat_for_input_str(file_name)))
                     self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
                     with open(file_path, 'wb') as long_file:
                         long_file.write(part_payload)
@@ -610,17 +611,17 @@ class ProcessEmail(object):
         content_type = part.get('Content-Type')
         content_id = part.get('Content-ID')
 
-        if (file_name is None):
+        if file_name is None:
             # init name and extension to default values
             name = "part_{0}_{1}".format(part_index, child)
             extension = ".{0}".format(part_index)
 
             # Try to create an extension from the content type if possible
-            if (content_type is not None):
+            if content_type is not None:
                 extension = mimetypes.guess_extension(re.sub(';.*', '', content_type))
 
             # Try to create a name from the content id if possible
-            if (content_id is not None):
+            if content_id is not None:
                 name = content_id
 
             file_name = "{0}{1}".format(name, extension)
@@ -635,11 +636,11 @@ class ProcessEmail(object):
         # is the part representing the body of the email
         status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
 
-        if (not process_further):
+        if not process_further:
             return phantom.APP_SUCCESS
 
         # is this another email as an attachment
-        if ((content_type is not None) and (content_type.find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) != -1)):
+        if content_type is not None and content_type.find(PROC_EMAIL_CONTENT_TYPE_MESSAGE) != -1:
             return phantom.APP_SUCCESS
 
         # This is an attachment and it's not an email
@@ -651,16 +652,16 @@ class ProcessEmail(object):
 
         # compare the various values of the passed header (param: headers)
         # to the header that the class got self._headers_from_ews
-        if (not self._headers_from_ews):
+        if not self._headers_from_ews:
             return phantom.APP_SUCCESS
 
-        if (not headers):
+        if not headers:
             return phantom.APP_SUCCESS
 
         headers_ci = CaseInsensitiveDict(headers)
 
         for curr_header_lower in self._headers_from_ews:
-            if (headers_ci.get('message-id', 'default_value1').strip() == curr_header_lower.get('message-id', 'default_value2').strip()):
+            if headers_ci.get('message-id', 'default_value1').strip() == curr_header_lower.get('message-id', 'default_value2').strip():
                 # the headers match with the one that we got from the ews API, so update it
                 headers.update(curr_header_lower)
 
@@ -671,13 +672,13 @@ class ProcessEmail(object):
         email_headers = list(part.items())
 
         # TODO: the next 2 ifs can be condensed to use 'or'
-        if (not charset):
+        if not charset:
             charset = part.get_content_charset()
 
-        if (not charset):
+        if not charset:
             charset = 'utf8'
 
-        if (not email_headers):
+        if not email_headers:
             return {}
 
         # Convert the header tuple into a dictionary
@@ -706,12 +707,12 @@ class ProcessEmail(object):
             err = "Error occurred while handling the received header tuple separately"
             self._base_connector.debug_print("{}. {}. {}".format(err, error_code, error_msg))
 
-        if (received_headers):
+        if received_headers:
             headers['Received'] = received_headers
 
         # handle the subject string, if required add a new key
         subject = headers.get('Subject')
-        if (subject):
+        if subject:
             if isinstance(subject, str):
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
@@ -723,46 +724,46 @@ class ProcessEmail(object):
 
         headers = self._get_email_headers_from_part(part, charset)
 
-        if (not headers):
+        if not headers:
             return 0
 
         # Parse email keys first
         cef_artifact = {}
         cef_types = {}
 
-        if (headers.get('From')):
+        if headers.get('From'):
             emails = headers['From']
-            if (emails):
+            if emails:
                 cef_artifact.update({'fromEmail': emails})
 
-        if (headers.get('To')):
+        if headers.get('To'):
             emails = headers['To']
-            if (emails):
+            if emails:
                 cef_artifact.update({'toEmail': emails})
 
         # if the header did not contain any email addresses then ignore this artifact
         message_id = headers.get('message-id')
-        if ((not cef_artifact) and (message_id is None)):
+        if not cef_artifact and message_id is None:
             return 0
 
         cef_types.update({'fromEmail': ['email'], 'toEmail': ['email']})
 
-        if (headers):
+        if headers:
             self._update_headers(headers)
             cef_artifact['emailHeaders'] = dict(headers)
 
         for curr_key in list(cef_artifact['emailHeaders'].keys()):
             if curr_key.lower().startswith('body'):
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
-                if (self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False)):
+                if self._config.get(PROC_EMAIL_JSON_EXTRACT_BODY, False):
                     cef_artifact.update({curr_key: curr_value})
-            elif (curr_key == 'parentInternetMessageId'):
+            elif curr_key == 'parentInternetMessageId':
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
-            elif (curr_key == 'parentGuid'):
+            elif curr_key == 'parentGuid':
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
-            elif (curr_key == 'emailGuid'):
+            elif curr_key == 'emailGuid':
                 curr_value = cef_artifact['emailHeaders'].pop(curr_key)
                 cef_artifact.update({curr_key: curr_value})
 
@@ -770,13 +771,12 @@ class ProcessEmail(object):
         # so not adding this right now. All the other code to process the emailId is there, but the refraining
         # from adding the emailId
         # add_email_id = False
-        if (add_email_id):
+        if add_email_id:
             cef_artifact['emailId'] = add_email_id
-            if (self._email_id_contains):
+            if self._email_id_contains:
                 cef_types.update({'emailId': self._email_id_contains})
 
         artifact = {}
-        artifact.update(_artifact_common)
         artifact['name'] = 'Email Artifact'
         artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
         artifact['cef'] = cef_artifact
@@ -798,7 +798,7 @@ class ProcessEmail(object):
 
         charset = mail.get_content_charset()
 
-        if (not charset):
+        if not charset:
             charset = 'utf8'
 
         # Extract fields and place it in a dictionary
@@ -836,13 +836,13 @@ class ProcessEmail(object):
         files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash})
 
         # parse the parts of the email
-        if (mail.is_multipart()):
+        if mail.is_multipart():
             child = False
             message_id = None
             ret_val = None
             for i, part in enumerate(mail.walk()):
                 add_email_id = None
-                if (i == 0):
+                if i == 0:
                     add_email_id = email_id
 
                 self._parse_email_headers(self._parsed_mail, part, add_email_id=add_email_id)
@@ -854,7 +854,7 @@ class ProcessEmail(object):
 
                 # parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS].append(part.items())
 
-                if (part.is_multipart()):
+                if part.is_multipart():
                     self._debug_print("Skipping part because it is multipart")
                     continue
 
@@ -867,7 +867,7 @@ class ProcessEmail(object):
                     self._debug_print("ErrorExp in _handle_part # {0}".format(i), e)
                     continue
 
-                if (phantom.is_fail(ret_val)):
+                if phantom.is_fail(ret_val):
                     continue
 
         else:
@@ -882,17 +882,15 @@ class ProcessEmail(object):
         # get the container name
         container_name = self._get_container_name(self._parsed_mail, email_id)
 
-        if (container_name is None):
+        if container_name is None:
             return phantom.APP_ERROR
 
         # Add the container
         # first save the container, to do that copy things from parsed_mail to a new object
-        container = {}
         container_data = dict(self._parsed_mail)
 
         # delete the header info, we dont make it a part of the container json
         del(container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
-        container.update(_container_common)
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
         self._container['data'] = {'raw_email': rfc822_email}
@@ -910,7 +908,7 @@ class ProcessEmail(object):
 
         # For bodies
         for i, body in enumerate(bodies):
-            if (not body):
+            if not body:
                 continue
 
             try:
@@ -930,18 +928,18 @@ class ProcessEmail(object):
 
     def _set_email_id_contains(self, email_id):
 
-        if (not self._base_connector):
+        if not self._base_connector:
             return
 
         email_id = str(email_id)
 
-        if ((self._base_connector.get_app_id() == EXCHANGE_ONPREM_APP_ID) and (email_id.endswith('='))):
+        if self._base_connector.get_app_id() == EXCHANGE_ONPREM_APP_ID and email_id.endswith('='):
             self._email_id_contains = [ "exchange email id" ]
-        elif ((self._base_connector.get_app_id() == OFFICE365_APP_ID) and (email_id.endswith('='))):
+        elif self._base_connector.get_app_id() == OFFICE365_APP_ID and email_id.endswith('='):
             self._email_id_contains = [ "office 365 email id" ]
-        elif (self._base_connector.get_app_id() == IMAP_APP_ID) and (email_id.isdigit()):
+        elif self._base_connector.get_app_id() == IMAP_APP_ID and email_id.isdigit():
             self._email_id_contains = [ "imap email id" ]
-        elif (ph_utils.is_sha1(email_id)):
+        elif ph_utils.is_sha1(email_id):
             self._email_id_contains = [ "vault id" ]
 
         return
@@ -973,11 +971,11 @@ class ProcessEmail(object):
         self._base_connector = base_connector
         self._config = config
 
-        if (email_headers):
+        if email_headers:
             for curr_header in email_headers:
                 self._headers_from_ews.append(CaseInsensitiveDict(curr_header))
 
-        if (config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS]) and (attachments_data is not None):
+        if config[PROC_EMAIL_JSON_EXTRACT_ATTACHMENTS] and attachments_data is not None:
             self._attachments_from_ews = attachments_data
 
         try:
@@ -988,7 +986,7 @@ class ProcessEmail(object):
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
 
         data = results[0].get('files', [])
-        if (data):
+        if data:
             for file_info in data:
                 con_des = file_info.get('meta_info', {}).get('headers', {}).get('Content-Description')
                 if isinstance(con_des, str):
@@ -1011,12 +1009,14 @@ class ProcessEmail(object):
                     if isinstance(con_disp_uni[value], str):
                         con_disp_decode = self._decode_uni_string(con_disp_uni[value], con_disp_uni[value])
                         if 'decodedContentDisposition' in file_info['meta_info']['headers']:
-                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value], con_disp_decode)
+                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value],
+                                    con_disp_decode)
                             file_info['meta_info']['headers']['decodedContentDisposition'] = decoded_disposition
                         else:
-                            file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value], con_disp_decode)
+                            file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value],
+                                    con_disp_decode)
 
-        if (not ret_val):
+        if not ret_val:
             self._del_tmp_dirs()
             return (phantom.APP_ERROR, message)
 
@@ -1028,45 +1028,21 @@ class ProcessEmail(object):
 
         return (phantom.APP_SUCCESS, "Email Processed")
 
-    def _save_ingested(self, container, using_dummy):
-
-        artifacts = container.pop('artifacts')
-
-        container_message = ""
-        artifact_message = ""
-        if using_dummy:
-            self._debug_print("using dummy")
-            cid = container['id']
-        else:
-            self._debug_print("without using dummy")
-            ret_val, container_message, cid = self._base_connector.save_container(container)
-            self._base_connector.debug_print(
-                "save_container (with artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
-                    ret_val,
-                    container_message,
-                    cid
-                )
-            )
-            if phantom.is_fail(ret_val):
-                return ret_val, container_message, cid
-
-        for artifact in artifacts:
-            artifact['container_id'] = cid
-        ret_val, artifact_message, ids = self._base_connector.save_artifacts(artifacts)
-        self._base_connector.debug_print(
-            "save_artifacts returns, value: {0}, reason: {1}".format(
-                ret_val,
-                artifact_message
-            )
-        )
-
-        container['artifacts'] = artifacts
-
-        return ret_val, "{}. {}".format(container_message, artifact_message), cid
-
     def _handle_save_ingested(self, artifacts, container, container_id, files):
+        """ This method is used to save all the ingested data as artifacts into a container along with saving the container.
+        This method will first create a container and save it using save_container.
+        As artifacts contains all the artifacts except the Vault artifacts, this method creates vault_artifacts from files.
+        Along with adding vault_artifacts to the list of artifacts, this method saves vaults to container.
+        Once all artifacts are created, this method saves all the artifacts in the container that was created before.
+
+        :param:
+        artifacts: List of all artifacts except Vault artifacts
+        files: List of all ingested files
+        """
+
         # One of either container or container_id will be set to None
         using_dummy = False
+        duplicate_container = False
 
         if container_id:
             # We are adding artifacts to an existing container
@@ -1074,51 +1050,157 @@ class ProcessEmail(object):
             container = {
                 'name': 'Dummy Container',
                 'dummy': True,
-                'id': container_id,
-                'artifacts': artifacts,
+                'id': container_id
             }
-        else:
-            # Create a new container
-            container['artifacts'] = artifacts
 
-        if (hasattr(self._base_connector, '_preprocess_container')):
+        if hasattr(self._base_connector, '_preprocess_container'):
             container = self._base_connector._preprocess_container(container)
 
-        for artifact in list([x for x in container.get('artifacts', []) if not x.get('source_data_identifier')]):
-            self._set_sdi(artifact)
+        # save the container without adding the artifacts into the container
+        if not using_dummy:
+            ret_val, message, container_id = self._base_connector.save_container(container)
+            self._base_connector.debug_print(
+                "save_container (without artifacts) returns, value: {0}, reason: {1}, id: {2}".format(
+                    ret_val,
+                    message,
+                    container_id
+                )
+            )
+            duplicate_container = (message == "Duplicate container found")
 
-        if files and container.get('artifacts'):
-            # Make sure the playbook only runs once
-            # We will instead set run_automation on the last vault artifact which is added
-            container['artifacts'][-1]['run_automation'] = False
-
-        ret_val, message, container_id = self._save_ingested(container, using_dummy)
-        if "Duplicate container found" in message and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
+        if duplicate_container and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
 
-        if (phantom.is_fail(ret_val)):
-            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
-            self._base_connector.debug_print(message)
-            return
+        if not using_dummy:
+            if phantom.is_fail(ret_val):
+                message = "Failed to save ingested container, error msg: {0}".format(message)
+                self._base_connector.debug_print(message)
+                return
 
-        if (not container_id):
+        if not container_id:
             message = "save_container did not return a container_id"
             self._base_connector.debug_print(message)
             return
 
-        vault_ids = list()
+        if duplicate_container and not self._base_connector.is_poll_now() and self._config.get(EWS_JSON_INGEST_TIME, "") == "created time":
+            message = "Skipping the process of save_artifacts because when " \
+                       "created_time is specified, new artifacts should not be ingested for duplicate containers"
+            self._base_connector.debug_print(message)
+            return
 
-        vault_artifacts_added = 0
-
-        last_file = len(files) - 1
+        # create a list of all the vault artifacts from the ingested files
+        vault_artifacts = list()
         for i, curr_file in enumerate(files):
-            run_automation = True if i == last_file else False
-            ret_val, added_to_vault = self._handle_file(
-                curr_file, vault_ids, container_id, vault_artifacts_added, run_automation
-            )
 
-            if (added_to_vault):
-                vault_artifacts_added += 1
+            file_name = self._decode_uni_string(curr_file.get('file_name'), curr_file.get('file_name'))
+
+            try:
+                success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
+            except Exception:
+                continue
+
+            if "file_hash" in curr_file and vault_info:
+                self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
+                continue
+
+            local_file_path = curr_file['file_path']
+
+            contains = self._get_file_contains(local_file_path)
+
+            # lets move the data into the vault
+            vault_attach_dict = {}
+
+            if not file_name:
+                file_name = os.path.basename(local_file_path)
+
+            self._base_connector.debug_print("Vault file name: {0}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+
+            vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
+            vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
+
+            file_name = self._decode_uni_string(file_name, file_name)
+
+            try:
+                success, message, vault_id = phantom_rules.vault_add(file_location=local_file_path,
+                                                                     container=container_id,
+                                                                     file_name=file_name,
+                                                                     metadata=vault_attach_dict)
+            except Exception as e:
+                error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+                err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
+                continue
+
+            if not success:
+                self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(message)))
+                continue
+
+            # add the vault id artifact to the container
+            cef_artifact = curr_file.get('meta_info', {})
+            if file_name:
+                cef_artifact.update({'fileName': file_name})
+
+            if vault_id:
+                cef_artifact.update({'vaultId': vault_id,
+                    'cs6': vault_id,
+                    'cs6Label': 'Vault ID'})
+
+                # now get the rest of the hashes and add them to the cef artifact
+                self._add_vault_hashes_to_dictionary(cef_artifact, vault_id, container_id)
+
+            if not cef_artifact:
+                continue
+
+            artifact = {}
+            artifact['name'] = 'Vault Artifact'
+            # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
+            # The container picks up the severity of any artifact that is higher than it's own
+            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
+            artifact['cef'] = cef_artifact
+
+            if contains:
+                artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
+            self._set_sdi(artifact)
+
+            if 'parentGuid' in cef_artifact:
+                parent_guid = cef_artifact.pop('parentGuid')
+                cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
+                self._debug_print("The value of parentSourceDataIdentifier in cef_artifact of is: {}".format(
+                    cef_artifact.get('parentSourceDataIdentifier')))
+
+            vault_artifacts.append(artifact)
+
+        # add all the vault artifacts to the list of other artifacts ingested to save them together
+        if vault_artifacts:
+            artifacts.extend(vault_artifacts)
+
+        container['artifacts'] = artifacts
+        if hasattr(self._base_connector, '_preprocess_container'):
+            container = self._base_connector._preprocess_container(container)
+
+        artifacts_list = container['artifacts']
+
+        for artifact in artifacts_list:
+            artifact['container_id'] = container_id
+            artifact['run_automation'] = False
+
+        if duplicate_container:
+            artifacts[-1]['run_automation'] = self._config.get('automation_on_duplicate', True)
+        else:
+            artifacts[-1]['run_automation'] = True
+
+        # save all the artifacts(Vault, IP, domain, etc.) in a single save_artifacts call
+        ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
+        self._base_connector.debug_print(
+            "save_artifacts returns, value: {0}, reason: {1}".format(
+                ret_val,
+                message
+            )
+        )
+
+        if phantom.is_fail(ret_val):
+            message = "Failed to save ingested artifacts, error msg: {0}".format(message)
+            self._base_connector.debug_print(message)
 
         return
 
@@ -1129,7 +1211,7 @@ class ProcessEmail(object):
         container_count = EWS_DEFAULT_CONTAINER_COUNT
         # artifact_count = EWS_DEFAULT_ARTIFACT_COUNT
 
-        if (param):
+        if param:
             container_count = param.get(phantom.APP_JSON_CONTAINER_COUNT, EWS_DEFAULT_CONTAINER_COUNT)
             # artifact_count = param.get(phantom.APP_JSON_ARTIFACT_COUNT, EWS_DEFAULT_ARTIFACT_COUNT)
 
@@ -1137,14 +1219,12 @@ class ProcessEmail(object):
 
         for result in results:
 
-            if (container_id is None):
+            if container_id is None:
 
                 container = result.get('container')
 
-                if (not container):
+                if not container:
                     continue
-
-                container.update(_container_common)
 
             else:
                 container = None
@@ -1153,32 +1233,25 @@ class ProcessEmail(object):
             artifacts = result.get('artifacts', [])
             for j, artifact in enumerate(artifacts):
 
-                if (not artifact):
+                if not artifact:
                     continue
 
                 self._set_sdi(artifact)
 
-            if (not artifacts):
+            if not artifacts:
                 continue
-
-            len_artifacts = len(artifacts)
 
             for j, artifact in enumerate(artifacts):
 
-                if (not artifact):
+                if not artifact:
                     continue
 
-                # if it is the last artifact of the last container
-                if ((j + 1) == len_artifacts):
-                    # mark it such that active playbooks get executed
-                    artifact['run_automation'] = True
-
                 cef_artifact = artifact.get('cef')
-                if ('parentGuid' in cef_artifact):
+                if 'parentGuid' in cef_artifact:
                     parent_guid = cef_artifact.pop('parentGuid')
-                    if (parent_guid in self._guid_to_hash):
+                    if parent_guid in self._guid_to_hash:
                         cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash[parent_guid]
-                if ('emailGuid' in cef_artifact):
+                if 'emailGuid' in cef_artifact:
                     # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
                     del cef_artifact['emailGuid']
 
@@ -1196,7 +1269,7 @@ class ProcessEmail(object):
         except:
             return phantom.APP_ERROR, "Could not retrieve vault file"
 
-        if (not vault_info):
+        if not vault_info:
             return (phantom.APP_ERROR, "Vault ID not found")
 
         # The return value is a list, each item represents an item in the vault
@@ -1224,95 +1297,9 @@ class ProcessEmail(object):
 
         return (phantom.APP_SUCCESS, "Mapped hash values")
 
-    def _handle_file(self, curr_file, vault_ids, container_id, artifact_id, run_automation=False):
-
-        file_name = self._decode_uni_string(curr_file.get('file_name'), curr_file.get('file_name'))
-
-        try:
-            success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
-        except:
-            return phantom.APP_ERROR, "Could not retrieve vault file"
-
-        if "file_hash" in curr_file and vault_info:
-            self._base_connector.debug_print("File {0} already attached to container {1}. Skipping.".format(file_name, container_id))
-            return phantom.APP_SUCCESS, phantom.APP_SUCCESS
-
-        local_file_path = curr_file['file_path']
-
-        contains = self._get_file_contains(local_file_path)
-
-        # lets move the data into the vault
-        vault_attach_dict = {}
-
-        if (not file_name):
-            file_name = os.path.basename(local_file_path)
-
-        self._base_connector.debug_print("Vault file name: {0}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
-
-        vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
-        vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
-
-        vault_ret = {}
-
-        file_name = self._decode_uni_string(file_name, file_name)
-
-        try:
-            vault_ret = Vault.add_attachment(local_file_path, container_id, file_name, vault_attach_dict)
-        except Exception as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-            self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
-            return (phantom.APP_ERROR, phantom.APP_ERROR)
-
-        # self._base_connector.debug_print("vault_ret_dict", vault_ret_dict)
-
-        if (not vault_ret.get('succeeded')):
-            self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(vault_ret)))
-            return (phantom.APP_ERROR, phantom.APP_ERROR)
-
-        # add the vault id artifact to the container
-        cef_artifact = curr_file.get('meta_info', {})
-        if (file_name):
-            cef_artifact.update({'fileName': file_name})
-
-        if (phantom.APP_JSON_HASH in vault_ret):
-            cef_artifact.update({'vaultId': vault_ret[phantom.APP_JSON_HASH],
-                'cs6': vault_ret[phantom.APP_JSON_HASH],
-                'cs6Label': 'Vault ID'})
-
-            # now get the rest of the hashes and add them to the cef artifact
-            self._add_vault_hashes_to_dictionary(cef_artifact, vault_ret[phantom.APP_JSON_HASH], container_id)
-
-        if (not cef_artifact):
-            return (phantom.APP_SUCCESS, phantom.APP_ERROR)
-
-        artifact = {}
-        artifact.update(_artifact_common)
-        artifact['container_id'] = container_id
-        artifact['name'] = 'Vault Artifact'
-        # set the artifact severity as configured in the asset, otherwise the artifact will get the default 'medium' severity
-        # The container picks up the severity of any artifact that is higher than it's own
-        artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
-        artifact['cef'] = cef_artifact
-        artifact['run_automation'] = run_automation
-        if (contains):
-            artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
-        self._set_sdi(artifact)
-
-        if ('parentGuid' in cef_artifact):
-            parent_guid = cef_artifact.pop('parentGuid')
-            cef_artifact['parentSourceDataIdentifier'] = self._guid_to_hash.get(parent_guid)
-            self._debug_print("The value of parentSourceDataIdentifier in cef_artifact of process_email._handle_file is: {}".format(
-                cef_artifact.get('parentSourceDataIdentifier')))
-
-        ret_val, status_string, artifact_id = self._base_connector.save_artifact(artifact)
-        self._base_connector.debug_print("save_artifact returns, value: {0}, reason: {1}, id: {2}".format(ret_val, status_string, artifact_id))
-
-        return (phantom.APP_SUCCESS, ret_val)
-
     def _set_sdi(self, input_dict):
 
-        if ('source_data_identifier' in input_dict):
+        if 'source_data_identifier' in input_dict:
             del input_dict['source_data_identifier']
 
         input_dict_hash = input_dict
@@ -1321,20 +1308,20 @@ class ProcessEmail(object):
 
         curr_email_guid = None
 
-        if (cef is not None):
-            if (('parentGuid' in cef) or ('emailGuid' in cef)):
+        if cef is not None:
+            if 'parentGuid' in cef or 'emailGuid' in cef:
                 # make a copy since the dictionary will have to be different
                 input_dict_hash = deepcopy(input_dict)
                 cef = input_dict_hash['cef']
-                if ('parentGuid' in cef):
+                if 'parentGuid' in cef:
                     del cef['parentGuid']
                 curr_email_guid = cef.get('emailGuid')
-                if (curr_email_guid is not None):
+                if curr_email_guid is not None:
                     del cef['emailGuid']
 
         input_dict['source_data_identifier'] = self._create_dict_hash(input_dict_hash)
 
-        if (curr_email_guid):
+        if curr_email_guid:
             self._guid_to_hash[curr_email_guid] = input_dict['source_data_identifier']
 
         return phantom.APP_SUCCESS
@@ -1343,7 +1330,7 @@ class ProcessEmail(object):
 
         input_dict_str = None
 
-        if (not input_dict):
+        if not input_dict:
             return None
 
         try:
@@ -1354,7 +1341,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
-        return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
+        return hashlib.sha256(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
 
     def _del_tmp_dirs(self):
         """Remove any tmp_dirs that were created."""

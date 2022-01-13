@@ -1,15 +1,23 @@
 # File: ews_soap.py
-# Copyright (c) 2016-2021 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
+# Copyright (c) 2016-2022 Splunk Inc.
 #
-# --
-
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+#
+#
 # http://lxml.de/tutorial.html
-from lxml.builder import ElementMaker
-from lxml import etree
 from bs4 import UnicodeDammit
+from lxml import etree
+from lxml.builder import ElementMaker
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -37,22 +45,22 @@ def xml_get_restriction(greater_than_time=None, message_id=None, field_uri="Last
 
     filters = []
 
-    if (greater_than_time):
+    if greater_than_time:
         greater_than_time = T.IsGreaterThan(
                 T.FieldURI({'FieldURI': 'item:{}'.format(field_uri)}),
                 T.FieldURIOrConstant(T.Constant({'Value': greater_than_time})))
         filters.append(greater_than_time)
 
-    if (message_id):
+    if message_id:
         message_id = T.IsNotEqualTo(
                 T.FieldURI({'FieldURI': 'item:ItemId'}),
                 T.FieldURIOrConstant(T.Constant({'Value': message_id})))
         filters.append(message_id)
 
-    if (not filters):
+    if not filters:
         return None
 
-    if (len(filters) > 1):
+    if len(filters) > 1:
         restriction = M.Restriction(T.And(*filters))
     else:
         restriction = M.Restriction(*filters)
@@ -81,7 +89,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction, f
 
     elements.append(page)
 
-    if (restriction):
+    if restriction:
         elements.append(restriction)
 
     sort_order = M.SortOrder(
@@ -97,7 +105,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction, f
                 {'Id': folder_id},
                 T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode('utf-8').decode('utf-8')))))
 
-    if (folder_id != 'inbox'):
+    if folder_id != 'inbox':
         parent_folder_ids = M.ParentFolderIds(T.FolderId({'Id': folder_id}))
 
     elements.append(parent_folder_ids)
@@ -114,7 +122,8 @@ def xml_get_resolve_names(email):
     https://msdn.microsoft.com/en-us/library/office/aa563518(v=exchg.150).aspx
     """
 
-    return M.ResolveNames({'ReturnFullContactData': "true"}, M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
+    return M.ResolveNames({'ReturnFullContactData': "true"},
+            M.UnresolvedEntry(UnicodeDammit(email).unicode_markup.encode('utf-8').decode('utf-8')))
 
 
 def get_expand_dl(email):
@@ -208,7 +217,8 @@ def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -270,7 +280,8 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
             T.FieldURI({'FieldURI': 'message:Sender'}),
             T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
-            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e', 'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
+            T.ExtendedFieldURI({'PropertySetId': 'aa3df801-4fc7-401f-bbc1-7c93d6498c2e',
+                    'PropertyName': 'ItemIndex', 'PropertyType': 'Integer'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('IdOnly'),
@@ -287,44 +298,44 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
     elements.append(page)
 
     # Restriction
-    if (restriction is None):
+    if restriction is None:
         filters = []
 
-        if (subject):
+        if subject:
             sub_filt = T.Contains(
                     {'ContainmentMode': 'Substring', 'ContainmentComparison': 'IgnoreCase'},
                     T.FieldURI({'FieldURI': 'item:Subject'}),
                     T.Constant({'Value': UnicodeDammit(subject).unicode_markup.encode('utf-8').decode('utf-8')}))
             filters.append(sub_filt)
 
-        if (sender):
+        if sender:
             sender_filter = T.IsEqualTo(
                     T.FieldURI({'FieldURI': 'message:Sender'}),
                     T.FieldURIOrConstant(
                         T.Constant({'Value': UnicodeDammit(sender).unicode_markup.encode('utf-8').decode('utf-8')})))
             filters.append(sender_filter)
 
-        if (int_msg_id):
+        if int_msg_id:
             sender_filter = T.IsEqualTo(
                     T.FieldURI({'FieldURI': 'message:InternetMessageId'}),
                     T.FieldURIOrConstant(
                         T.Constant({'Value': UnicodeDammit(int_msg_id).unicode_markup.encode('utf-8').decode('utf-8')})))
             filters.append(sender_filter)
 
-        if (body):
+        if body:
             body_filter = T.Contains(
                     {'ContainmentMode': 'Substring', 'ContainmentComparison': 'IgnoreCase'},
                     T.FieldURI({'FieldURI': 'item:Body'}),
                     T.Constant({'Value': UnicodeDammit(body).unicode_markup.encode('utf-8').decode('utf-8')}))
             filters.append(body_filter)
 
-        if (filters):
-            if (len(filters) > 1):
+        if filters:
+            if len(filters) > 1:
                 restriction = M.Restriction(T.And(*filters))
             else:
                 restriction = M.Restriction(*filters)
 
-    if (restriction is not None):
+    if restriction is not None:
         elements.append(restriction)
 
     # sort order
@@ -354,7 +365,7 @@ def get_update_email(email_id, change_key, categories=None, subject=None):
 
     update_node = []
 
-    if (categories is not None):
+    if categories is not None:
         category_string_list = []
 
         for curr_category in categories:
@@ -363,7 +374,7 @@ def get_update_email(email_id, change_key, categories=None, subject=None):
         cat_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Categories'}), T.Message(T.Categories(*category_string_list)))
         update_node.append(cat_node)
 
-    if (subject is not None):
+    if subject is not None:
         sub_node = T.SetItemField(T.FieldURI({'FieldURI': 'item:Subject'}), T.Message(T.Subject(subject)))
         update_node.append(sub_node)
 
@@ -376,7 +387,7 @@ def get_update_email(email_id, change_key, categories=None, subject=None):
 
 def get_delete_email(message_ids):
 
-    if (type(message_ids) != list):
+    if type(message_ids) != list:
         message_ids = [message_ids]
 
     item_ids = [T.ItemId({'Id': x}) for x in message_ids]
@@ -409,7 +420,7 @@ def get_copy_email(message_id, folder_id):
 
 def xml_get_root_folder_id(user, root_folder_id='root'):
     folder_shape = M.FolderShape(T.BaseShape('IdOnly'))
-    if (root_folder_id == 'publicfoldersroot'):
+    if root_folder_id == 'publicfoldersroot':
         par_folder_id = M.ParentFolderIds(
             T.DistinguishedFolderId({
                 'Id': root_folder_id
@@ -442,7 +453,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
 
     elements.append(folder_shape)
 
-    if (query_range):
+    if query_range:
         mini, maxi = (int(x) for x in query_range.split('-'))
         page = M.IndexedPageFolderView(
                 {'MaxEntriesReturned': str(maxi - mini + 1)},
@@ -463,26 +474,26 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
 
     traversal = {'Traversal': 'Deep'}
 
-    if (child_folder_name):
+    if child_folder_name:
         display_name_equal_to = T.IsEqualTo(
                 T.FieldURI({'FieldURI': 'folder:DisplayName'}),
                 T.FieldURIOrConstant(
                     T.Constant({'Value': UnicodeDammit(child_folder_name).unicode_markup.encode('utf-8').decode('utf-8')})))
         filters.append(display_name_equal_to)
 
-    if (filters):
-        if (len(filters) > 1):
+    if filters:
+        if len(filters) > 1:
             restriction = M.Restriction(T.And(*filters))
         else:
             restriction = M.Restriction(*filters)
 
-    if (user):
-        if (parent_folder_id == 'root'):
+    if user:
+        if parent_folder_id == 'root':
             par_folder_id = M.ParentFolderIds(
                     T.DistinguishedFolderId(
                         {'Id': parent_folder_id},
                         T.Mailbox(T.EmailAddress(UnicodeDammit(user).unicode_markup.encode('utf-8').decode('utf-8')))))
-        elif (parent_folder_id == 'publicfoldersroot'):
+        elif parent_folder_id == 'publicfoldersroot':
             par_folder_id = M.ParentFolderIds(
                 T.DistinguishedFolderId({
                     'Id': parent_folder_id
@@ -495,7 +506,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id='root',
     else:
         par_folder_id = M.ParentFolderIds(T.DistinguishedFolderId({'Id': parent_folder_id}))
 
-    if (restriction is not None):
+    if restriction is not None:
         elements.append(restriction)
 
     elements.append(par_folder_id)
@@ -518,7 +529,7 @@ def add_to_envelope(lxml_obj, version, target_user=None):
 
     header = S.Header(T.RequestServerVersion({'Version': 'Exchange{0}'.format(version)}))
 
-    if (target_user):
+    if target_user:
         impersonation = T.ExchangeImpersonation(
                 T.ConnectingSID(
                     T.SmtpAddress(UnicodeDammit(target_user).unicode_markup.encode('utf-8').decode('utf-8'))))
