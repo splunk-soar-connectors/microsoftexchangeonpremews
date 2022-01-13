@@ -1082,7 +1082,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print(message)
             return
 
-        if duplicate_container and (not self._base_connector.is_poll_now()) and self._config.get(EWS_JSON_INGEST_TIME, "") == "created time":
+        if duplicate_container and not self._base_connector.is_poll_now() and self._config.get(EWS_JSON_INGEST_TIME, "") == "created time":
             message = "Skipping the process of save_artifacts because when " \
                        "created_time is specified, new artifacts should not be ingested for duplicate containers"
             self._base_connector.debug_print(message)
