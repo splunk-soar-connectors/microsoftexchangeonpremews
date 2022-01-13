@@ -27,7 +27,7 @@ def handle_request(request, path_parts):
 def _get_dir_name_from_app_name(app_name):
     app_name = ''.join([x for x in app_name if x.isalnum()])
     app_name = app_name.lower()
-    if (not app_name):
+    if not app_name:
         app_name = "app_for_phantom"
     return app_name
 

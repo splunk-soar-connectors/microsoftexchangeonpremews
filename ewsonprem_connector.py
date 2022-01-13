@@ -263,7 +263,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return (None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, str(e)))
 
-        if (r.status_code != 200):
+        if r.status_code != 200:
             return (None, "POST to ping url failed. Status Code: {0}".format(r.status_code))
 
         # process the xml response
@@ -272,7 +272,7 @@ class EWSOnPremConnector(BaseConnector):
         end_pos = xml_response.find('</saml:Assertion>') + len('</saml:Assertion>')
 
         # validate that the saml assertion is present
-        if (start_pos == -1 or end_pos == -1):
+        if start_pos == -1 or end_pos == -1:
             return (None, "Could not find Saml Assertion")
 
         saml_assertion = xml_response[start_pos:end_pos]
@@ -303,7 +303,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return (None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(url, str(e)))
 
-        if (r.status_code != 200):
+        if r.status_code != 200:
             return (None, "POST to office365 url failed. Status Code: {0}".format(r.status_code))
 
         resp_json = None
@@ -343,7 +343,7 @@ class EWSOnPremConnector(BaseConnector):
         temp_base_url = self.get_phantom_base_url()
         ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/system_info')
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return (action_result.get_status(), None)
 
         phantom_base_url = resp_json.get('base_url')
@@ -358,7 +358,7 @@ class EWSOnPremConnector(BaseConnector):
         temp_base_url = self.get_phantom_base_url()
         ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/asset/{0}'.format(self.get_asset_id()))
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return (action_result.get_status(), None)
 
         asset_name = resp_json.get('name')
@@ -372,11 +372,11 @@ class EWSOnPremConnector(BaseConnector):
             action_result = ActionResult()
         # get the phantom ip to redirect to
         ret_val, phantom_base_url = self._get_phantom_base_url_ews(action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return (action_result.get_status(), action_result.get_message())
         # get the asset name
         ret_val, asset_name = self._get_asset_name(action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return (action_result.get_status(), action_result.get_message())
         self.save_progress('Using Phantom base URL as: {0}'.format(phantom_base_url))
         app_json = self.get_app_json()
@@ -509,7 +509,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return (None, str(e))
 
-        if (r.status_code != 200):
+        if r.status_code != 200:
             return (None, r.text)
 
         resp_json = None
@@ -542,7 +542,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             return (None, str(e))
 
-        if (r.status_code != 200):
+        if r.status_code != 200:
             return (None, self._clean_str(r.text))
 
         resp_json = None
@@ -687,13 +687,13 @@ class EWSOnPremConnector(BaseConnector):
 
         message = ''
 
-        if (auth_type == AUTH_TYPE_AZURE):
+        if auth_type == AUTH_TYPE_AZURE:
             self.save_progress("Using Azure AD authentication")
             self._session.auth, message = self._set_azure_auth(config)
-        elif (auth_type == AUTH_TYPE_AZURE_INTERACTIVE):
+        elif auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
             self.save_progress("Using Azure AD authentication (interactive)")
             self._session.auth, message = self._set_azure_int_auth(config)
-        elif (auth_type == AUTH_TYPE_FEDERATED):
+        elif auth_type == AUTH_TYPE_FEDERATED:
             self.save_progress("Using Federated authentication")
             self._session.auth, message = self._set_federated_auth(config)
         else:
@@ -710,7 +710,7 @@ class EWSOnPremConnector(BaseConnector):
             self._session.auth = HTTPBasicAuth(username, password)
 
             # depending on the app, it's either basic or NTML
-            if (self.get_app_id() != OFFICE365_APP_ID):
+            if self.get_app_id() != OFFICE365_APP_ID:
                 self.save_progress("Using NTLM authentication")
                 # use NTLM (Exchange on Prem)
                 self._session.auth = HttpNtlmAuth(username, password)
@@ -720,7 +720,7 @@ class EWSOnPremConnector(BaseConnector):
         if not self._session.auth:
             return self.set_status(phantom.APP_ERROR, message)
 
-        if (self._base_url.endswith('/')):
+        if self._base_url.endswith('/'):
             self._base_url = self._base_url[:-1]
 
         # The host member extacts the host from the URL, is used in creating status messages
@@ -813,7 +813,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _get_http_error_details(self, r):
 
-        if ('text/xml' in r.headers.get('Content-Type', '')):
+        if 'text/xml' in r.headers.get('Content-Type', ''):
             # Try a xmltodict parse
             try:
                 resp_json = xmltodict.parse(self._clean_xml(r.text))
@@ -843,7 +843,7 @@ class EWSOnPremConnector(BaseConnector):
 
         resp_json = None
 
-        if ((self._impersonate) and (not self._target_user)):
+        if self._impersonate and not self._target_user:
             return (result.set_status(phantom.APP_ERROR, "Impersonation is required, but target user not set. Cannot continue execution"), None)
 
         if self._impersonate:
@@ -871,12 +871,12 @@ class EWSOnPremConnector(BaseConnector):
             import string
             resp_body = ''.join([x for x in resp_body if x in string.printable])
 
-        if (hasattr(result, 'add_debug_data')):
+        if hasattr(result, 'add_debug_data'):
             result.add_debug_data({'r_status_code': r.status_code})
             result.add_debug_data({'r_text': resp_body if r else 'r is None'})
             result.add_debug_data({'r_headers': r.headers})
 
-        if (not (200 <= r.status_code <= 399)):
+        if not (200 <= r.status_code <= 399):
             # error
             detail = self._get_http_error_details(r)
             if detail:
@@ -918,7 +918,7 @@ class EWSOnPremConnector(BaseConnector):
 
         resp_class = resp_message.get('@ResponseClass', '')
 
-        if (resp_class == 'Error'):
+        if resp_class == 'Error':
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json)
 
         return (phantom.APP_SUCCESS, resp_message)
@@ -934,7 +934,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, email_infos = self._get_email_infos_to_process(0, 1, action_result)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
 
             # Dump error messages in the log
             self.debug_print(action_result.get_message())
@@ -967,12 +967,12 @@ class EWSOnPremConnector(BaseConnector):
 
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 return (action_result.get_status(), None)
 
             total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
-            if (total_items == '0'):
+            if total_items == '0':
                 # total_items gives the total items in the view, not just items returned in the current call
                 return (action_result.set_status(phantom.APP_ERROR, "Children not found, possibly not present."), None)
 
@@ -991,7 +991,7 @@ class EWSOnPremConnector(BaseConnector):
                 'folder_path': self._extract_folder_path(x.get('t:ExtendedProperty'))} for x in folders])
 
             curr_folder_len = len(folders)
-            if (curr_folder_len < step_size):
+            if curr_folder_len < step_size:
 
                 # got less than what we asked for, so looks like we got all that we wanted
                 break
@@ -1017,7 +1017,7 @@ class EWSOnPremConnector(BaseConnector):
             return input_dict
 
         for k, v in list(input_dict.items()):
-            if (k.find(':') != -1):
+            if k.find(':') != -1:
                 new_key = k.replace(':', '_')
                 input_dict[new_key] = v
                 del input_dict[k]
@@ -1041,13 +1041,13 @@ class EWSOnPremConnector(BaseConnector):
         except:
             return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
-        if (mini < 0) or (maxi < 0):
+        if mini < 0 or maxi < 0:
             return action_result.set_status(phantom.APP_ERROR, "Invalid min or max offset value specified in range", )
 
-        if (mini > maxi):
+        if mini > maxi:
             return action_result.set_status(phantom.APP_ERROR, "Invalid range value, min_offset greater than max_offset")
 
-        if (maxi > EWSONPREM_MAX_END_OFFSET_VAL):
+        if maxi > EWSONPREM_MAX_END_OFFSET_VAL:
             return action_result.set_status(phantom.APP_ERROR, "Invalid range value. The max_offset value cannot be greater than {0}"
                     .format(EWSONPREM_MAX_END_OFFSET_VAL))
 
@@ -1074,7 +1074,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Parameter validation failed for the AQS query. {0}".format(error_text))
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the query. Unicode value found.")
 
-        if (not subject and not sender and not aqs and not body and not int_msg_id):
+        if not subject and not sender and not aqs and not body and not int_msg_id:
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
 
         # Use parameters to create an aqs string
@@ -1102,7 +1102,7 @@ class EWSOnPremConnector(BaseConnector):
 
         ret_val = self._validate_range(email_range, action_result)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         folder_infos = []
@@ -1113,16 +1113,16 @@ class EWSOnPremConnector(BaseConnector):
         else:
             ret_val, folder_info = self._get_root_folder_id(user, action_result, is_public_folder)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         parent_folder_info = folder_info
         folder_infos.append(folder_info)
 
-        if (not ignore_subfolders):
-            if (int(parent_folder_info['children_count']) != 0):
+        if not ignore_subfolders:
+            if int(parent_folder_info['children_count']) != 0:
                 ret_val, child_folder_infos = self._get_child_folder_infos(user, action_result, parent_folder_info=parent_folder_info)
-                if (phantom.is_fail(ret_val)):
+                if phantom.is_fail(ret_val):
                     return action_result.get_status()
                 folder_infos.extend(child_folder_infos)
 
@@ -1130,7 +1130,7 @@ class EWSOnPremConnector(BaseConnector):
 
         num_folder_ids = len(folder_infos)
 
-        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if (num_folder_ids > 1) else '')
+        self.save_progress('Will be searching in {0} folder{1}', num_folder_ids, 's' if num_folder_ids > 1 else '')
 
         for i, folder_info in enumerate(folder_infos):
 
@@ -1148,7 +1148,7 @@ class EWSOnPremConnector(BaseConnector):
             ret_val, resp_json = self._make_rest_call(ar_folder, data, self._check_find_response)
 
             # Process errors
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 self.debug_print("Rest call failed: {0}".format(ar_folder.get_message()))
                 continue
 
@@ -1165,7 +1165,7 @@ class EWSOnPremConnector(BaseConnector):
                 continue
 
             items = []
-            for key, value in list(resp_items.items()):
+            for key, value in resp_items.items():
                 if isinstance(value, dict):
                     items.append(value)
                 elif isinstance(value, list):
@@ -1205,7 +1205,7 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print("Unable to query Email container", error_text)
             return None
 
-        if (resp_json.get('count', 0) <= 0):
+        if resp_json.get('count', 0) <= 0:
             self.debug_print("No container matched")
             return None
 
@@ -1227,7 +1227,7 @@ class EWSOnPremConnector(BaseConnector):
 
         ret_val, resp_data, status_code = self.get_container_info(container_id)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
 
         # Keep pylint happy
@@ -1324,7 +1324,7 @@ class EWSOnPremConnector(BaseConnector):
             value = decoded_string.get('value')
             encoding = decoded_string.get('encoding')
 
-            if (not encoding or not value):
+            if not encoding or not value:
                 # nothing to replace with
                 continue
 
@@ -1337,7 +1337,7 @@ class EWSOnPremConnector(BaseConnector):
                 new_str_create_count += 1
             except:
                 try:
-                    if (encoding != 'utf-8'):
+                    if encoding != 'utf-8':
                         value = str(value, encoding)
                 except:
                     pass
@@ -1407,13 +1407,13 @@ class EWSOnPremConnector(BaseConnector):
     def _handle_email_with_container_id(self, action_result, container_id, ingest_email, target_container_id=None):
 
         ret_val, email_data, email_id = self._get_email_data_from_container(container_id, action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         action_result.update_summary({"email_id": email_id})
 
         ret_val, header_dict = self._get_mail_header_dict(email_data, action_result)
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         action_result.add_data(header_dict)
@@ -1431,7 +1431,7 @@ class EWSOnPremConnector(BaseConnector):
         process_email = ProcessEmail()
         ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
 
         # get the container id that of the email that was ingested
@@ -1445,7 +1445,7 @@ class EWSOnPremConnector(BaseConnector):
 
         ret_val, email_data, email_id = self._get_email_data_from_vault(vault_id, action_result)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         try:
@@ -1474,7 +1474,7 @@ class EWSOnPremConnector(BaseConnector):
         process_email = ProcessEmail()
         ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
 
         # get the container id that of the email that was ingested
@@ -1507,7 +1507,7 @@ class EWSOnPremConnector(BaseConnector):
         if use_current_container:
             target_container_id = self.get_container_id()
 
-        if (not email_id and not container_id and not vault_id):
+        if not email_id and not container_id and not vault_id:
             return action_result.set_status(phantom.APP_ERROR, "Please specify id, container_id or vault_id to get the email")
 
         ingest_email = param.get(EWSONPREM_JSON_INGEST_EMAIL, False)
@@ -1522,7 +1522,7 @@ class EWSOnPremConnector(BaseConnector):
             ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
             # Process errors
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id),
                         action_result.get_message())
                 self.debug_print(message)
@@ -1544,7 +1544,7 @@ class EWSOnPremConnector(BaseConnector):
             if not resp_items or not isinstance(resp_items, dict):
                 message = {}
             else:
-                message = list(resp_items.values())[0]
+                message = next(iter(resp_items.values()))
 
             # Remove mime content because it can be very large
             if 't_MimeContent' in message:
@@ -1596,7 +1596,7 @@ class EWSOnPremConnector(BaseConnector):
         category = self._handle_py_ver_compat_for_input_unicode(param.get('category'))
         subject = self._handle_py_ver_compat_for_input_unicode(param.get('subject'))
 
-        if ((subject is None) and (category is None)):
+        if subject is None and category is None:
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
 
         # do a get on the message to get the change id
@@ -1605,7 +1605,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id),
                     action_result.get_message())
             self.debug_print(message)
@@ -1613,8 +1613,8 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         try:
-            change_key = list(resp_json['m:Items'].values())[0]['t:ItemId']['@ChangeKey']
-        except:
+            change_key = next(iter(resp_json['m:Items'].values()))['t:ItemId']['@ChangeKey']
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to get the change key of the email to update")
 
         if category is not None:
@@ -1626,7 +1626,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         if not resp_json:
@@ -1637,7 +1637,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         self._cleanse_key_names(resp_json)
@@ -1646,7 +1646,7 @@ class EWSOnPremConnector(BaseConnector):
         if not resp_items or not isinstance(resp_items, dict):
             message = {}
         else:
-            message = list(resp_items.values())[0]
+            message = next(iter(resp_items.values()))
 
         categories = message.get('t_Categories', {}).get('t_String')
         if categories:
@@ -1687,7 +1687,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             self.add_action_result(action_result)
             return action_result.get_status()
 
@@ -1706,7 +1706,7 @@ class EWSOnPremConnector(BaseConnector):
 
             resp_class = resp_message.get('@ResponseClass', '')
 
-            if (resp_class == 'Error'):
+            if resp_class == 'Error':
                 curr_ar.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message))))
                 continue
             curr_ar.set_status(phantom.APP_SUCCESS, "Email deleted")
@@ -1771,7 +1771,7 @@ class EWSOnPremConnector(BaseConnector):
 
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
-            if (self._handle_py_ver_compat_for_input_str(curr_folder_path) == folder_path):
+            if self._handle_py_ver_compat_for_input_str(curr_folder_path) == folder_path:
                 return (phantom.APP_SUCCESS, curr_folder)
 
         return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'"
@@ -1805,12 +1805,12 @@ class EWSOnPremConnector(BaseConnector):
 
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 return (action_result.get_status(), None)
 
             total_items = resp_json.get('m:RootFolder', {}).get('@TotalItemsInView', '0')
 
-            if (total_items == '0'):
+            if total_items == '0':
                 return (action_result.set_status(phantom.APP_ERROR, "Folder '{0}' not found, possibly not present"
                         .format(curr_valid_folder_path)), None)
 
@@ -1825,7 +1825,7 @@ class EWSOnPremConnector(BaseConnector):
 
             ret_val, folder = self._get_matching_folder_path(folder, folder_name, curr_valid_folder_path, action_result)
 
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 return (action_result.get_status(), None)
 
             if not folder:
@@ -1875,20 +1875,20 @@ class EWSOnPremConnector(BaseConnector):
 
         ret_val, folder_info = self._get_folder_info(user, folder_path, action_result, is_public_folder)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         data = ews_soap.get_copy_email(message_id, folder_info['id'])
         response_checker = self._check_copy_response
 
-        if (action == "move"):
+        if action == "move":
             data = ews_soap.get_move_email(message_id, folder_info['id'])
             response_checker = self._check_move_response
 
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_status()
 
         if not resp_json:
@@ -1896,10 +1896,10 @@ class EWSOnPremConnector(BaseConnector):
 
         new_email_id = None
 
-        action_verb = 'copied' if (action == "copy") else 'moved'
+        action_verb = 'copied' if action == "copy" else 'moved'
 
         try:
-            new_email_id = list(resp_json['m:Items'].values())[0]['t:ItemId']['@Id']
+            new_email_id = next(iter(resp_json['m:Items'].values()))['t:ItemId']['@Id']
         except:
             return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
@@ -1924,9 +1924,9 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_resolve_names_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             message = action_result.get_message()
-            if ( 'ErrorNameResolutionNoResults' in message):
+            if 'ErrorNameResolutionNoResults' in message:
                 message = 'No email found. The input parameter might not be a valid alias or email.'
                 return action_result.set_status(phantom.APP_SUCCESS, message)
             else:
@@ -1979,10 +1979,10 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_expand_dl_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
 
             message = action_result.get_message()
-            if ( 'ErrorNameResolutionNoResults' in message):
+            if 'ErrorNameResolutionNoResults' in message:
                 message += ' The input parameter might not be a distribution list.'
                 action_result.add_data({"t_EmailAddress": group})
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -2052,7 +2052,7 @@ class EWSOnPremConnector(BaseConnector):
         # attachmentID, attachmentType
         for k, v in attachment.items():
 
-            if (not isinstance(v, str)):
+            if not isinstance(v, str):
                 continue
 
             # convert the key to the convention used by cef
@@ -2067,16 +2067,15 @@ class EWSOnPremConnector(BaseConnector):
         email_headers_ret = list()
         attach_meta_info_ret = list()
 
-        if ('m:Items' not in resp_json):
-            k = list(resp_json.keys())[0]
+        if 'm:Items' not in resp_json:
+            k = next(iter(resp_json.keys()))
             resp_json['m:Items'] = resp_json.pop(k)
 
         data = None
         # Get the attachments
         try:
-            attachment_keys = resp_json['m:Items'].keys()
             for key in EWSONPREM_MAIL_TYPES:
-                if key in attachment_keys:
+                if key in resp_json['m:Items']:
                     data = resp_json['m:Items'][key]
             attachments = data['t:Attachments']
         except:
@@ -2117,7 +2116,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_get_attachment_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return RetVal3(action_result.get_status())
 
         if not isinstance(resp_json, list):
@@ -2189,8 +2188,8 @@ class EWSOnPremConnector(BaseConnector):
 
     def _extract_ext_properties(self, resp_json, parent_internet_message_id=None, parent_guid=None):  # noqa
 
-        if ('m:Items' not in resp_json):
-            k = list(resp_json.keys())[0]
+        if 'm:Items' not in resp_json:
+            k = next(iter(resp_json.keys()))
             resp_json['m:Items'] = resp_json.pop(k)
 
         headers = dict()
@@ -2199,9 +2198,8 @@ class EWSOnPremConnector(BaseConnector):
         data = None
         # Get the Extended Properties
         try:
-            item_keys = resp_json['m:Items'].keys()
             for key in EWSONPREM_MAIL_TYPES:
-                if key in item_keys:
+                if key in resp_json['m:Items']:
                     data = resp_json['m:Items'][key]
             extended_properties = data['t:ExtendedProperty']
         except:
@@ -2224,7 +2222,7 @@ class EWSOnPremConnector(BaseConnector):
                     if email_headers is not None:
                         headers.update(email_headers)
                         continue
-                if (property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT):
+                if property_tag == ews_soap.EXTENDED_PROPERTY_BODY_TEXT:
                     headers.update({'bodyText': value})
 
         # now parse the body in the main resp_json
@@ -2300,7 +2298,7 @@ class EWSOnPremConnector(BaseConnector):
     def _parse_email(self, resp_json, email_id, target_container_id):
 
         try:
-            mime_content = list(resp_json['m:Items'].values())[0]['t:MimeContent']['#text']
+            mime_content = next(iter(resp_json['m:Items'].values()))['t:MimeContent']['#text']
         except:
             return (phantom.APP_ERROR, "Email MimeContent missing in response.")
 
@@ -2346,7 +2344,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
@@ -2354,7 +2352,7 @@ class EWSOnPremConnector(BaseConnector):
 
         ret_val, message = self._parse_email(resp_json, email_id, target_container_id)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return phantom.APP_ERROR
 
         return phantom.APP_SUCCESS
@@ -2376,14 +2374,14 @@ class EWSOnPremConnector(BaseConnector):
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return (action_result.get_status(), None)
 
         manner = config[EWS_JSON_INGEST_MANNER]
         folder_id = folder_info['id']
 
         order = "Ascending"
-        if (manner == EWS_INGEST_LATEST_EMAILS):
+        if manner == EWS_INGEST_LATEST_EMAILS:
             order = "Descending"
 
         data = ews_soap.xml_get_email_ids(
@@ -2399,7 +2397,7 @@ class EWSOnPremConnector(BaseConnector):
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_find_response)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
 
             # Dump error messages in the log
             self.debug_print(action_result.get_message())
@@ -2440,7 +2438,7 @@ class EWSOnPremConnector(BaseConnector):
         if email_ids is None:
             return action_result.set_status(phantom.APP_ERROR, "Did not get access to email IDs")
 
-        self.save_progress("Got {0} email{1}".format(len(email_ids), '' if (len(email_ids) == 1) else 's'))
+        self.save_progress("Got {0} email{1}".format(len(email_ids), '' if len(email_ids) == 1 else 's'))
 
         for i, email_id in enumerate(email_ids):
             self.send_progress("Querying email # {0} with id: {1}".format(i + 1, self._pprint_email_id(email_id)))
@@ -2485,7 +2483,7 @@ class EWSOnPremConnector(BaseConnector):
             sort_on = "DateTimeCreated" if config.get(EWS_JSON_INGEST_TIME, "") == "created time" else "LastModifiedTime"
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, field_uri=sort_on)
 
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
             if not email_infos:
@@ -2509,7 +2507,7 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        emails_after_key = 'last_ingested_format' if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else emails_after
+        emails_after_key = 'last_ingested_format' if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else emails_after
 
         date_time_string = self._state.get(emails_after_key)
 
@@ -2584,7 +2582,7 @@ class EWSOnPremConnector(BaseConnector):
 
             # if the config is for latest emails, then the 0th is the latest in the list returned, else
             # The last email is the latest in the list returned
-            email_index = 0 if (config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS) else -1
+            email_index = 0 if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS else -1
 
             # Store all the times to the state file for the next cycle
             utc_now = datetime.utcnow()
@@ -2595,7 +2593,7 @@ class EWSOnPremConnector(BaseConnector):
             email_ids = [x['id'] for x in email_infos]
 
             ret_val = self._process_email_ids(email_ids, action_result)
-            if (phantom.is_fail(ret_val)):
+            if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
             total_ingested += max_emails - self._dup_emails
@@ -2627,25 +2625,25 @@ class EWSOnPremConnector(BaseConnector):
         ret_val = phantom.APP_SUCCESS
 
         # Bunch if if..elif to process actions
-        if (action == self.ACTION_ID_RUN_QUERY):
+        if action == self.ACTION_ID_RUN_QUERY:
             ret_val = self._run_query_aqs(param)
-        elif (action == self.ACTION_ID_DELETE_EMAIL):
+        elif action == self.ACTION_ID_DELETE_EMAIL:
             ret_val = self._delete_email(param)
-        elif (action == self.ACTION_ID_UPDATE_EMAIL):
+        elif action == self.ACTION_ID_UPDATE_EMAIL:
             ret_val = self._update_email(param)
-        elif (action == self.ACTION_ID_GET_EMAIL):
+        elif action == self.ACTION_ID_GET_EMAIL:
             ret_val = self._get_email(param)
-        elif (action == self.ACTION_ID_COPY_EMAIL):
+        elif action == self.ACTION_ID_COPY_EMAIL:
             ret_val = self._copy_move_email(param)
-        elif (action == self.ACTION_ID_MOVE_EMAIL):
+        elif action == self.ACTION_ID_MOVE_EMAIL:
             ret_val = self._copy_move_email(param, action='move')
-        elif (action == self.ACTION_ID_EXPAND_DL):
+        elif action == self.ACTION_ID_EXPAND_DL:
             ret_val = self._expand_dl(param)
-        elif (action == self.ACTION_ID_RESOLVE_NAME):
+        elif action == self.ACTION_ID_RESOLVE_NAME:
             ret_val = self._resolve_name(param)
-        elif (action == self.ACTION_ID_ON_POLL):
+        elif action == self.ACTION_ID_ON_POLL:
             ret_val = self._on_poll(param)
-        elif (action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
+        elif action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
             ret_val = self._test_connectivity(param)
 
         return ret_val
@@ -2673,13 +2671,13 @@ if __name__ == '__main__':
     username = args.username
     password = args.password
 
-    if (username is not None and password is None):
+    if username is not None and password is None:
 
         # User specified a username but not a password, so ask
         import getpass
         password = getpass.getpass("Password: ")
 
-    if (username and password):
+    if username and password:
         try:
             print("Accessing the Login page")
             r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)  # nosemgrep
@@ -2713,19 +2711,19 @@ if __name__ == '__main__':
         raw_email = in_json.get('raw_email')
 
         # if neither present then treat it as a normal action test json
-        if (not data and not raw_email):
+        if not data and not raw_email:
             print(json.dumps(in_json, indent=4))
 
-            if (session_id is not None):
+            if session_id is not None:
                 in_json['user_session_token'] = session_id
             result = connector._handle_action(json.dumps(in_json), None)
             print(result)
             sys.exit(0)
 
-        if (data):
+        if data:
             raw_email = data.get('raw_email')
 
-        if (raw_email):
+        if raw_email:
             config = {
                     "extract_attachments": True,
                     "extract_domains": True,
