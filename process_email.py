@@ -716,6 +716,18 @@ class ProcessEmail(object):
             if isinstance(subject, str):
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
+        to_data = headers.get('To')
+        if (to_data):
+            headers['decodedTo'] = self._decode_uni_string(to_data, to_data)
+
+        from_data = headers.get('From')
+        if (from_data):
+            headers['decodedFrom'] = self._decode_uni_string(from_data, from_data)
+
+        CC_data = headers.get('CC')
+        if (CC_data):
+            headers['decodedCC'] = self._decode_uni_string(CC_data, CC_data)
+
         return headers
 
     def _parse_email_headers(self, parsed_mail, part, charset=None, add_email_id=None):

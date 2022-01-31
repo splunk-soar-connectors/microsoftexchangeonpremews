@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.7.11",
+    "app_version": "3.8.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
@@ -16,7 +16,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.0.0",
+    "min_phantom_version": "5.1.0",
     "fips_compliant": true,
     "python_version": "3",
     "logo": "logo_microsoft.svg",
