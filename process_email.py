@@ -32,6 +32,8 @@ import phantom.app as phantom
 import phantom.rules as phantom_rules
 import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
 
 from ewsonprem_consts import *
@@ -213,6 +215,13 @@ class ProcessEmail(object):
             uris = re.findall(uri_regexc, file_data)
             if uris:
                 uris = [self._clean_url(x) for x in uris]
+
+        for uri in uris.copy():
+            try:
+                validate_url = URLValidator()
+                validate_url(uri)
+            except ValidationError:
+                uris.remove(uri)
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             # add the uris to the urls
