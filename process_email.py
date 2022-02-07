@@ -25,8 +25,8 @@ from builtins import str
 from collections import OrderedDict
 from copy import deepcopy
 from email.header import decode_header
-from urllib.parse import urlparse
 from html import unescape
+from urllib.parse import urlparse
 
 import magic
 import phantom.app as phantom
