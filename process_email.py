@@ -26,6 +26,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from email.header import decode_header
 from urllib.parse import urlparse
+from html import unescape
 
 import magic
 import phantom.app as phantom
@@ -197,31 +198,46 @@ class ProcessEmail(object):
             return
 
         uris = []
-        # get all tags that have hrefs
+        # get all tags that have hrefs and srcs
         links = soup.find_all(href=True)
-        if links:
-            # it's html, so get all the urls
-            uris = [x['href'] for x in links if (not x['href'].startswith('mailto:'))]
-            # work on the text part of the link, they might be http links different from the href
-            # and were either missed by the uri_regexc while parsing text or there was no text counterpart
-            # in the email
-            uri_text = [self._clean_url(x.get_text()) for x in links]
+        srcs = soup.find_all(src=True)
+
+        if links or srcs:
+            uri_text = []
+            if links:
+                for x in links:
+                    # work on the text part of the link, they might be http links different from the href
+                    # and were either missed by the uri_regexc while parsing text or there was no text counterpart
+                    # in the email
+                    uri_text.append(self._clean_url(x.get_text()))
+                    # it's html, so get all the urls
+                    if not x['href'].startswith('mailto:'):
+                        uris.append(x['href'])
+
+            if srcs:
+                for x in srcs:
+                    uri_text.append(self._clean_url(x.get_text()))
+                    # it's html, so get all the urls
+                    uris.append(x['src'])
             if uri_text:
                 uri_text = [x for x in uri_text if x.startswith('http')]
                 if uri_text:
                     uris.extend(uri_text)
         else:
+            file_data = unescape(file_data)
             # Parse it as a text file
             uris = re.findall(uri_regexc, file_data)
             if uris:
                 uris = [self._clean_url(x) for x in uris]
 
+        validate_url = URLValidator(schemes=['http', 'https'])
         for uri in uris.copy():
             try:
-                validate_url = URLValidator()
                 validate_url(uri)
             except ValidationError:
                 uris.remove(uri)
+            except Exception:
+                pass
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             # add the uris to the urls
