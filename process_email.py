@@ -850,7 +850,7 @@ class ProcessEmail(object):
         self._parsed_mail[PROC_EMAIL_JSON_START_TIME] = start_time_epoch
         self._parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS] = []
 
-        if self._config.get(PROC_ROOT_EMAIL_AS_VAULT, False):
+        if self._config.get(PROC_ROOT_EMAIL_AS_VAULT, True):
             file_hash = hashlib.sha1(rfc822_email.encode()).hexdigest()
             extension = '.eml'
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]

@@ -251,7 +251,7 @@
             "data_type": "boolean",
             "description": "Add root email to the Vault",
             "order": 23,
-            "default": false
+            "default": true
         },
         "preprocess_script": {
             "data_type": "file",
