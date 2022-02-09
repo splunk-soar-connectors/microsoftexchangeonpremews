@@ -232,24 +232,26 @@ class ProcessEmail(object):
                 uris = [self._clean_url(x) for x in uris]
 
         validate_url = URLValidator(schemes=['http', 'https'])
-        for uri in uris.copy():
+        validated_urls = list()
+        for uri in uris:
             try:
                 validate_url(uri)
+                validated_urls.append(uri)
             except ValidationError:
-                uris.remove(uri)
+                pass
             except Exception:
                 pass
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             # add the uris to the urls
-            unique_uris = set(uris)
+            unique_uris = set(validated_urls)
             unique_uris = list(unique_uris)
             for uri in unique_uris:
                 uri_dict = {'requestURL': uri, 'parentInternetMessageId': parent_id}
                 urls.append(uri_dict)
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]:
-            for uri in uris:
+            for uri in validated_urls:
                 domain = phantom.get_host_from_url(uri)
                 if domain and not self._is_ip(domain):
                     domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
