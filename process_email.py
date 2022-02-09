@@ -190,7 +190,7 @@ class ProcessEmail(object):
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            err = "paul: Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self._debug_print("Error occurred while extracting domains of the URLs. {0}".format(err))
             return
 
@@ -433,7 +433,7 @@ class ProcessEmail(object):
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            err = "paul6: Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self._debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
             return def_name
 
@@ -915,7 +915,7 @@ class ProcessEmail(object):
                 self._handle_body(body, self._parsed_mail, i, email_id)
             except Exception as e:
                 error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-                err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                err = "paul5 Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self._debug_print("Error occurred in _handle_body # {0}. {1}".format(i, err))
                 continue
 
@@ -957,7 +957,7 @@ class ProcessEmail(object):
             ret_val = self._handle_mail_object(mail, email_id, rfc822_email, tmp_dir, start_time_epoch)
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            err = "paul4 Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             message = "Error occurred in _handle_mail_object. {0}".format(err)
             self._debug_print(message)
             return (phantom.APP_ERROR, message, [])
@@ -1127,7 +1127,7 @@ class ProcessEmail(object):
                                                                      metadata=vault_attach_dict)
             except Exception as e:
                 error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-                err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+                err = "paul2 Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
                 self._base_connector.debug_print(phantom.APP_ERR_FILE_ADD_TO_VAULT.format(err))
                 continue
 
@@ -1337,7 +1337,7 @@ class ProcessEmail(object):
             input_dict_str = json.dumps(input_dict, sort_keys=True)
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            err = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+            err = "paul3 Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
