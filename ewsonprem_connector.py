@@ -322,7 +322,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
 
-# break here
+
     def _make_rest_calls_to_phantom(self, action_result, url):
 
         r = requests.get(url, verify=False)  # nosemgrep
@@ -342,7 +342,7 @@ class EWSOnPremConnector(BaseConnector):
     def _get_phantom_base_url_ews(self, action_result):
 
         temp_base_url = self.get_phantom_base_url()
-        # break here
+
         ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/system_info')
 
         if phantom.is_fail(ret_val):
@@ -358,7 +358,7 @@ class EWSOnPremConnector(BaseConnector):
     def _get_asset_name(self, action_result):
 
         temp_base_url = self.get_phantom_base_url()
-        # break here
+
         ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/asset/{0}'.format(self.get_asset_id()))
 
         if phantom.is_fail(ret_val):
@@ -980,7 +980,7 @@ class EWSOnPremConnector(BaseConnector):
 
             input_xml = ews_soap.xml_get_children_info(user, parent_folder_id=parent_folder_info['id'], query_range=curr_range)
 
-# break here
+
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
             if phantom.is_fail(ret_val):
@@ -1161,7 +1161,7 @@ class EWSOnPremConnector(BaseConnector):
                 data = ews_soap.get_search_request_filter([folder_id], subject=subject, sender=sender,
                                                           body=body, int_msg_id=int_msg_id, email_range=email_range)
 
-# break here
+
             ret_val, resp_json = self._make_rest_call(ar_folder, data, self._check_find_response)
 
             # Process errors
@@ -1536,7 +1536,7 @@ class EWSOnPremConnector(BaseConnector):
         else:
             data = ews_soap.xml_get_emails_data([email_id], self._version)
 
-# break here
+
             ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
             # Process errors
@@ -1620,7 +1620,7 @@ class EWSOnPremConnector(BaseConnector):
         # do a get on the message to get the change id
         data = ews_soap.xml_get_emails_data([email_id], self._version)
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
         # Process errors
@@ -1642,7 +1642,7 @@ class EWSOnPremConnector(BaseConnector):
 
         data = ews_soap.get_update_email(email_id, change_key, category, subject)
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_update_response)
 
         # Process errors
@@ -1654,7 +1654,7 @@ class EWSOnPremConnector(BaseConnector):
 
         data = ews_soap.xml_get_emails_data([email_id], self._version)
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
         # Process errors
@@ -1705,7 +1705,7 @@ class EWSOnPremConnector(BaseConnector):
 
         data = ews_soap.get_delete_email(message_ids)
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_delete_response)
 
         # Process errors
@@ -1825,7 +1825,7 @@ class EWSOnPremConnector(BaseConnector):
 
             input_xml = ews_soap.xml_get_children_info(user, child_folder_name=folder_name, parent_folder_id=parent_folder_id)
 
-# break here
+
             ret_val, resp_json = self._make_rest_call(action_result, input_xml, self._check_findfolder_response)
 
             if phantom.is_fail(ret_val):
@@ -1908,7 +1908,7 @@ class EWSOnPremConnector(BaseConnector):
             data = ews_soap.get_move_email(message_id, folder_info['id'])
             response_checker = self._check_move_response
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, response_checker)
 
         # Process errors
@@ -1945,7 +1945,7 @@ class EWSOnPremConnector(BaseConnector):
 
         data = ews_soap.xml_get_resolve_names(email)
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_resolve_names_response)
 
         # Process errors
@@ -2001,7 +2001,7 @@ class EWSOnPremConnector(BaseConnector):
 
         data = ews_soap.get_expand_dl(group)
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_expand_dl_response)
 
         # Process errors
@@ -2139,7 +2139,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = ActionResult()
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_get_attachment_response)
 
         # Process errors
@@ -2368,7 +2368,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = ActionResult()
 
-# break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_getitem_response)
 
         # Process errors
@@ -2423,7 +2423,7 @@ class EWSOnPremConnector(BaseConnector):
         )
 
         self.save_progress('paul: Before making rest call with data')
-        # break here
+
         ret_val, resp_json = self._make_rest_call(action_result, data, self._check_find_response)
 
         # Process errors
