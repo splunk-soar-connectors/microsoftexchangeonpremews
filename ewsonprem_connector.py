@@ -2295,19 +2295,6 @@ class EWSOnPremConnector(BaseConnector):
 
         return (phantom.APP_SUCCESS, headers)
 
-    def _get_fips_enabled(self):
-        try:
-            from phantom_common.install_info import is_fips_enabled
-        except ImportError:
-            return False
-
-        fips_enabled = is_fips_enabled()
-        if fips_enabled:
-            self.debug_print('FIPS is enabled')
-        else:
-            self.debug_print('FIPS is not enabled')
-        return fips_enabled
-
     def _parse_email(self, resp_json, email_id, target_container_id):
 
         try:
