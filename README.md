@@ -2,11 +2,11 @@
 # Microsoft Exchange On\-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3\.7\.9  
+Connector Version: 3\.7\.11  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.0\.0  
+Minimum Product Version: 5\.1\.0  
 
 This app performs email ingestion, investigative and containment actions on an on\-premise Exchange installation
 

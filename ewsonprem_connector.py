@@ -112,7 +112,7 @@ class EWSOnPremConnector(BaseConnector):
     ACTION_ID_RESOLVE_NAME = "resolve_name"
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_GET_EMAIL = "get_email"
-    REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"
+    REPLACE_CONST = "C53CEA8298BD401BA695F247633D0542"  # pragma: allowlist secret
 
     def __init__(self):
         """ """
