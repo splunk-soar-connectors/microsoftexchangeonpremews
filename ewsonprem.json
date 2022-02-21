@@ -54,7 +54,7 @@
             },
             {
                 "module": "ntlm_auth",
-                "input_file": "wheels/shared/ntlm_auth-1.0.5-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/ntlm_auth-1.5.0-py2.py3-none-any.whl"
             },
             {
                 "module": "python_magic",
@@ -3187,7 +3187,7 @@
             },
             {
                 "module": "ntlm_auth",
-                "input_file": "wheels/shared/ntlm_auth-1.0.5-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/ntlm_auth-1.5.0-py2.py3-none-any.whl"
             },
             {
                 "module": "python_magic",
