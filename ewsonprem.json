@@ -249,7 +249,7 @@
         },
         "extract_root_email_as_vault": {
             "data_type": "boolean",
-            "description": "Add root email to the Vault",
+            "description": "Extract root (primary) email as Vault",
             "order": 23,
             "default": true
         },
