@@ -742,15 +742,15 @@ class ProcessEmail(object):
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
         to_data = headers.get('To')
-        if (to_data):
+        if to_data:
             headers['decodedTo'] = self._decode_uni_string(to_data, to_data)
 
         from_data = headers.get('From')
-        if (from_data):
+        if from_data:
             headers['decodedFrom'] = self._decode_uni_string(from_data, from_data)
 
         CC_data = headers.get('CC')
-        if (CC_data):
+        if CC_data:
             headers['decodedCC'] = self._decode_uni_string(CC_data, CC_data)
 
         return headers
