@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.7.11",
+    "app_version": "3.8.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2010",
         "Exchange Server(on-prem) 2013",
@@ -82,7 +82,7 @@
             },
             {
                 "module": "typing_extensions",
-                "input_file": "wheels/py3/typing_extensions-4.0.1-py3-none-any.whl"
+                "input_file": "wheels/py3/typing_extensions-4.1.1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
@@ -247,6 +247,12 @@
             "order": 22,
             "default": false
         },
+        "extract_root_email_as_vault": {
+            "data_type": "boolean",
+            "description": "Extract root (primary) email as Vault",
+            "order": 23,
+            "default": true
+        },
         "preprocess_script": {
             "data_type": "file",
             "description": "Script with functions to preprocess containers and artifacts",
@@ -255,13 +261,13 @@
         "unify_cef_fields": {
             "data_type": "boolean",
             "description": "Unify CC/BCC CEF fields (to uppercase)",
-            "order": 23
+            "order": 24
         },
         "automation_on_duplicate": {
             "data_type": "boolean",
             "description": "Run automation on duplicate event",
             "default": true,
-            "order": 24
+            "order": 25
         }
     },
     "actions": [
