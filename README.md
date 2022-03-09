@@ -2,7 +2,7 @@
 # Microsoft Exchange On\-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3\.7\.11  
+Connector Version: 3\.8\.0  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): "\.\*"  
@@ -351,6 +351,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **extract\_hashes** |  optional  | boolean | Extract Hashes
 **extract\_email\_addresses** |  optional  | boolean | Extract Email Addresses
 **add\_body\_to\_header\_artifacts** |  optional  | boolean | Add email body to the Email Artifact
+**extract\_root\_email\_as\_vault** |  optional  | boolean | Extract root \(primary\) email as Vault
 **preprocess\_script** |  optional  | file | Script with functions to preprocess containers and artifacts
 **unify\_cef\_fields** |  optional  | boolean | Unify CC/BCC CEF fields \(to uppercase\)
 **automation\_on\_duplicate** |  optional  | boolean | Run automation on duplicate event
