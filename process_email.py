@@ -25,6 +25,7 @@ from builtins import str
 from collections import OrderedDict
 from copy import deepcopy
 from email.header import decode_header
+from html import unescape
 from urllib.parse import urlparse
 
 import magic
@@ -32,6 +33,7 @@ import phantom.app as phantom
 import phantom.rules as phantom_rules
 import phantom.utils as ph_utils
 from bs4 import BeautifulSoup, UnicodeDammit
+from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
 
 from ewsonprem_consts import *
@@ -76,6 +78,7 @@ PROC_EMAIL_JSON_EXTRACT_IPS = "extract_ips"
 PROC_EMAIL_JSON_EXTRACT_DOMAINS = "extract_domains"
 PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES = "extract_email_addresses"
 PROC_EMAIL_JSON_EXTRACT_HASHES = "extract_hashes"
+PROC_ROOT_EMAIL_AS_VAULT = "extract_root_email_as_vault"
 PROC_EMAIL_JSON_IPS = "ips"
 PROC_EMAIL_JSON_HASHES = "hashes"
 PROC_EMAIL_JSON_URLS = "urls"
@@ -195,35 +198,57 @@ class ProcessEmail(object):
             return
 
         uris = []
-        # get all tags that have hrefs
+        # get all tags that have hrefs and srcs
         links = soup.find_all(href=True)
-        if links:
-            # it's html, so get all the urls
-            uris = [x['href'] for x in links if (not x['href'].startswith('mailto:'))]
-            # work on the text part of the link, they might be http links different from the href
-            # and were either missed by the uri_regexc while parsing text or there was no text counterpart
-            # in the email
-            uri_text = [self._clean_url(x.get_text()) for x in links]
+        srcs = soup.find_all(src=True)
+
+        if links or srcs:
+            uri_text = []
+            if links:
+                for x in links:
+                    # work on the text part of the link, they might be http links different from the href
+                    # and were either missed by the uri_regexc while parsing text or there was no text counterpart
+                    # in the email
+                    uri_text.append(self._clean_url(x.get_text()))
+                    # it's html, so get all the urls
+                    if not x['href'].startswith('mailto:'):
+                        uris.append(x['href'])
+
+            if srcs:
+                for x in srcs:
+                    uri_text.append(self._clean_url(x.get_text()))
+                    # it's html, so get all the urls
+                    uris.append(x['src'])
             if uri_text:
                 uri_text = [x for x in uri_text if x.startswith('http')]
                 if uri_text:
                     uris.extend(uri_text)
         else:
+            file_data = unescape(file_data)
             # Parse it as a text file
             uris = re.findall(uri_regexc, file_data)
             if uris:
                 uris = [self._clean_url(x) for x in uris]
 
+        validate_url = URLValidator(schemes=['http', 'https'])
+        validated_urls = list()
+        for uri in uris:
+            try:
+                validate_url(uri)
+                validated_urls.append(uri)
+            except Exception:
+                pass
+
         if self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
             # add the uris to the urls
-            unique_uris = set(uris)
+            unique_uris = set(validated_urls)
             unique_uris = list(unique_uris)
             for uri in unique_uris:
                 uri_dict = {'requestURL': uri, 'parentInternetMessageId': parent_id}
                 urls.append(uri_dict)
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS]:
-            for uri in uris:
+            for uri in validated_urls:
                 domain = phantom.get_host_from_url(uri)
                 if domain and not self._is_ip(domain):
                     domains.append({'destinationDnsDomain': domain, 'parentInternetMessageId': parent_id})
@@ -716,6 +741,18 @@ class ProcessEmail(object):
             if isinstance(subject, str):
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
 
+        to_data = headers.get('To')
+        if to_data:
+            headers['decodedTo'] = self._decode_uni_string(to_data, to_data)
+
+        from_data = headers.get('From')
+        if from_data:
+            headers['decodedFrom'] = self._decode_uni_string(from_data, from_data)
+
+        CC_data = headers.get('CC')
+        if CC_data:
+            headers['decodedCC'] = self._decode_uni_string(CC_data, CC_data)
+
         return headers
 
     def _parse_email_headers(self, parsed_mail, part, charset=None, add_email_id=None):
@@ -812,28 +849,29 @@ class ProcessEmail(object):
         self._parsed_mail[PROC_EMAIL_JSON_START_TIME] = start_time_epoch
         self._parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS] = []
 
-        file_hash = hashlib.sha1(rfc822_email.encode()).hexdigest()
-        extension = '.eml'
-        file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
-        file_name = "{0}{1}".format(self._base_connector._decode_uni_string(file_name, file_name), extension)
-        file_path = "{0}/{1}".format(tmp_dir, file_name)
-        try:
-            with open(file_path, 'wb') as f:
-                f.write(rfc822_email.encode())
-        except Exception as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+        if self._config.get(PROC_ROOT_EMAIL_AS_VAULT, True):
+            file_hash = hashlib.sha1(rfc822_email.encode()).hexdigest()
+            extension = '.eml'
+            file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
+            file_name = "{0}{1}".format(self._base_connector._decode_uni_string(file_name, file_name), extension)
+            file_path = "{0}/{1}".format(tmp_dir, file_name)
             try:
-                new_file_name = "ph_temp_email_file.eml"
-                file_path = "{0}/{1}".format(tmp_dir, new_file_name)
-                self._base_connector.debug_print("Original filename: {}".format(file_name))
-                self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
-                with open(file_path, 'wb') as uncompressed_file:
-                    uncompressed_file.write(rfc822_email.encode())
+                with open(file_path, 'wb') as f:
+                    f.write(rfc822_email.encode())
             except Exception as e:
                 error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-                self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
-                return
-        files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash})
+                try:
+                    new_file_name = "ph_temp_email_file.eml"
+                    file_path = "{0}/{1}".format(tmp_dir, new_file_name)
+                    self._base_connector.debug_print("Original filename: {}".format(file_name))
+                    self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
+                    with open(file_path, 'wb') as uncompressed_file:
+                        uncompressed_file.write(rfc822_email.encode())
+                except Exception as e:
+                    error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+                    self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
+                    return
+            files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash})
 
         # parse the parts of the email
         if mail.is_multipart():
