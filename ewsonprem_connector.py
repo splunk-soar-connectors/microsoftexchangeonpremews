@@ -256,10 +256,11 @@ class EWSOnPremConnector(BaseConnector):
 
         # POST the request
         try:
-            r = requests.post(url,  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(url,
                               data=fed_request_xml,
                               headers=headers,
-                              verify=config[EWS_JSON_FED_VERIFY_CERT])
+                              verify=config[EWS_JSON_FED_VERIFY_CERT],
+                              timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return (None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, str(e)))
 
@@ -299,7 +300,7 @@ class EWSOnPremConnector(BaseConnector):
                 'scope': 'openid' }
 
         try:
-            r = requests.post(url, data=data, headers=headers)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(url, data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return (None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(url, str(e)))
 
@@ -324,6 +325,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _make_rest_calls_to_phantom(self, action_result, url):
 
+        # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
         r = requests.get(url, verify=False)  # nosemgrep
         if not r:
             message = 'Status Code: {0}'.format(r.status_code)
@@ -449,7 +451,7 @@ class EWSOnPremConnector(BaseConnector):
             'refresh_token': refresh_token
         }
         try:
-            r = requests.post(request_url, data=body)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            r = requests.post(request_url, data=body, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return (None, "Error refreshing token: {}".format(str(e)))
 
@@ -1197,6 +1199,7 @@ class EWSOnPremConnector(BaseConnector):
         url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
 
         try:
+            # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
             r = requests.get(url, verify=False)  # nosemgrep
             resp_json = r.json()
         except Exception as e:
@@ -2664,12 +2667,14 @@ if __name__ == '__main__':
     argparser.add_argument('input_test_json', help='Input Test JSON file')
     argparser.add_argument('-u', '--username', help='username', required=False)
     argparser.add_argument('-p', '--password', help='password', required=False)
+    argparser.add_argument('-v', '--verify', help='verify', required=False, default=False)
 
     args = argparser.parse_args()
     session_id = None
 
     username = args.username
     password = args.password
+    verify = args.verify
 
     if username is not None and password is None:
 
@@ -2680,7 +2685,7 @@ if __name__ == '__main__':
     if username and password:
         try:
             print("Accessing the Login page")
-            r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=False)  # nosemgrep
+            r = requests.get(BaseConnector._get_phantom_base_url() + "login", verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -2693,7 +2698,8 @@ if __name__ == '__main__':
             headers['Referer'] = BaseConnector._get_phantom_base_url() + 'login'
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=False, data=data, headers=headers)  # nosemgrep
+            r2 = requests.post(BaseConnector._get_phantom_base_url() + "login", verify=verify,
+                               data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: " + str(e))

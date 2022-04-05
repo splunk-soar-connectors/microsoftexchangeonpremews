@@ -82,3 +82,5 @@ AUTH_TYPE_AZURE = "Azure"
 AUTH_TYPE_AZURE_INTERACTIVE = "Azure (interactive)"
 AUTH_TYPE_FEDERATED = "Federated"
 AUTH_TYPE_BASIC = "Basic"
+
+DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
