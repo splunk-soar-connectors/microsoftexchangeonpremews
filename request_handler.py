@@ -59,7 +59,8 @@ class Office365RequestHandler():
         }
 
         try:
-            r = requests.post(
+            # The request-sensitive-data error indicated by semgrep is a false positive hence ignoring the check
+            r = requests.post(  # nosemgrep
                 request_url + '/token',
                 data=body,
                 timeout=30  # in seconds
