@@ -128,7 +128,7 @@ class RequestStateHandler():
         state_file = self._get_state_file()
         try:
             os.remove(state_file)
-        except:
+        except Exception:
             pass
 
         return True
@@ -140,7 +140,7 @@ class RequestStateHandler():
             with open(state_file, 'w+') as fp:
                 fp.write(json.dumps(state))
                 fp.close()
-        except:
+        except Exception:
             pass
 
         return True
@@ -153,7 +153,7 @@ class RequestStateHandler():
                 in_json = fp.read()
                 state = json.loads(in_json)
                 fp.close()
-        except:
+        except Exception:
             pass
 
         state = self._decrypt_state(state)

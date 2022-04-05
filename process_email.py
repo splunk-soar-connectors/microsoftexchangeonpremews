@@ -157,7 +157,7 @@ class ProcessEmail(object):
 
         try:
             socket.inet_pton(socket.AF_INET6, input_ip)
-        except:  # not a valid v6 address
+        except Exception:  # not a valid v6 address
             return False
 
         return True
@@ -491,11 +491,11 @@ class ProcessEmail(object):
                 value = value.decode(encoding)
                 new_str += value
                 new_str_create_count += 1
-            except:
+            except Exception:
                 try:
                     if encoding != 'utf-8':
                         value = str(value, encoding)
-                except:
+                except Exception:
                     pass
 
                 try:
@@ -507,7 +507,7 @@ class ProcessEmail(object):
                     if value:
                         new_str += UnicodeDammit(value).unicode_markup
                         new_str_create_count += 1
-                except:
+                except Exception:
                     pass
 
         # replace input string with new string because issue find in PAPP-9531
@@ -587,7 +587,7 @@ class ProcessEmail(object):
 
             try:
                 attach_content = curr_attach['content']
-            except:
+            except Exception:
                 continue
 
             if attach_content.strip().replace('\r\n', '') == part_base64_encoded.strip().replace('\r\n', ''):
@@ -1020,7 +1020,7 @@ class ProcessEmail(object):
 
         try:
             self._set_email_id_contains(email_id)
-        except:
+        except Exception:
             pass
 
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
@@ -1321,7 +1321,7 @@ class ProcessEmail(object):
 
         try:
             success, message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
-        except:
+        except Exception:
             return phantom.APP_ERROR, "Could not retrieve vault file"
 
         if not vault_info:
@@ -1332,22 +1332,22 @@ class ProcessEmail(object):
         # will be the same for every entry, so just access the first one
         try:
             metadata = vault_info[0].get('metadata')
-        except:
+        except Exception:
             return (phantom.APP_ERROR, "Failed to get vault item metadata")
 
         try:
             cef_artifact['fileHashSha256'] = metadata['sha256']
-        except:
+        except Exception:
             pass
 
         try:
             cef_artifact['fileHashMd5'] = metadata['md5']
-        except:
+        except Exception:
             pass
 
         try:
             cef_artifact['fileHashSha1'] = metadata['sha1']
-        except:
+        except Exception:
             pass
 
         return (phantom.APP_SUCCESS, "Mapped hash values")

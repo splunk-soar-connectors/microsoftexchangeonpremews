@@ -84,3 +84,7 @@ AUTH_TYPE_FEDERATED = "Federated"
 AUTH_TYPE_BASIC = "Basic"
 
 DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
+STATE_FILE_CORRUPT_ERR = (
+    "Error occurred while loading the state file due to its unexpected format. "
+    "Resetting the state file with the default format. Please try again."
+)

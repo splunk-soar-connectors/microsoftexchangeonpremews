@@ -41,7 +41,7 @@ def _process_data(data):
     try:
         soup = BeautifulSoup(email_body, "html.parser")
         data['email_text'] = _clean_email_text(soup.get_text())
-    except:
+    except Exception:
         data['email_text'] = None
 
     recipients_mailbox = data.get('t_ToRecipients', {}).get('t_Mailbox')

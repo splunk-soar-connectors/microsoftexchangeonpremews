@@ -58,14 +58,14 @@ from request_handler import _get_dir_name_from_app_name
 
 try:
     import urllib
-except:
+except Exception:
     import urllib.error
     import urllib.parse
     import urllib.request
 
 try:
     from urlparse import urlparse
-except:
+except Exception:
     from urllib.parse import urlparse
 
 
@@ -160,7 +160,7 @@ class EWSOnPremConnector(BaseConnector):
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
-            except:
+            except Exception:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
@@ -574,7 +574,7 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, EWSONPREM_VALIDATE_INTEGER_MESSAGE.format(key=key)), None
 
             parameter = int(parameter)
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, EWSONPREM_VALIDATE_INTEGER_MESSAGE.format(key=key)), None
 
         if parameter < 0:
@@ -595,7 +595,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if input_str and self._python_version == 2:
                 input_str = UnicodeDammit(input_str).unicode_markup.encode('utf-8')
-        except:
+        except Exception:
             self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
 
         return input_str
@@ -609,7 +609,7 @@ class EWSOnPremConnector(BaseConnector):
         try:
             if input_str and self._python_version == 2:
                 input_str = UnicodeDammit(input_str).unicode_markup
-        except:
+        except Exception:
             self.debug_print("Error occurred while handling python 2to3 compatibility for the input string|unicode")
 
         return input_str
@@ -622,7 +622,7 @@ class EWSOnPremConnector(BaseConnector):
                     input_str = UnicodeDammit(input_str).unicode_markup.encode(charset)
                 else:
                     input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except:
+        except Exception:
             self.debug_print("Error occurred while converting to string with specific encoding")
 
         return input_str
@@ -644,7 +644,7 @@ class EWSOnPremConnector(BaseConnector):
             else:
                 error_code = EWSONPREM_ERR_CODE_MESSAGE
                 error_msg = EWSONPREM_ERR_MESSAGE
-        except:
+        except Exception:
             error_code = EWSONPREM_ERR_CODE_MESSAGE
             error_msg = EWSONPREM_ERR_MESSAGE
 
@@ -652,7 +652,7 @@ class EWSOnPremConnector(BaseConnector):
             error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
         except TypeError:
             error_msg = TYPE_ERR_MESSAGE
-        except:
+        except Exception:
             error_msg = EWSONPREM_ERR_MESSAGE
 
         return error_code, error_msg
@@ -666,12 +666,17 @@ class EWSOnPremConnector(BaseConnector):
 
         self._state = self.load_state()
 
+        if not isinstance(self._state, dict):
+            self.debug_print("Resetting the state file with the default format")
+            self._state = {"app_version": self.get_app_json().get("app_version")}
+            return self.set_status(phantom.APP_ERROR, STATE_FILE_CORRUPT_ERR)
+
         config = self.get_config()
 
         # Fetching the Python major version
         try:
             self._python_version = int(sys.version_info[0])
-        except:
+        except Exception:
             return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
 
         # The headers, initialize them here once and use them for all other REST calls
@@ -830,7 +835,7 @@ class EWSOnPremConnector(BaseConnector):
 
             try:
                 return resp_json['s:Envelope']['s:Body']['s:Fault']['detail']['e:Message']['#text']
-            except:
+            except Exception:
                 pass
 
         return ""
@@ -1040,7 +1045,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mini, maxi = (int(x) for x in email_range.split('-'))
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Unable to parse the range. Please specify the range as min_offset-max_offset")
 
         if mini < 0 or maxi < 0:
@@ -1193,7 +1198,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             email_id = urllib.quote_plus(email_id)
-        except:
+        except Exception:
             email_id = urllib.parse.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
         url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
@@ -1256,7 +1261,7 @@ class EWSOnPremConnector(BaseConnector):
             if not file_info:
                 return RetVal3(action_result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_VAULT_INFO), None, None)
             file_path = list(file_info)[0].get('path')
-        except:
+        except Exception:
             return RetVal3(action_result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_VAULT_INFO), None, None)
 
         if not file_path:
@@ -1274,7 +1279,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mail = email.message_from_string(email_data)
-        except:
+        except Exception:
             return RetVal2(action_result.set_status(phantom.APP_ERROR,
                     "Unable to create email object from data. Does not seem to be valid email"), None)
 
@@ -1338,11 +1343,11 @@ class EWSOnPremConnector(BaseConnector):
                 value = value.decode(encoding)
                 new_str += value
                 new_str_create_count += 1
-            except:
+            except Exception:
                 try:
                     if encoding != 'utf-8':
                         value = str(value, encoding)
-                except:
+                except Exception:
                     pass
 
                 try:
@@ -1354,7 +1359,7 @@ class EWSOnPremConnector(BaseConnector):
                     if value:
                         new_str += UnicodeDammit(value).unicode_markup
                         new_str_create_count += 1
-                except:
+                except Exception:
                     pass
 
         # replace input string with new string because issue find in PAPP-9531
@@ -1903,7 +1908,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             new_email_id = next(iter(resp_json['m:Items'].values()))['t:ItemId']['@Id']
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_SUCCESS, "Unable to get {0} Email ID".format(action_verb))
 
         action_result.add_data({'new_email_id': new_email_id})
@@ -2022,7 +2027,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mime_content = resp_json['m:Items']['t:Message']['t:MimeContent']['#text']
-        except:
+        except Exception:
             return action_result.set_status(phantom.APP_ERROR, "Email MimeContent missing in response.")
 
         try:
@@ -2041,12 +2046,12 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             attach_meta_info['attachmentId'] = attachment['t:AttachmentId']['@Id']
-        except:
+        except Exception:
             pass
 
         try:
             attach_meta_info['attachmentType'] = curr_key[2:].replace('Attachment', '').lower()
-        except:
+        except Exception:
             pass
 
         attach_meta_info['parentInternetMessageId'] = parent_internet_message_id
@@ -2081,7 +2086,7 @@ class EWSOnPremConnector(BaseConnector):
                 if key in resp_json['m:Items']:
                     data = resp_json['m:Items'][key]
             attachments = data['t:Attachments']
-        except:
+        except Exception:
             return RetVal3(phantom.APP_SUCCESS)
 
         attachment_ids = list()
@@ -2089,7 +2094,7 @@ class EWSOnPremConnector(BaseConnector):
         internet_message_id = None
         try:
             internet_message_id = data['t:InternetMessageId']
-        except:
+        except Exception:
             internet_message_id = None
 
         email_guid = resp_json['emailGuid']
@@ -2205,7 +2210,7 @@ class EWSOnPremConnector(BaseConnector):
                 if key in resp_json['m:Items']:
                     data = resp_json['m:Items'][key]
             extended_properties = data['t:ExtendedProperty']
-        except:
+        except Exception:
             pass
 
         if extended_properties:
@@ -2231,12 +2236,12 @@ class EWSOnPremConnector(BaseConnector):
         # now parse the body in the main resp_json
         try:
             body_text = data['t:Body']['#text']
-        except:
+        except Exception:
             body_text = None
 
         try:
             body_type = data['t:Body']['@BodyType']
-        except:
+        except Exception:
             body_type = None
 
         if body_text is not None:
@@ -2252,7 +2257,7 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self.debug_print("Extracting body text from t:TextBody key from the response")
                 body_text = data['t:TextBody']['#text']
-            except:
+            except Exception:
                 body_text = None
 
             # if body text not found into the response json
@@ -2268,7 +2273,7 @@ class EWSOnPremConnector(BaseConnector):
                     split_lines = body_text.split('\n')
                     split_lines = [x.strip() for x in split_lines if x.strip()]
                     body_text = '\n'.join(split_lines)
-                except:
+                except Exception:
                     body_text = None
 
             if body_text is not None:
@@ -2282,7 +2287,7 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 message_id = data['t:InternetMessageId']
                 headers['Message-ID'] = message_id
-            except:
+            except Exception:
                 pass
 
         if parent_internet_message_id is not None:
@@ -2302,7 +2307,7 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             mime_content = next(iter(resp_json['m:Items'].values()))['t:MimeContent']['#text']
-        except:
+        except Exception:
             return (phantom.APP_ERROR, "Email MimeContent missing in response.")
 
         try:
