@@ -59,9 +59,11 @@ class Office365RequestHandler():
         }
 
         try:
-            r = requests.post(  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            # The request-sensitive-data error indicated by semgrep is a false positive hence ignoring the check
+            r = requests.post(  # nosemgrep
                 request_url + '/token',
-                data=body
+                data=body,
+                timeout=30  # in seconds
             )
             r.raise_for_status()
             resp_json = r.json()
@@ -126,7 +128,7 @@ class RequestStateHandler():
         state_file = self._get_state_file()
         try:
             os.remove(state_file)
-        except:
+        except Exception:
             pass
 
         return True
@@ -138,7 +140,7 @@ class RequestStateHandler():
             with open(state_file, 'w+') as fp:
                 fp.write(json.dumps(state))
                 fp.close()
-        except:
+        except Exception:
             pass
 
         return True
@@ -151,7 +153,7 @@ class RequestStateHandler():
                 in_json = fp.read()
                 state = json.loads(in_json)
                 fp.close()
-        except:
+        except Exception:
             pass
 
         state = self._decrypt_state(state)

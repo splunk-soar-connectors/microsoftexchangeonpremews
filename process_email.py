@@ -134,7 +134,9 @@ class ProcessEmail(object):
         contains = []
         ext = os.path.splitext(file_path)[1]
         contains.extend(FILE_EXTENSIONS.get(ext, []))
+        self._debug_print("File path: {}".format(file_path))
         magic_str = magic.from_file(file_path)
+        self._debug_print("File type: {}".format(magic_str))
         for regex, cur_contains in MAGIC_FORMATS:
             if regex.match(magic_str):
                 contains.extend(cur_contains)
@@ -155,7 +157,7 @@ class ProcessEmail(object):
 
         try:
             socket.inet_pton(socket.AF_INET6, input_ip)
-        except:  # not a valid v6 address
+        except Exception:  # not a valid v6 address
             return False
 
         return True
@@ -489,11 +491,11 @@ class ProcessEmail(object):
                 value = value.decode(encoding)
                 new_str += value
                 new_str_create_count += 1
-            except:
+            except Exception:
                 try:
                     if encoding != 'utf-8':
                         value = str(value, encoding)
-                except:
+                except Exception:
                     pass
 
                 try:
@@ -505,7 +507,7 @@ class ProcessEmail(object):
                     if value:
                         new_str += UnicodeDammit(value).unicode_markup
                         new_str_create_count += 1
-                except:
+                except Exception:
                     pass
 
         # replace input string with new string because issue find in PAPP-9531
@@ -585,7 +587,7 @@ class ProcessEmail(object):
 
             try:
                 attach_content = curr_attach['content']
-            except:
+            except Exception:
                 continue
 
             if attach_content.strip().replace('\r\n', '') == part_base64_encoded.strip().replace('\r\n', ''):
@@ -1018,7 +1020,7 @@ class ProcessEmail(object):
 
         try:
             self._set_email_id_contains(email_id)
-        except:
+        except Exception:
             pass
 
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
@@ -1109,11 +1111,10 @@ class ProcessEmail(object):
         if duplicate_container and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
 
-        if not using_dummy:
-            if phantom.is_fail(ret_val):
-                message = "Failed to save ingested container, error msg: {0}".format(message)
-                self._base_connector.debug_print(message)
-                return
+        if not using_dummy and phantom.is_fail(ret_val):
+            message = "Failed to save ingested container, error msg: {0}".format(message)
+            self._base_connector.debug_print(message)
+            return
 
         if not container_id:
             message = "save_container did not return a container_id"
@@ -1127,11 +1128,15 @@ class ProcessEmail(object):
             return
 
         # create a list of all the vault artifacts from the ingested files
+        self._debug_print("Processing Vault files")
         vault_artifacts = list()
         for i, curr_file in enumerate(files):
 
+            self._debug_print("The file name is : {}".format(curr_file.get('file_name')))
             file_name = self._decode_uni_string(curr_file.get('file_name'), curr_file.get('file_name'))
+            self._debug_print("The decoded file name is : {}".format(file_name))
 
+            self._debug_print("Checking whether or not the file is present in the container")
             try:
                 success, message, vault_info = phantom_rules.vault_info(vault_id=curr_file['file_hash'], container_id=container_id)
             except Exception:
@@ -1143,7 +1148,12 @@ class ProcessEmail(object):
 
             local_file_path = curr_file['file_path']
 
-            contains = self._get_file_contains(local_file_path)
+            try:
+                contains = self._get_file_contains(local_file_path)
+                self._debug_print("Obtained contains: {}".format(contains))
+            except Exception as e:
+                contains = []
+                self._debug_print("An exception occurred while adding the contains: {}".format(str(e)))
 
             # lets move the data into the vault
             vault_attach_dict = {}
@@ -1173,6 +1183,7 @@ class ProcessEmail(object):
                 self._base_connector.debug_print("Failed to add file to Vault: {0}".format(json.dumps(message)))
                 continue
 
+            self._debug_print("Successfully added file to the vault")
             # add the vault id artifact to the container
             cef_artifact = curr_file.get('meta_info', {})
             if file_name:
@@ -1198,6 +1209,8 @@ class ProcessEmail(object):
 
             if contains:
                 artifact['cef_types'] = {'vaultId': contains, 'cs6': contains}
+
+            self._debug_print("Adding Source Data Identifier to the Vault artifact")
             self._set_sdi(artifact)
 
             if 'parentGuid' in cef_artifact:
@@ -1207,6 +1220,7 @@ class ProcessEmail(object):
                     cef_artifact.get('parentSourceDataIdentifier')))
 
             vault_artifacts.append(artifact)
+            self._debug_print("Added the artifact to the vault artifact list")
 
         # add all the vault artifacts to the list of other artifacts ingested to save them together
         if vault_artifacts:
@@ -1227,6 +1241,7 @@ class ProcessEmail(object):
         else:
             artifacts[-1]['run_automation'] = True
 
+        self._debug_print("Saving artifacts")
         # save all the artifacts(Vault, IP, domain, etc.) in a single save_artifacts call
         ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
         self._base_connector.debug_print(
@@ -1292,8 +1307,10 @@ class ProcessEmail(object):
                 if 'emailGuid' in cef_artifact:
                     # cef_artifact['emailGuid'] = self._guid_to_hash[cef_artifact['emailGuid']]
                     del cef_artifact['emailGuid']
-
-            self._handle_save_ingested(artifacts, container, container_id, result.get('files'))
+            try:
+                self._handle_save_ingested(artifacts, container, container_id, result.get('files'))
+            except Exception as e:
+                self._debug_print("An exception occurred in _handle_save_ingested: {}".format(str(e)))
 
         # delete any temp directories that were created by the email parsing function
         [shutil.rmtree(x['temp_directory'], ignore_errors=True) for x in results if x.get('temp_directory')]
@@ -1304,7 +1321,7 @@ class ProcessEmail(object):
 
         try:
             success, message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
-        except:
+        except Exception:
             return phantom.APP_ERROR, "Could not retrieve vault file"
 
         if not vault_info:
@@ -1315,22 +1332,22 @@ class ProcessEmail(object):
         # will be the same for every entry, so just access the first one
         try:
             metadata = vault_info[0].get('metadata')
-        except:
+        except Exception:
             return (phantom.APP_ERROR, "Failed to get vault item metadata")
 
         try:
             cef_artifact['fileHashSha256'] = metadata['sha256']
-        except:
+        except Exception:
             pass
 
         try:
             cef_artifact['fileHashMd5'] = metadata['md5']
-        except:
+        except Exception:
             pass
 
         try:
             cef_artifact['fileHashSha1'] = metadata['sha1']
-        except:
+        except Exception:
             pass
 
         return (phantom.APP_SUCCESS, "Mapped hash values")
