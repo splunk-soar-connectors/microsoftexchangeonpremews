@@ -1,2 +1,1 @@
 **Unreleased**
-* Fixed the artifact extraction issue for the 'on poll' action [PAPP-23700]
