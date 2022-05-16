@@ -507,7 +507,7 @@ class EWSOnPremConnector(BaseConnector):
         params = {'api-version': '1.0'}
 
         try:
-            r = self._session.get(url, params=params, headers=headers)
+            r = self._session.get(url, params=params, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return (None, str(e))
 
@@ -540,7 +540,7 @@ class EWSOnPremConnector(BaseConnector):
                 'scope': 'openid' }
 
         try:
-            r = self._session.post(url, params=params, headers=headers, data=data, verify=True)
+            r = self._session.post(url, params=params, headers=headers, data=data, verify=True, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             return (None, str(e))
 
@@ -926,6 +926,8 @@ class EWSOnPremConnector(BaseConnector):
         resp_class = resp_message.get('@ResponseClass', '')
 
         if resp_class == 'Error':
+            if resp_message.get('m:ResponseCode') == 'ErrorMimeContentConversionFailed':
+                return (phantom.APP_SUCCESS, resp_message)
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json)
 
         return (phantom.APP_SUCCESS, resp_message)
@@ -949,7 +951,7 @@ class EWSOnPremConnector(BaseConnector):
             action_result.append_to_message(EWS_MODIFY_CONFIG)
 
             # Set the status of the complete connector result
-            self.set_status(phantom.APP_ERROR, action_result.get_message())
+            action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
             action_result.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
@@ -2357,6 +2359,11 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
+
+        if resp_json.get('m:ResponseCode') == 'ErrorMimeContentConversionFailed':
+            self.debug_print("While getting email data for id {0} ErrorMimeContentConversionFailed error occured. Skipping the email.".format(
+                    email_id))
+            return phantom.APP_SUCCESS
 
         ret_val, message = self._parse_email(resp_json, email_id, target_container_id)
 

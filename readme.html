@@ -62,6 +62,20 @@ and limitations under the License.
     <h3>Run automation on duplicate event</h3>
     <p>Set this parameter to run the automation, when there is a modification in the email which is already ingested. If you don't want to trigger the automation for such small changes (in case of re-ingestion), this parameter can be set to FALSE.</p>
 
+    <h2>Important points regarding scheduled polling</h2>
+    <ul>
+      <li>The accuracy of scheduled polling can not be assured at lower scheduled time. The variance of +/-2 minute is acceptable in the current implementation.</li>
+      <li>The interval period must be set considering various aspects. Anything below 5 minutes can be considered as less accurate.</li>
+      <li>One can separate out the mail boxes. For example, inbox, drafts and other folders. This allows multiple ingestions on different assets by keeping longer interval period (i.e. 5 minutes), rather than a single asset with 1 minute interval period.</li>
+      <li>When the ingestion time takes longer than the interval period, i.e. if the interval period is 1 minute ans it takes 2 minutes to ingest an email. In this case, the following points can be observed.</li>
+      <ul>
+        <li>The timing can not be exact, as one ingestion must be completed before the timer is resumed.</li>
+        <li>It is also possible that even after turning off the scheduled polling, some emails would be ingested as the emails are queued when the ingestion takes longer than the period.</li>
+        <li>Hence, it is important to set the appropriate ingestion period.</li>
+      </ul>
+      </ul>
+
+    </ul>
     <h2>Artifacts created</h2>
     <p>
        The app will create the following type of artifacts:
