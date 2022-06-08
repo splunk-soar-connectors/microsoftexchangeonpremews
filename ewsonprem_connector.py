@@ -110,6 +110,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._impersonate = False
         self._dup_emails = 0
+        self._skipped_emails = 0
         self._group_list = list()
 
     def _handle_preprocess_scipts(self):
@@ -1906,8 +1907,9 @@ class EWSOnPremConnector(BaseConnector):
             return phantom.APP_ERROR
 
         if resp_json.get('m:ResponseCode') == 'ErrorMimeContentConversionFailed':
-            self.debug_print("While getting email data for id {0} ErrorMimeContentConversionFailed error occured. Skipping the email.".format(
+            self.debug_print("While getting email data for id {0} ErrorMimeContentConversionFailed error occurred. Skipping the email.".format(
                     email_id))
+            self._skipped_emails += 1
             return phantom.APP_SUCCESS
 
         ret_val, message = self._parse_email(resp_json, email_id, target_container_id)
@@ -2008,7 +2010,8 @@ class EWSOnPremConnector(BaseConnector):
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
                 self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
-
+        if self._skipped_emails > 0:
+            self.save_progress("Skipped emails: {}. (For more details, check the logs)".format(self._skipped_emails))
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _poll_now(self, param):
@@ -2129,7 +2132,7 @@ class EWSOnPremConnector(BaseConnector):
         while True:
 
             self._dup_emails = 0
-
+            self._skipped_emails = 0
             restriction = self._get_restriction(field_uri=sort_on, emails_after=emails_after)
 
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction, field_uri=sort_on)
@@ -2156,9 +2159,9 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
-            total_ingested += max_emails - self._dup_emails
+            total_ingested += max_emails - (self._dup_emails + self._skipped_emails)
 
-            if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS or total_ingested == run_limit:
+            if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS or total_ingested >= run_limit:
                 break
 
             # In case of duplicate emails, find the count of duplicate emails and run the cycle again
@@ -2171,7 +2174,7 @@ class EWSOnPremConnector(BaseConnector):
                 else:
                     break
 
-            max_emails = next_cycle_repeat_emails + min(self._dup_emails, run_limit)
+            max_emails = next_cycle_repeat_emails + min(self._dup_emails + self._skipped_emails, run_limit)
 
         return ret_val
 
