@@ -472,7 +472,7 @@ class EWSOnPremConnector(BaseConnector):
         resp_class = resp_message.get('@ResponseClass', '')
 
         if resp_class == 'Error':
-            if resp_message.get('m:ResponseCode') == 'ErrorMimeContentConversionFailed':
+            if resp_message.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
                 return (phantom.APP_SUCCESS, resp_message)
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json)
 
@@ -1085,6 +1085,10 @@ class EWSOnPremConnector(BaseConnector):
                 self.send_progress(message)
                 return phantom.APP_ERROR
 
+            if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+                self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+                return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+
             self._cleanse_key_names(resp_json)
 
             """
@@ -1167,6 +1171,10 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
+
+        if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+            self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+            return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
 
         try:
             change_key = next(iter(resp_json['m:Items'].values()))['t:ItemId']['@ChangeKey']
@@ -1906,9 +1914,8 @@ class EWSOnPremConnector(BaseConnector):
             self.send_progress(message)
             return phantom.APP_ERROR
 
-        if resp_json.get('m:ResponseCode') == 'ErrorMimeContentConversionFailed':
-            self.debug_print("While getting email data for id {0} ErrorMimeContentConversionFailed error occurred. Skipping the email.".format(
-                    email_id))
+        if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+            self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_MESSAGE.format(email_id))
             self._skipped_emails += 1
             return phantom.APP_SUCCESS
 

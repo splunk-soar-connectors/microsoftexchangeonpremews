@@ -53,6 +53,10 @@ EWSONPREM_ERR_CODE_MESSAGE = "Error code unavailable"
 EWSONPREM_ERR_MESSAGE = "Error message unavailable. Please check the asset configuration and|or action parameters."
 TYPE_ERR_MESSAGE = "Error occurred while connecting to the EWS server. Please check the asset configuration and|or the action parameters."
 EWSONPREM_VALIDATE_INTEGER_MESSAGE = "Please provide a valid integer value in the {key} parameter"
+EWSONPREM_MIME_CONTENT_CONVERSION_ERROR = "Error occurred due to 'Mime-Content' conversion failure"
+EWSONPREM_MIME_CONTENT_CONVERSION_MESSAGE = "While getting email data for id {0} 'ErrorMimeContentConversionFailed' error occurred. \
+Skipping the email."
+EWSONPREM_ERROR_MIME_CONTENT_CONVERSION = 'ErrorMimeContentConversionFailed'
 
 EWSONPREM_MAIL_TYPES = [
     "t:Message",
