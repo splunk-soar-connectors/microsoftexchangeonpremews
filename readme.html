@@ -65,12 +65,12 @@ and limitations under the License.
     <h2>Important points regarding scheduled polling</h2>
     <ul>
       <li>The accuracy of "scheduled polling" can't be assured for lower polling intervals. The variance of +/-2 minutes is acceptable in the current implementation.</li>
-      <li>The interval period must be set considering various aspects. Anything below 5 minutes can be consider as less accurate.</li>
-      <li>One can separate out the mail boxes. For example, inbox, drafts and other folders. This allows multiple ingestions on different assets by keeping longer interval period (i.e. 5 minutes), rather than a single asset with 1 minute interval period.</li>
+      <li>The interval period must be set considering various aspects. Anything below 5 minutes can be considered as less accurate.</li>
+      <li>One can separate out the mail boxes to increase the accuracy of polling. For example, inbox, drafts and other folders. This allows multiple ingestions on different assets by keeping longer interval period (i.e. 5 minutes), rather than a single asset with 1 minute interval period.</li>
       <li>When the ingestion time takes longer than the interval period( i.e. When the interval period is 1-minute, and it takes 2 minutes to ingest an email), In this case, the following scenarios are possible.</li>
       <ul>
         <li>The timing can not be exact, as one ingestion must complete before the timer is resumed.</li>
-        <li>It is also possible that even after turning off the scheduled polling, some emails would be ingested as the emails are in queued when the ingestion takes longer than the period.</li>
+        <li>It is also possible that even after turning off the scheduled polling, some emails would be ingested as the emails are queued when the ingestion takes longer than the period.</li>
         <li>Hence, it is important to set the appropriate ingestion period as per your data.</li>
       </ul>
       </ul>
