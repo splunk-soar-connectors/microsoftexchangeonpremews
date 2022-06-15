@@ -270,9 +270,6 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session.auth = HttpNtlmAuth(username, password)
 
-        if not self._session.auth:
-            return self.set_status(phantom.APP_ERROR, message)
-
         if self._base_url.endswith('/'):
             self._base_url = self._base_url[:-1]
 
