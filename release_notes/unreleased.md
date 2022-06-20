@@ -1,3 +1,1 @@
 **Unreleased**
-* Fixed the issue related to 'Mime-Content' conversion failure [PAPP-25569]
-* Added the guidelines for scheduled polling intervals in the app documentation [PAPP-25200]

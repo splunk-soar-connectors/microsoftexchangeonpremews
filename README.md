@@ -2,7 +2,7 @@
 # Microsoft Exchange On\-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3\.9\.0  
+Connector Version: 3\.10\.0  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): "\.\*"  
@@ -151,6 +151,29 @@ same second, it will start polling from the next second in the next polling cycl
 Set this parameter to run the automation, when there is a modification in the email which is already
 ingested. If you don't want to trigger the automation for such small changes (in case of
 re-ingestion), this parameter can be set to FALSE.
+
+## Important points regarding scheduled polling
+
+-   The accuracy of "scheduled polling" can't be assured for lower polling intervals. The variance
+    of +/-2 minutes is acceptable in the current implementation.
+
+-   The interval period must be set considering various aspects. Anything below 5 minutes can be
+    considered as less accurate.
+
+-   One can separate out the mail boxes to increase the accuracy of polling. For example, inbox,
+    drafts and other folders. This allows multiple ingestions on different assets by keeping longer
+    interval period (i.e. 5 minutes), rather than a single asset with 1 minute interval period.
+
+-   When the ingestion time takes longer than the interval period( i.e. When the interval period is
+    1-minute, and it takes 2 minutes to ingest an email), In this case, the following scenarios are
+    possible.
+
+      
+
+    -   The timing can not be exact, as one ingestion must complete before the timer is resumed.
+    -   It is also possible that even after turning off the scheduled polling, some emails would be
+        ingested as the emails are queued when the ingestion takes longer than the period.
+    -   Hence, it is important to set the appropriate ingestion period as per your data.
 
 ## Artifacts created
 
