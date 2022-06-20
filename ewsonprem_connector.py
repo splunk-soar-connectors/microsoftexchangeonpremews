@@ -33,9 +33,8 @@ import json
 import os
 import re
 import sys
-import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from email.header import decode_header
 from email.parser import HeaderParser
 
@@ -47,14 +46,11 @@ import xmltodict
 from bs4 import BeautifulSoup, UnicodeDammit
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
-from requests.auth import AuthBase, HTTPBasicAuth
 from requests.structures import CaseInsensitiveDict
 
 import ews_soap
 from ewsonprem_consts import *
 from process_email import ProcessEmail
-from request_handler import RequestStateHandler  # noqa
-from request_handler import _get_dir_name_from_app_name
 
 try:
     import urllib
@@ -62,11 +58,6 @@ except Exception:
     import urllib.error
     import urllib.parse
     import urllib.request
-
-try:
-    from urlparse import urlparse
-except Exception:
-    from urllib.parse import urlparse
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -82,22 +73,6 @@ class RetVal3(tuple):
 class RetVal2(tuple):
     def __new__(cls, val1, val2=None):
         return tuple.__new__(RetVal2, (val1, val2))
-
-
-OFFICE365_APP_ID = "a73f6d32-c9d5-4fec-b024-43876700daa6"
-EXCHANGE_ONPREM_APP_ID = "badc5252-4a82-4a6d-bc53-d1e503857124"
-
-
-class OAuth2TokenAuth(AuthBase):
-
-    def __init__(self, token, token_type="Bearer"):
-        self._token = token
-        self._token_type = token_type
-
-    def __call__(self, r):
-        # modify and return the request
-        r.headers['Authorization'] = "{0} {1}".format(self._token_type, self._token)
-        return r
 
 
 class EWSOnPremConnector(BaseConnector):
@@ -135,6 +110,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._impersonate = False
         self._dup_emails = 0
+        self._skipped_emails = 0
         self._group_list = list()
 
     def _handle_preprocess_scipts(self):
@@ -165,408 +141,6 @@ class EWSOnPremConnector(BaseConnector):
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
         return phantom.APP_SUCCESS
-
-    def _get_ping_fed_request_xml(self, config):
-
-        try:
-            ret_val = "<s:Envelope xmlns:s='http://www.w3.org/2003/05/soap-envelope' "
-            ret_val += "xmlns:wsse='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd' "
-            ret_val += "xmlns:u='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd'>"
-            ret_val += "<s:Header>"
-            ret_val += "<wsse:Action s:mustUnderstand='1'>http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsse:Action>"
-            ret_val += "<wsse:messageID>urn:uuid:7f45785a-9691-451e-b3ff-30ab463af64c</wsse:messageID>"
-            ret_val += "<wsse:ReplyTo><wsse:Address>http://www.w3.org/2005/08/addressing/anonymous</wsse:Address></wsse:ReplyTo>"
-            ret_val += "<wsse:To s:mustUnderstand='1'>"
-            ret_val += config[EWS_JSON_FED_PING_URL].split('?')[0]
-            ret_val += "</wsse:To>"
-            ret_val += "<o:Security s:mustUnderstand='1' "
-            ret_val += "xmlns:o='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'>"
-            ret_val += "<u:Timestamp>"
-            ret_val += "<u:Created>"
-
-            dt_now = datetime.utcnow()
-            dt_plus = dt_now + timedelta(minutes=10)
-
-            dt_now_str = "{0}Z".format(dt_now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
-            dt_plus_str = "{0}Z".format(dt_plus.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
-
-            ret_val += dt_now_str
-            ret_val += "</u:Created>"
-            ret_val += "<u:Expires>"
-            ret_val += dt_plus_str
-            ret_val += "</u:Expires>"
-            ret_val += "</u:Timestamp>"
-            ret_val += "<o:UsernameToken>"
-            ret_val += "<wsse:Username>"
-            ret_val += config[phantom.APP_JSON_USERNAME]
-            ret_val += "</wsse:Username>"
-            ret_val += "<o:Password>"
-            ret_val += config[phantom.APP_JSON_PASSWORD]
-            ret_val += "</o:Password>"
-            ret_val += "</o:UsernameToken>"
-            ret_val += "</o:Security>"
-            ret_val += "</s:Header>"
-            ret_val += "<s:Body>"
-            ret_val += "<trust:RequestSecurityToken xmlns:trust='http://docs.oasis-open.org/ws-sx/ws-trust/200512'>"
-            ret_val += "<wsp:AppliesTo xmlns:wsp='http://schemas.xmlsoap.org/ws/2004/09/policy'>"
-            ret_val += "<wsse:EndpointReference><wsse:Address>urn:federation:MicrosoftOnline</wsse:Address></wsse:EndpointReference>"
-            ret_val += "</wsp:AppliesTo>"
-            ret_val += "<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>"
-            ret_val += "<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>"
-            ret_val += "</trust:RequestSecurityToken>"
-            ret_val += "</s:Body>"
-            ret_val += "</s:Envelope>"
-        except Exception as e:
-            return (None, "Unable to create request xml data. Error: {0}".format(str(e)))
-
-        return (ret_val, "Done")
-
-    def _set_federated_auth(self, config):
-
-        ret_val, message = self._check_password(config)
-        if phantom.is_fail(ret_val):
-            self.save_progress(message)
-            return (None, message)
-
-        required_params = [EWS_JSON_CLIENT_ID, EWS_JSON_FED_PING_URL, EWS_JSON_AUTH_URL, EWS_JSON_FED_VERIFY_CERT]
-
-        for required_param in required_params:
-            if required_param not in config:
-                return (None, "ERROR: {0} is a required parameter for Azure/Federated Authentication, please specify one."
-                        .format(required_param))
-
-        client_id = config[EWS_JSON_CLIENT_ID]
-
-        # create the xml request that we need to send to the ping fed
-        fed_request_xml, message = self._get_ping_fed_request_xml(config)
-
-        if fed_request_xml is None:
-            return (None, message)
-
-        # Now create the request to the server
-        headers = {'Content-Type': 'application/soap_xml; charset=utf8'}
-
-        try:
-            url = self._handle_py_ver_compat_for_input_str(config[EWS_JSON_FED_PING_URL])
-        except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
-            self.debug_print("{}. Error: {}".format(EWSONPREM_ERR_FED_PING_URL, error_text))
-            return (None, EWSONPREM_ERR_FED_PING_URL)
-
-        # POST the request
-        try:
-            r = requests.post(url,
-                              data=fed_request_xml,
-                              headers=headers,
-                              verify=config[EWS_JSON_FED_VERIFY_CERT],
-                              timeout=DEFAULT_REQUEST_TIMEOUT)
-        except Exception as e:
-            return (None, "Unable to send POST to ping url: {0}, Error: {1}".format(url, str(e)))
-
-        if r.status_code != 200:
-            return (None, "POST to ping url failed. Status Code: {0}".format(r.status_code))
-
-        # process the xml response
-        xml_response = r.text
-        start_pos = xml_response.find('<saml:Assertion')
-        end_pos = xml_response.find('</saml:Assertion>') + len('</saml:Assertion>')
-
-        # validate that the saml assertion is present
-        if start_pos == -1 or end_pos == -1:
-            return (None, "Could not find Saml Assertion")
-
-        saml_assertion = xml_response[start_pos:end_pos]
-
-        # base64 encode the assertion
-        saml_assertion_encoded = base64.encodestring(saml_assertion)
-
-        # Now work on sending th assertion, to get the token
-        url = '{0}/oauth2/token'.format(config[EWS_JSON_AUTH_URL])
-
-        # headers
-        client_req_id = str(uuid.uuid4())
-        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-
-        # URL
-        parsed_auth_url = urlparse(self._base_url)
-
-        # Form data
-        data = {
-                'resource': '{0}://{1}'.format(parsed_auth_url.scheme, parsed_auth_url.netloc),
-                'client_id': client_id,
-                'grant_type': 'urn:ietf:params:oauth:grant-type:saml1_1-bearer',
-                'assertion': saml_assertion_encoded,
-                'scope': 'openid' }
-
-        try:
-            r = requests.post(url, data=data, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT)
-        except Exception as e:
-            return (None, "Failed to acquire token. POST request failed for {0}, Error: {1}".format(url, str(e)))
-
-        if r.status_code != 200:
-            return (None, "POST to office365 url failed. Status Code: {0}".format(r.status_code))
-
-        resp_json = None
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return (None, "Unable to parse auth token response as JSON. Error: {0}".format(str(e)))
-
-        if 'token_type' not in resp_json:
-            return (None, "token_type not found in response from server")
-
-        if 'access_token' not in resp_json:
-            return (None, "token not found in response from server")
-
-        self.save_progress("Got Access Token")
-
-        return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
-
-    def _make_rest_calls_to_phantom(self, action_result, url):
-
-        # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
-        r = requests.get(url, verify=False)  # nosemgrep
-        if not r:
-            message = 'Status Code: {0}'.format(r.status_code)
-            if r.text:
-                message += " Error from Server: {0}".format(r.text.replace('{', '{{').replace('}', '}}'))
-            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving system info, {0}".format(message)), None)
-
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return (action_result.set_status(phantom.APP_ERROR, "Error processing response JSON", e), None)
-
-        return (phantom.APP_SUCCESS, resp_json)
-
-    def _get_phantom_base_url_ews(self, action_result):
-
-        temp_base_url = self.get_phantom_base_url()
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/system_info')
-
-        if phantom.is_fail(ret_val):
-            return (action_result.get_status(), None)
-
-        phantom_base_url = resp_json.get('base_url')
-        if not phantom_base_url:
-            return (action_result.set_status(phantom.APP_ERROR, "Phantom Base URL is not configured, please configure it in System Settings"),
-                    None)
-
-        return (phantom.APP_SUCCESS, phantom_base_url)
-
-    def _get_asset_name(self, action_result):
-
-        temp_base_url = self.get_phantom_base_url()
-        ret_val, resp_json = self._make_rest_calls_to_phantom(action_result, temp_base_url + 'rest/asset/{0}'.format(self.get_asset_id()))
-
-        if phantom.is_fail(ret_val):
-            return (action_result.get_status(), None)
-
-        asset_name = resp_json.get('name')
-        if not asset_name:
-            return (action_result.set_status(phantom.APP_ERROR, "Error retrieving asset name"), None)
-
-        return (phantom.APP_SUCCESS, asset_name)
-
-    def _get_url_to_app_rest(self, action_result=None):
-        if not action_result:
-            action_result = ActionResult()
-        # get the phantom ip to redirect to
-        ret_val, phantom_base_url = self._get_phantom_base_url_ews(action_result)
-        if phantom.is_fail(ret_val):
-            return (action_result.get_status(), action_result.get_message())
-        # get the asset name
-        ret_val, asset_name = self._get_asset_name(action_result)
-        if phantom.is_fail(ret_val):
-            return (action_result.get_status(), action_result.get_message())
-        self.save_progress('Using Phantom base URL as: {0}'.format(phantom_base_url))
-        app_json = self.get_app_json()
-        app_name = app_json['name']
-        app_dir_name = _get_dir_name_from_app_name(app_name)
-        url_to_app_rest = "{0}/rest/handler/{1}_{2}/{3}".format(phantom_base_url, app_dir_name, app_json['appid'], asset_name)
-        return (phantom.APP_SUCCESS, url_to_app_rest)
-
-    def _azure_int_auth_initial(self, client_id, rsh):
-        state = rsh.load_state()
-        asset_id = self.get_asset_id()
-
-        ret_val, message = self._get_url_to_app_rest()
-        if phantom.is_fail(ret_val):
-            return (None, message)
-
-        app_rest_url = message
-
-        request_url = 'https://login.microsoftonline.com/common/oauth2'
-
-        state['client_id'] = client_id
-        state['redirect_url'] = app_rest_url
-        state['request_url'] = request_url
-
-        rsh.save_state(state)
-
-        params = {
-            'response_type': 'code',
-            'response_mode': 'query',
-            'client_id': client_id,
-            'state': asset_id,
-            'redirect_url': app_rest_url
-        }
-        url = requests.Request('GET', request_url + '/authorize', params=params).prepare().url
-        url += '&'
-
-        self.save_progress("To continue, open this link in a new tab in your browser")
-        self.save_progress(url)
-        for _ in range(0, 60):
-            state = rsh.load_state()
-            oauth_token = state.get('oauth_token')
-            if oauth_token:
-                break
-            elif state.get('error'):
-                return (None, "Error retrieving OAuth token")
-
-            time.sleep(5)
-        else:
-            return (None, "Timed out waiting for login")
-
-        self._state['oauth_token'] = oauth_token
-        return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
-
-    def _azure_int_auth_refresh(self, client_id):
-
-        oauth_token = self._state.get('oauth_token')
-        if not oauth_token:
-            return (None, "Unable to get refresh token. Has Test Connectivity been run?")
-
-        if client_id != self._state.get('client_id', ''):
-            return (None, "Client ID has been changed. Please run Test Connectivity again")
-
-        refresh_token = oauth_token['refresh_token']
-
-        request_url = 'https://login.microsoftonline.com/common/oauth2/token'
-        body = {
-            'grant_type': 'refresh_token',
-            'resource': 'https://outlook.office365.com/',
-            'client_id': client_id,
-            'refresh_token': refresh_token
-        }
-        try:
-            r = requests.post(request_url, data=body, timeout=DEFAULT_REQUEST_TIMEOUT)
-        except Exception as e:
-            return (None, "Error refreshing token: {}".format(str(e)))
-
-        try:
-            oauth_token = r.json()
-        except Exception:
-            return (None, "Error retrieving OAuth Token")
-
-        self._state['oauth_token'] = oauth_token
-        return (OAuth2TokenAuth(oauth_token['access_token'], oauth_token['token_type']), "")
-
-    def _set_azure_int_auth(self, config):
-
-        client_id = config.get(EWS_JSON_CLIENT_ID)
-        if not client_id:
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
-
-        asset_id = self.get_asset_id()
-        rsh = RequestStateHandler(asset_id)  # Use the states from the OAuth login
-
-        self._state = rsh._decrypt_state(self._state)
-
-        if self.get_action_identifier() != phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
-            ret = self._azure_int_auth_refresh(client_id)
-        else:
-            ret = self._azure_int_auth_initial(client_id, rsh)
-
-        self._state = rsh._encrypt_state(self._state)
-        self._state['client_id'] = client_id
-
-        # NOTE: This state is in the app directory, it is
-        #  different than the app state (i.e. self._state)
-        rsh.delete_state()
-
-        return ret
-
-    def _set_azure_auth(self, config):
-
-        ret_val, message = self._check_password(config)
-        if phantom.is_fail(ret_val):
-            self.save_progress(message)
-            return (None, message)
-
-        client_id = config.get(EWS_JSON_CLIENT_ID)
-
-        if not client_id:
-            return (None, "ERROR: {0} is a required parameter for Azure Authentication, please specify one.".format(EWS_JSON_CLIENT_ID))
-
-        client_req_id = str(uuid.uuid4())
-
-        headers = {'Accept': 'application/json', 'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/common/UserRealm/{1}".format(EWS_LOGIN_URL, config[phantom.APP_JSON_USERNAME])
-        params = {'api-version': '1.0'}
-
-        try:
-            r = self._session.get(url, params=params, headers=headers)
-        except Exception as e:
-            return (None, str(e))
-
-        if r.status_code != 200:
-            return (None, r.text)
-
-        resp_json = None
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return (None, str(e))
-
-        domain = resp_json.get('domain_name')
-
-        if not domain:
-            return (None, "Did not find domain in response. Cannot continue")
-
-        headers = {'client-request-id': client_req_id, 'return-client-request-id': 'True'}
-        url = "{0}/{1}/oauth2/token".format(EWS_LOGIN_URL, domain)
-        params = None
-
-        parsed_base_url = urlparse(self._base_url)
-
-        data = {
-                'resource': '{0}://{1}'.format(parsed_base_url.scheme, parsed_base_url.netloc),
-                'client_id': config[EWS_JSON_CLIENT_ID],
-                'username': config[phantom.APP_JSON_USERNAME],
-                'password': config[phantom.APP_JSON_PASSWORD],
-                'grant_type': 'password',
-                'scope': 'openid' }
-
-        try:
-            r = self._session.post(url, params=params, headers=headers, data=data, verify=True)
-        except Exception as e:
-            return (None, str(e))
-
-        if r.status_code != 200:
-            return (None, self._clean_str(r.text))
-
-        resp_json = None
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return (None, str(e))
-
-        if 'token_type' not in resp_json:
-            return (None, "token_type not found in response from server")
-
-        if 'access_token' not in resp_json:
-            return (None, "token not found in response from server")
-
-        self.save_progress("Got Access Token")
-
-        return (OAuth2TokenAuth(resp_json['access_token'], resp_json['token_type']), "")
-
-    def _check_password(self, config):
-        if phantom.APP_JSON_PASSWORD not in list(config.keys()):
-            return phantom.APP_ERROR, "Password not present in asset configuration"
-        return phantom.APP_SUCCESS, ''
 
     def _validate_integer(self, action_result, parameter, key, allow_zero=False):
         try:
@@ -686,46 +260,15 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session = requests.Session()
 
-        auth_type = config.get(EWS_JSON_AUTH_TYPE, "Basic")
-
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
         self._unify_cef_fields = config.get('unify_cef_fields', False)
 
-        message = ''
+        password = config[phantom.APP_JSON_PASSWORD]
+        username = self._handle_py_ver_compat_for_input_str(config[phantom.APP_JSON_USERNAME])
+        username = username.replace('/', '\\')
 
-        if auth_type == AUTH_TYPE_AZURE:
-            self.save_progress("Using Azure AD authentication")
-            self._session.auth, message = self._set_azure_auth(config)
-        elif auth_type == AUTH_TYPE_AZURE_INTERACTIVE:
-            self.save_progress("Using Azure AD authentication (interactive)")
-            self._session.auth, message = self._set_azure_int_auth(config)
-        elif auth_type == AUTH_TYPE_FEDERATED:
-            self.save_progress("Using Federated authentication")
-            self._session.auth, message = self._set_federated_auth(config)
-        else:
-            # Make sure username and password are set
-            ret_val, message = self._check_password(config)
-            if phantom.is_fail(ret_val):
-                self.save_progress(message)
-                return ret_val
-
-            password = config[phantom.APP_JSON_PASSWORD]
-            username = self._handle_py_ver_compat_for_input_str(config[phantom.APP_JSON_USERNAME])
-            username = username.replace('/', '\\')
-
-            self._session.auth = HTTPBasicAuth(username, password)
-
-            # depending on the app, it's either basic or NTML
-            if self.get_app_id() != OFFICE365_APP_ID:
-                self.save_progress("Using NTLM authentication")
-                # use NTLM (Exchange on Prem)
-                self._session.auth = HttpNtlmAuth(username, password)
-            else:
-                self.save_progress("Using HTTP Basic authentication")
-
-        if not self._session.auth:
-            return self.set_status(phantom.APP_ERROR, message)
+        self._session.auth = HttpNtlmAuth(username, password)
 
         if self._base_url.endswith('/'):
             self._base_url = self._base_url[:-1]
@@ -926,6 +469,8 @@ class EWSOnPremConnector(BaseConnector):
         resp_class = resp_message.get('@ResponseClass', '')
 
         if resp_class == 'Error':
+            if resp_message.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+                return (phantom.APP_SUCCESS, resp_message)
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json)
 
         return (phantom.APP_SUCCESS, resp_message)
@@ -949,7 +494,7 @@ class EWSOnPremConnector(BaseConnector):
             action_result.append_to_message(EWS_MODIFY_CONFIG)
 
             # Set the status of the complete connector result
-            self.set_status(phantom.APP_ERROR, action_result.get_message())
+            action_result.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
             action_result.append_to_message(EWSONPREM_ERR_CONNECTIVITY_TEST)
@@ -1537,6 +1082,10 @@ class EWSOnPremConnector(BaseConnector):
                 self.send_progress(message)
                 return phantom.APP_ERROR
 
+            if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+                self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+                return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+
             self._cleanse_key_names(resp_json)
 
             """
@@ -1619,6 +1168,10 @@ class EWSOnPremConnector(BaseConnector):
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
+
+        if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+            self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+            return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
 
         try:
             change_key = next(iter(resp_json['m:Items'].values()))['t:ItemId']['@ChangeKey']
@@ -2358,6 +1911,11 @@ class EWSOnPremConnector(BaseConnector):
             self.send_progress(message)
             return phantom.APP_ERROR
 
+        if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+            self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_MESSAGE.format(email_id))
+            self._skipped_emails += 1
+            return phantom.APP_SUCCESS
+
         ret_val, message = self._parse_email(resp_json, email_id, target_container_id)
 
         if phantom.is_fail(ret_val):
@@ -2456,7 +2014,8 @@ class EWSOnPremConnector(BaseConnector):
                 error_code, error_msg = self._get_error_message_from_exception(e)
                 error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
                 self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
-
+        if self._skipped_emails > 0:
+            self.save_progress("Skipped emails: {}. (For more details, check the logs)".format(self._skipped_emails))
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _poll_now(self, param):
@@ -2577,7 +2136,7 @@ class EWSOnPremConnector(BaseConnector):
         while True:
 
             self._dup_emails = 0
-
+            self._skipped_emails = 0
             restriction = self._get_restriction(field_uri=sort_on, emails_after=emails_after)
 
             ret_val, email_infos = self._get_email_infos_to_process(0, max_emails, action_result, restriction, field_uri=sort_on)
@@ -2604,9 +2163,9 @@ class EWSOnPremConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
 
-            total_ingested += max_emails - self._dup_emails
+            total_ingested += max_emails - (self._dup_emails + self._skipped_emails)
 
-            if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS or total_ingested == run_limit:
+            if config[EWS_JSON_INGEST_MANNER] == EWS_INGEST_LATEST_EMAILS or total_ingested >= run_limit:
                 break
 
             # In case of duplicate emails, find the count of duplicate emails and run the cycle again
@@ -2619,7 +2178,7 @@ class EWSOnPremConnector(BaseConnector):
                 else:
                     break
 
-            max_emails = next_cycle_repeat_emails + min(self._dup_emails, run_limit)
+            max_emails = next_cycle_repeat_emails + min(self._dup_emails + self._skipped_emails, run_limit)
 
         return ret_val
 
