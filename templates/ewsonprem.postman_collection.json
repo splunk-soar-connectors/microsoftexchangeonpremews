@@ -1,0 +1,743 @@
+{
+	"info": {
+		"_postman_id": "704af292-27c8-49f4-b355-ca713c269afd",
+		"name": "Microsoft Exchange On-Premise EWS",
+		"description": "# Postman Collection of Endpoints for Microsoft Exchange On-Premise EWS App on Splunk SOAR.\n\n- ### Prerequisite\n\nThe below mentioned are the required fields to use this collection. So, make sure that all these fields are set before running the request.\n\n| **Variable Name** | **Description** |\n| ------ | ------ |\n| username  |  Username ( in environment variables) |\n| password  | Password ( in environment variables) |\n| domain | Domain name ( in environment variables) |\n| base_url | EWS URL ( in environment variables) |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Copy email",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var base_url = pm.environment.get(\"base_url\")",
+							"var copy_email_email = pm.variables.get(\"copy_email_email\")",
+							"var copy_email_folder = pm.variables.get(\"copy_email_folder\")",
+							"var copy_email_impersonate_email = pm.variables.get(\"copy_email_impersonate_email\")",
+							"const req = {",
+							"    url: base_url,",
+							"    method: \"post\",",
+							"    body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${copy_email_impersonate_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindFolder Traversal=\"Deep\"><m:FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:FolderId\"/><t:FieldURI FieldURI=\"folder:FolderClass\"/><t:FieldURI FieldURI=\"folder:ChildFolderCount\"/><t:FieldURI FieldURI=\"folder:ParentFolderId\"/><t:ExtendedFieldURI PropertyTag=\"26293\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"folder:DisplayName\"/></t:AdditionalProperties></m:FolderShape><m:Restriction><t:IsEqualTo><t:FieldURI FieldURI=\"folder:DisplayName\"/><t:FieldURIOrConstant><t:Constant Value=\"${copy_email_folder}\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction><m:ParentFolderIds><t:DistinguishedFolderId Id=\"root\"><t:Mailbox><t:EmailAddress>${copy_email_email}</t:EmailAddress></t:Mailbox></t:DistinguishedFolderId></m:ParentFolderIds></m:FindFolder></soap:Body></soap:Envelope>`,",
+							"    header: {",
+							"        'Content-Type': 'text/xml; charset=utf-8',",
+							"        'Accept': 'text/xml'",
+							"    }",
+							"}",
+							"pm.sendRequest(req, function (err, response) {",
+							"    if (err) throw new Error(JSON.stringify(err))",
+							"    var r = response.text()",
+							"    var rx = /<t:FolderId Id=[\"|\\w*|\\/|=]*/gm;",
+							"    var arr = r.match(rx);",
+							"    pm.variables.set(\"copy_email_folder_id\", arr[0].match(/\"[\"|\\w*|\\/|=]*/gm))",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{copy_email_impersonate_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:CopyItem>\n            <m:ToFolderId>\n                <t:FolderId Id={{copy_email_folder_id}}/>\n            </m:ToFolderId>\n            <m:ItemIds>\n                <t:ItemId Id={{copy_email_id}}/>\n            </m:ItemIds>\n        </m:CopyItem>\n    </soap:Body>\n</soap:Envelope>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| copy_mail_email |  test@sample.com |\n| copy_mail_folder | Destination Mail Folder Name/Path eg. Inbox |\n| copy_mail_impersonate_email | test@sample.com  |\n| copy_mail_folder_id | Set automatically |"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete email",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{delete_email_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:DeleteItem DeleteType=\"HardDelete\">\n            <m:ItemIds>\n                <t:ItemId Id={{delete_email_id}}/>\n            </m:ItemIds>\n        </m:DeleteItem>\n    </soap:Body>\n</soap:Envelope>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| delete_email_id | Email IDs to delete |\n| delete_email_email | Email of the mailbox owner |"
+			},
+			"response": []
+		},
+		{
+			"name": "Get email",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{get_email_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:GetItem>\n            <m:ItemShape>\n                <t:BaseShape>Default</t:BaseShape>\n                <t:IncludeMimeContent>true</t:IncludeMimeContent>\n                <t:AdditionalProperties>\n                    <t:FieldURI FieldURI=\"item:Subject\"/>\n                    <t:FieldURI FieldURI=\"message:From\"/>\n                    <t:FieldURI FieldURI=\"message:Sender\"/>\n                    <t:FieldURI FieldURI=\"message:InternetMessageId\"/>\n                    <t:FieldURI FieldURI=\"item:Categories\"/>\n                    <t:ExtendedFieldURI PropertyTag=\"0x007D\" PropertyType=\"String\"/>\n                    <t:ExtendedFieldURI PropertyTag=\"0x1000\" PropertyType=\"String\"/>\n                    <t:FieldURI FieldURI=\"item:DateTimeReceived\"/>\n                    <t:FieldURI FieldURI=\"item:LastModifiedTime\"/>\n                    <t:FieldURI FieldURI=\"item:Body\"/>\n                </t:AdditionalProperties>\n            </m:ItemShape>\n            <m:ItemIds>\n                <t:ItemId Id={{get_email_id}}/>\n            </m:ItemIds>\n        </m:GetItem>\n    </soap:Body>\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| get_email_email  | test@sample.com |\n| get_email_id | Email ID to get |"
+			},
+			"response": []
+		},
+		{
+			"name": "List addresses",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n    </soap:Header>\n    <soap:Body>\n        <m:ExpandDL>\n            <m:Mailbox>\n                <t:EmailAddress>{{list_addresses_group}}</t:EmailAddress>\n            </m:Mailbox>\n        </m:ExpandDL>\n    </soap:Body>\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variable and its example value for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| list_addresses_group  | Group |"
+			},
+			"response": []
+		},
+		{
+			"name": "Lookup email",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n    </soap:Header>\n    <soap:Body>\n        <m:ResolveNames ReturnFullContactData=\"true\">\n            <m:UnresolvedEntry>{{lookup_email_email}}</m:UnresolvedEntry>\n        </m:ResolveNames>\n    </soap:Body>\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variable and its example value for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| lookup_email_email  | test@sample.com |"
+			},
+			"response": []
+		},
+		{
+			"name": "Move email",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var base_url = pm.environment.get(\"base_url\")",
+							"var move_email_email = pm.variables.get(\"move_email_email\")",
+							"var move_email_folder = pm.variables.get(\"move_email_folder\")",
+							"var move_email_impersonate_email = pm.variables.get(\"move_email_impersonate_email\")",
+							"const req = {",
+							"    url: base_url,",
+							"    method: \"post\",",
+							"    body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${move_email_impersonate_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindFolder Traversal=\"Deep\"><m:FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:FolderId\"/><t:FieldURI FieldURI=\"folder:FolderClass\"/><t:FieldURI FieldURI=\"folder:ChildFolderCount\"/><t:FieldURI FieldURI=\"folder:ParentFolderId\"/><t:ExtendedFieldURI PropertyTag=\"26293\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"folder:DisplayName\"/></t:AdditionalProperties></m:FolderShape><m:Restriction><t:IsEqualTo><t:FieldURI FieldURI=\"folder:DisplayName\"/><t:FieldURIOrConstant><t:Constant Value=\"${move_email_folder}\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction><m:ParentFolderIds><t:DistinguishedFolderId Id=\"root\"><t:Mailbox><t:EmailAddress>${move_email_email}</t:EmailAddress></t:Mailbox></t:DistinguishedFolderId></m:ParentFolderIds></m:FindFolder></soap:Body></soap:Envelope>`,",
+							"    header: {",
+							"        'Content-Type': 'text/xml; charset=utf-8',",
+							"        'Accept': 'text/xml'",
+							"    }",
+							"}",
+							"pm.sendRequest(req, function (err, response) {",
+							"    if (err) throw new Error(JSON.stringify(err))",
+							"    var r = response.text()",
+							"    var rx = /<t:FolderId Id=[\"|\\w*|\\/|=]*/gm;",
+							"    var arr = r.match(rx);",
+							"    pm.variables.set(\"move_email_folder_id\", arr[0].match(/\"[\"|\\w*|\\/=]*/gm))",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{move_email_impersonate_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:MoveItem>\n            <m:ToFolderId>\n                <t:FolderId Id={{move_email_folder_id}} />\n            </m:ToFolderId>\n            <m:ItemIds>\n                <t:ItemId Id={{move_email_item_id}} />\n            </m:ItemIds>\n        </m:MoveItem>\n    </soap:Body>\n</soap:Envelope>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| move_mail_email | test@sample.com | \n| move_mail_folder | Destination Mail Folder Name/Path eg. Drafts | \n| move_mail_impersonate_email | test@sample.com | \n| move_mail_folder_id |  Set automatically | \n| move_item_id | Email ID to move |"
+			},
+			"response": []
+		},
+		{
+			"name": "On poll",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var base_url = pm.environment.get(\"base_url\")",
+							"var  on_poll_user_email= pm.variables.get(\"on_poll_user_email\")",
+							"var on_poll_user_impersonation_email = pm.variables.get(\"on_poll_user_impersonation_email\")",
+							"var folder_id = ''",
+							"const req = {",
+							"    url: base_url,",
+							"    method: \"post\",",
+							"    body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${on_poll_user_impersonation_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindFolder Traversal=\"Deep\"><m:FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:FolderId\"/><t:FieldURI FieldURI=\"folder:FolderClass\"/><t:FieldURI FieldURI=\"folder:ChildFolderCount\"/><t:FieldURI FieldURI=\"folder:ParentFolderId\"/><t:ExtendedFieldURI PropertyTag=\"26293\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"folder:DisplayName\"/></t:AdditionalProperties></m:FolderShape><m:Restriction><t:IsEqualTo><t:FieldURI FieldURI=\"folder:DisplayName\"/><t:FieldURIOrConstant><t:Constant Value=\"Inbox\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction><m:ParentFolderIds><t:DistinguishedFolderId Id=\"root\"><t:Mailbox><t:EmailAddress>${on_poll_user_email}</t:EmailAddress></t:Mailbox></t:DistinguishedFolderId></m:ParentFolderIds></m:FindFolder></soap:Body></soap:Envelope>`,",
+							"    header: {",
+							"        'Content-Type': 'text/xml; charset=utf-8',",
+							"        'Accept': 'text/xml'",
+							"    }",
+							"}",
+							"pm.sendRequest(req, function (err, response) {",
+							"    if (err) throw new Error(JSON.stringify(err))",
+							"    var r = response.text()",
+							"    var rx = /<t:FolderId Id=[\"|\\w*|\\/|=]*/gm;",
+							"    var arr = r.match(rx);",
+							"    folder_id = arr[0].match(/\"[\"|\\w*|\\/|=]*/gm)",
+							"});",
+							"",
+							"setTimeout(function () {",
+							"    const req1 = {",
+							"        url: base_url,",
+							"        method: \"post\",",
+							"        body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${on_poll_user_impersonation_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindFolder Traversal=\"Deep\"><m:FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:FolderId\"/><t:FieldURI FieldURI=\"folder:FolderClass\"/><t:FieldURI FieldURI=\"folder:ChildFolderCount\"/><t:FieldURI FieldURI=\"folder:ParentFolderId\"/><t:ExtendedFieldURI PropertyTag=\"26293\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"folder:DisplayName\"/></t:AdditionalProperties></m:FolderShape><m:Restriction><t:IsEqualTo><t:FieldURI FieldURI=\"folder:DisplayName\"/><t:FieldURIOrConstant><t:Constant Value=\"TestEmails2\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction><m:ParentFolderIds><t:FolderId Id=${folder_id}/></m:ParentFolderIds></m:FindFolder></soap:Body></soap:Envelope>`,",
+							"        header: {",
+							"            'Content-Type': 'text/xml; charset=utf-8',",
+							"            'Accept': 'text/xml',",
+							"        }",
+							"    }",
+							"    pm.sendRequest(req1, function (err, response) {",
+							"        if (err) throw new Error(JSON.stringify(err))",
+							"        var r = response.text()",
+							"        var rx = /<t:FolderId Id=[\"|\\w*|\\/|=]*/gm;",
+							"        var arr = r.match(rx);",
+							"        folder_id = arr[0].match(/\"[\"|\\w*|\\/|=]*/gm)",
+							"    });",
+							"},3000);",
+							"",
+							"",
+							"setTimeout(function () {",
+							"    const req1 = {",
+							"        url: base_url,",
+							"        method: \"post\",",
+							"        body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${on_poll_user_impersonation_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindItem Traversal=\"Shallow\"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"item:LastModifiedTime\"/></t:AdditionalProperties></m:ItemShape><m:IndexedPageItemView MaxEntriesReturned=\"1\" Offset=\"0\" BasePoint=\"Beginning\"/><m:SortOrder><t:FieldOrder Order=\"Ascending\"><t:FieldURI FieldURI=\"item:LastModifiedTime\"/></t:FieldOrder></m:SortOrder><m:ParentFolderIds><t:FolderId Id=${folder_id}/></m:ParentFolderIds></m:FindItem></soap:Body></soap:Envelope>`,",
+							"        header: {",
+							"            'Content-Type': 'text/xml; charset=utf-8',",
+							"            'Accept': 'text/xml',",
+							"        }",
+							"    }",
+							"    pm.sendRequest(req1, function (err, response) {",
+							"        if (err) throw new Error(JSON.stringify(err))",
+							"        var r = response.text()",
+							"        var rx = /<t:ItemId Id=[\"|\\w*|\\/|=]*/gm;",
+							"        var arr = r.match(rx);",
+							"        var item_id = arr[0].match(/\"[\"|\\w*|\\/|=]*/gm)",
+							"        pm.variables.set(\"on_poll_item_id\", item_id)",
+							"    });",
+							"},6000);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{user_impersonation_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:GetItem>\n            <m:ItemShape>\n                <t:BaseShape>Default</t:BaseShape>\n                <t:IncludeMimeContent>true</t:IncludeMimeContent>\n                <t:AdditionalProperties>\n                    <t:FieldURI FieldURI=\"item:Subject\"/>\n                    <t:FieldURI FieldURI=\"message:From\"/>\n                    <t:FieldURI FieldURI=\"message:Sender\"/>\n                    <t:FieldURI FieldURI=\"message:InternetMessageId\"/>\n                    <t:FieldURI FieldURI=\"item:Categories\"/>\n                    <t:ExtendedFieldURI PropertyTag=\"0x007D\" PropertyType=\"String\"/>\n                    <t:ExtendedFieldURI PropertyTag=\"0x1000\" PropertyType=\"String\"/>\n                    <t:FieldURI FieldURI=\"item:DateTimeReceived\"/>\n                    <t:FieldURI FieldURI=\"item:LastModifiedTime\"/>\n                    <t:FieldURI FieldURI=\"item:Body\"/>\n                </t:AdditionalProperties>\n            </m:ItemShape>\n            <m:ItemIds>\n                <t:ItemId Id={{on_poll_item_id}}/>\n            </m:ItemIds>\n        </m:GetItem>\n    </soap:Body>\n</soap:Envelope>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| user_email | test@sample.com |\n| user_impersonation_email | test@sample.com |\n|on_poll_item_id | Set automatically |"
+			},
+			"response": []
+		},
+		{
+			"name": "Run query",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var base_url = pm.environment.get(\"base_url\")",
+							"var run_query_email = pm.variables.get(\"run_query_email\")",
+							"var run_query_mail_impersonate_email = pm.variables.get(\"run_query_mail_impersonate_email\")",
+							"var folder_id = ''",
+							"const req = {",
+							"    url: base_url,",
+							"    method: \"post\",",
+							"    body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${run_query_mail_impersonate_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindFolder Traversal=\"Deep\"><m:FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:FolderId\"/><t:FieldURI FieldURI=\"folder:FolderClass\"/><t:FieldURI FieldURI=\"folder:ChildFolderCount\"/><t:FieldURI FieldURI=\"folder:ParentFolderId\"/><t:ExtendedFieldURI PropertyTag=\"26293\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"folder:DisplayName\"/></t:AdditionalProperties></m:FolderShape><m:Restriction><t:IsEqualTo><t:FieldURI FieldURI=\"folder:DisplayName\"/><t:FieldURIOrConstant><t:Constant Value=\"Inbox\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction><m:ParentFolderIds><t:DistinguishedFolderId Id=\"root\"><t:Mailbox><t:EmailAddress>${run_query_email}</t:EmailAddress></t:Mailbox></t:DistinguishedFolderId></m:ParentFolderIds></m:FindFolder></soap:Body></soap:Envelope>`,",
+							"    header: {",
+							"        'Content-Type': 'text/xml; charset=utf-8',",
+							"        'Accept': 'text/xml'",
+							"    }",
+							"}",
+							"pm.sendRequest(req, function (err, response) {",
+							"    if (err) throw new Error(JSON.stringify(err))",
+							"    var r = response.text()",
+							"    var rx = /<t:FolderId Id=[\"|\\w*|\\/|=]*/gm;",
+							"    var arr = r.match(rx);",
+							"    folder_id = arr[0].match(/\"[\"|\\w*|\\/|=]*/gm)",
+							"});",
+							"",
+							"setTimeout(function () {",
+							"    const req1 = {",
+							"        url: base_url,",
+							"        method: \"post\",",
+							"        body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${run_query_mail_impersonate_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:FindFolder Traversal=\"Deep\"><m:FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:FolderId\"/><t:FieldURI FieldURI=\"folder:FolderClass\"/><t:FieldURI FieldURI=\"folder:ChildFolderCount\"/><t:FieldURI FieldURI=\"folder:ParentFolderId\"/><t:ExtendedFieldURI PropertyTag=\"26293\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"folder:DisplayName\"/></t:AdditionalProperties></m:FolderShape><m:IndexedPageFolderView MaxEntriesReturned=\"500\" Offset=\"0\" BasePoint=\"Beginning\"/><m:ParentFolderIds><t:FolderId Id=${folder_id}/></m:ParentFolderIds></m:FindFolder></soap:Body></soap:Envelope>`,",
+							"        header: {",
+							"            'Content-Type': 'text/xml; charset=utf-8',",
+							"            'Accept': 'text/xml',",
+							"        }",
+							"    }",
+							"    pm.sendRequest(req1, function (err, response) {",
+							"        if (err) throw new Error(JSON.stringify(err))",
+							"        var r = response.text()",
+							"        var rx = /<t:FolderId Id=[\"|\\w*|\\/|=]*/gm;",
+							"        var arr = r.match(rx);",
+							"        folder_id = arr[1].match(/\"[\"|\\w*|\\/|=]*/gm)",
+							"        pm.variables.set(\"run_query_folder_id\", folder_id)",
+							"    });",
+							"},2000);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{run_query_mail_impersonate_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:FindItem Traversal=\"Shallow\">\n            <m:ItemShape>\n                <t:BaseShape>IdOnly</t:BaseShape>\n                <t:AdditionalProperties>\n                    <t:FieldURI FieldURI=\"item:Subject\"/>\n                    <t:FieldURI FieldURI=\"message:From\"/>\n                    <t:FieldURI FieldURI=\"message:Sender\"/>\n                    <t:FieldURI FieldURI=\"message:InternetMessageId\"/>\n                    <t:FieldURI FieldURI=\"item:DateTimeReceived\"/>\n                    <t:ExtendedFieldURI PropertySetId=\"aa3df801-4fc7-401f-bbc1-7c93d6498c2e\" PropertyName=\"ItemIndex\" PropertyType=\"Integer\"/>\n                </t:AdditionalProperties>\n            </m:ItemShape>\n            <m:IndexedPageItemView MaxEntriesReturned=\"3\" Offset=\"0\" BasePoint=\"Beginning\"/>\n            <m:SortOrder>\n                <t:FieldOrder Order=\"Descending\">\n                    <t:FieldURI FieldURI=\"item:DateTimeReceived\"/>\n                </t:FieldOrder>\n            </m:SortOrder>\n            <m:ParentFolderIds>\n                <t:FolderId Id={{run_query_folder_id}}/>\n            </m:ParentFolderIds>\n            <m:QueryString>{{run_query_query}}</m:QueryString>\n        </m:FindItem>\n    </soap:Body>\n</soap:Envelope>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n| run_query_email | test@sample.com |\n| run_query_mail_impersonate_email | test@sample.com |\n| run_query_folder_id | Set automatically |\n| run_query_query | AQS string eg. subject: Test |\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Update email",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var base_url = pm.environment.get(\"base_url\")",
+							"var update_email_id = pm.variables.get(\"update_email_id\")",
+							"var update_email_email = pm.variables.get(\"update_email_email\")",
+							"const req = {",
+							"    url: base_url,",
+							"    method: \"post\",",
+							"    body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${update_email_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:GetItem><m:ItemShape><t:BaseShape>Default</t:BaseShape><t:IncludeMimeContent>true</t:IncludeMimeContent><t:AdditionalProperties><t:FieldURI FieldURI=\"item:Subject\"/><t:FieldURI FieldURI=\"message:From\"/><t:FieldURI FieldURI=\"message:Sender\"/><t:FieldURI FieldURI=\"message:InternetMessageId\"/><t:FieldURI FieldURI=\"item:Categories\"/><t:ExtendedFieldURI PropertyTag=\"0x007D\" PropertyType=\"String\"/><t:ExtendedFieldURI PropertyTag=\"0x1000\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"item:DateTimeReceived\"/><t:FieldURI FieldURI=\"item:LastModifiedTime\"/><t:FieldURI FieldURI=\"item:Body\"/></t:AdditionalProperties></m:ItemShape><m:ItemIds><t:ItemId Id=${update_email_id}/></m:ItemIds></m:GetItem></soap:Body></soap:Envelope>`,",
+							"    header: {",
+							"        'Content-Type': 'text/xml; charset=utf-8',",
+							"        'Accept': 'text/xml'",
+							"    }",
+							"}",
+							"pm.sendRequest(req, function (err, response) {",
+							"    if (err) throw new Error(JSON.stringify(err))",
+							"    r  = response.text()",
+							"    var rx = /ChangeKey=\"[\"|\\w*|\\/|=]*/gm;",
+							"    var arr = r.match(rx);",
+							"    pm.variables.set(\"update_email_changekey\", arr[0].match(/\"[\"|\\w*|\\/|=]*\"/gm))",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var base_url = pm.variables.get(\"base_url\")",
+							"var content_type = pm.variables.get(\"content_type\")",
+							"var accept = pm.variables.get(\"accept\")",
+							"var update_email_id = pm.variables.get(\"update_email_id\")",
+							"var update_email_email = pm.variables.get(\"update_email_email\")",
+							"const req = {",
+							"    url: base_url,",
+							"    method: \"post\",",
+							"    body: `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\"><soap:Header><t:RequestServerVersion Version=\"Exchange2010\"/><t:ExchangeImpersonation><t:ConnectingSID><t:SmtpAddress>${update_email_email}</t:SmtpAddress></t:ConnectingSID></t:ExchangeImpersonation></soap:Header><soap:Body><m:GetItem><m:ItemShape><t:BaseShape>Default</t:BaseShape><t:IncludeMimeContent>true</t:IncludeMimeContent><t:AdditionalProperties><t:FieldURI FieldURI=\"item:Subject\"/><t:FieldURI FieldURI=\"message:From\"/><t:FieldURI FieldURI=\"message:Sender\"/><t:FieldURI FieldURI=\"message:InternetMessageId\"/><t:FieldURI FieldURI=\"item:Categories\"/><t:ExtendedFieldURI PropertyTag=\"0x007D\" PropertyType=\"String\"/><t:ExtendedFieldURI PropertyTag=\"0x1000\" PropertyType=\"String\"/><t:FieldURI FieldURI=\"item:DateTimeReceived\"/><t:FieldURI FieldURI=\"item:LastModifiedTime\"/><t:FieldURI FieldURI=\"item:Body\"/></t:AdditionalProperties></m:ItemShape><m:ItemIds><t:ItemId Id=${update_email_id}/></m:ItemIds></m:GetItem></soap:Body></soap:Envelope>`,",
+							"    header: {",
+							"        'Content-Type': content_type,",
+							"        'Accept': accept",
+							"    }",
+							"}",
+							"pm.sendRequest(req, function (err, response) {",
+							"    if (err) throw new Error(JSON.stringify(err))",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/xml; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": " \n<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\" xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">\n    <soap:Header>\n        <t:RequestServerVersion Version=\"Exchange2010\"/>\n        <t:ExchangeImpersonation>\n            <t:ConnectingSID>\n                <t:SmtpAddress>{{update_email_email}}</t:SmtpAddress>\n            </t:ConnectingSID>\n        </t:ExchangeImpersonation>\n    </soap:Header>\n    <soap:Body>\n        <m:UpdateItem MessageDisposition=\"SaveOnly\" ConflictResolution=\"AlwaysOverwrite\">\n            <m:ItemChanges>\n                <t:ItemChange>\n                    <t:ItemId Id={{update_email_id}} ChangeKey={{update_email_changekey}}/>\n                    <t:Updates>\n                        <t:SetItemField>\n                            <t:FieldURI FieldURI=\"item:Subject\"/>\n                            <t:Message>\n                                <t:Subject>{{update_email_subject}}</t:Subject>\n                            </t:Message>\n                        </t:SetItemField>\n                    </t:Updates>\n                </t:ItemChange>\n            </m:ItemChanges>\n        </m:UpdateItem>\n    </soap:Body>\n</soap:Envelope>"
+				},
+				"url": {
+					"raw": "{{base_url}}",
+					"host": [
+						"{{base_url}}"
+					]
+				},
+				"description": "The variables and their example values for the action are mentioned below.\n\n| **Variable Name** | **Example Value** |\n| ------ | ------ |\n|update_email_id | Email ID to update |\n|update_email_email | test@sample.com |\n| update_email_changekey | Set automatically |\n| update_email_subject | Subject to set |"
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "ntlm",
+		"ntlm": [
+			{
+				"key": "domain",
+				"value": "{{domain}}",
+				"type": "string"
+			},
+			{
+				"key": "password",
+				"value": "{{password}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{username}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "copy_email_impersonate_email",
+			"value": ""
+		},
+		{
+			"key": "copy_email_email",
+			"value": ""
+		},
+		{
+			"key": "copy_email_id",
+			"value": ""
+		},
+		{
+			"key": "copy_email_folder",
+			"value": ""
+		},
+		{
+			"key": "copy_email_folder_id",
+			"value": ""
+		},
+		{
+			"key": "delete_email_email",
+			"value": ""
+		},
+		{
+			"key": "delete_email_id",
+			"value": ""
+		},
+		{
+			"key": "get_email_email",
+			"value": ""
+		},
+		{
+			"key": "get_email_id",
+			"value": ""
+		},
+		{
+			"key": "list_addresses_group",
+			"value": ""
+		},
+		{
+			"key": "lookup_email_email",
+			"value": ""
+		},
+		{
+			"key": "move_email_email",
+			"value": ""
+		},
+		{
+			"key": "move_email_impersonate_email",
+			"value": ""
+		},
+		{
+			"key": "move_email_folder",
+			"value": ""
+		},
+		{
+			"key": "move_email_item_id",
+			"value": ""
+		},
+		{
+			"key": "move_email_item_id",
+			"value": ""
+		},
+		{
+			"key": "move_email_folder_id",
+			"value": ""
+		},
+		{
+			"key": "on_poll_item_id",
+			"value": ""
+		},
+		{
+			"key": "on_poll_user_email",
+			"value": ""
+		},
+		{
+			"key": "on_poll_user_impersonation_email",
+			"value": ""
+		},
+		{
+			"key": "run_query_mail_impersonate_email",
+			"value": ""
+		},
+		{
+			"key": "run_query_query",
+			"value": ""
+		},
+		{
+			"key": "run_query_email",
+			"value": ""
+		},
+		{
+			"key": "run_query_folder_id",
+			"value": ""
+		},
+		{
+			"key": "update_email_id",
+			"value": ""
+		},
+		{
+			"key": "update_email_email",
+			"value": ""
+		},
+		{
+			"key": "update_email_subject",
+			"value": ""
+		},
+		{
+			"key": "update_email_changekey",
+			"value": ""
+		}
+	]
+}
