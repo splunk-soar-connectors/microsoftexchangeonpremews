@@ -653,7 +653,7 @@ class ProcessEmail(object):
 
             file_name = "{0}{1}".format(name, extension)
         else:
-            file_name = self._decode_uni_string(file_name, file_name)
+            file_name = self._sanitize_file_name(self._decode_uni_string(file_name, file_name))
 
         # Remove any chars that we don't want in the name
         file_path = "{0}/{1}_{2}_{3}".format(tmp_dir, part_index, file_name.replace('<', '').replace('>', '').replace(' ', ''), child)
@@ -824,12 +824,14 @@ class ProcessEmail(object):
 
         return len(email_header_artifacts)
 
+    def _sanitize_file_name(self, file_name):
+        return re.sub('[,"\']', '', file_name)
+
     def _handle_mail_object(self, mail, email_id, rfc822_email, tmp_dir, start_time_epoch):
 
         self._parsed_mail = OrderedDict()
 
         # Create a tmp directory for this email, will extract all files here
-        tmp_dir = tmp_dir
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
 
@@ -856,6 +858,7 @@ class ProcessEmail(object):
             extension = '.eml'
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
             file_name = "{0}{1}".format(self._base_connector._decode_uni_string(file_name, file_name), extension)
+            file_name = self._sanitize_file_name(file_name)
             file_path = "{0}/{1}".format(tmp_dir, file_name)
             try:
                 with open(file_path, 'wb') as f:
