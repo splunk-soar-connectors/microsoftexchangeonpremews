@@ -136,6 +136,7 @@ and limitations under the License.
         <ul>
           <li>If the email contains any attachments, these are extracted (if <b>extract_attachments</b> is enabled) and added to the vault of the Container.</li>
           <li>At the same time, the vault ID and file name of this item is represented by a Vault Artifact.</li>
+          <li>Some special characters will be removed from the file name before ingestion. Such as comma(,), single quote(') and double quote("). </li>
           <li>The same file can be added to the vault multiple times. In this scenario, the file name of the item added the second time onwards will be slightly different, but the vault ID will still be the same. However, there will be multiple artifacts created.</li>
           <li>Do note that the system does <i>not</i> duplicate the file bytes, only the metadata in the database.
           <table style="width:100%">

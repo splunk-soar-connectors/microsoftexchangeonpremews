@@ -953,7 +953,7 @@ class EWSOnPremConnector(BaseConnector):
         subject = headers.get('Subject')
         if subject:
             if isinstance(subject, str):
-                headers['decodedSubject'] = self._decode_uni_string(subject, subject)
+                headers['decodedSubject'] = self._decode_uni_string(subject, subject).replace('\r\n', '')
 
         return headers
 

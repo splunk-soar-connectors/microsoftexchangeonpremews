@@ -741,7 +741,7 @@ class ProcessEmail(object):
         subject = headers.get('Subject')
         if subject:
             if isinstance(subject, str):
-                headers['decodedSubject'] = self._decode_uni_string(subject, subject)
+                headers['decodedSubject'] = self._decode_uni_string(subject, subject).replace('\r\n', '')
 
         to_data = headers.get('To')
         if to_data:
@@ -843,7 +843,7 @@ class ProcessEmail(object):
             charset = 'utf8'
 
         # Extract fields and place it in a dictionary
-        self._parsed_mail[PROC_EMAIL_JSON_SUBJECT] = mail.get('Subject', '')
+        self._parsed_mail[PROC_EMAIL_JSON_SUBJECT] = mail.get('Subject', '').replace('\r\n', '')
         self._parsed_mail[PROC_EMAIL_JSON_FROM] = mail.get('From', '')
         self._parsed_mail[PROC_EMAIL_JSON_TO] = mail.get('To', '')
         self._parsed_mail[PROC_EMAIL_JSON_DATE] = mail.get('Date', '')
