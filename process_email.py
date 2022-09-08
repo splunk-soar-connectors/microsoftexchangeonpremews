@@ -376,10 +376,7 @@ class ProcessEmail(object):
     def _parse_email_headers_as_inline(self, file_data, parsed_mail, charset, email_id):
 
         # remove the 'Forwarded Message' from the email text and parse it
-        if self._base_connector._python_version == 2:
-            p = re.compile(r'.*Forwarded Message.*\r\n(.*)', re.IGNORECASE)
-        else:
-            p = re.compile(r'.*Forwarded Message.*\n(.*)', re.IGNORECASE)
+        p = re.compile(r'.*Forwarded Message.*\n(.*)', re.IGNORECASE)
         email_text = p.sub(r'\1', file_data.strip()[:500])
         mail = email.message_from_string(email_text)
 
@@ -608,8 +605,7 @@ class ProcessEmail(object):
                     new_file_name = "ph_long_file_name_temp"
                     file_path = "{}{}".format(self.remove_child_info(file_path).rstrip(file_name.replace('<', '').replace('>', '')
                             .replace(' ', '')), new_file_name)
-                    self._base_connector.debug_print("Original filename: {}".format(self._base_connector
-                            ._handle_py_ver_compat_for_input_str(file_name)))
+                    self._base_connector.debug_print("Original filename: {}".format(file_name))
                     self._base_connector.debug_print("Modified filename: {}".format(new_file_name))
                     with open(file_path, 'wb') as long_file:
                         long_file.write(part_payload)
@@ -1164,7 +1160,7 @@ class ProcessEmail(object):
             if not file_name:
                 file_name = os.path.basename(local_file_path)
 
-            self._base_connector.debug_print("Vault file name: {0}".format(self._base_connector._handle_py_ver_compat_for_input_str(file_name)))
+            self._base_connector.debug_print("Vault file name: {0}".format(file_name))
 
             vault_attach_dict[phantom.APP_JSON_ACTION_NAME] = self._base_connector.get_action_name()
             vault_attach_dict[phantom.APP_JSON_APP_RUN_ID] = self._base_connector.get_app_run_id()
