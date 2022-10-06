@@ -737,6 +737,7 @@ class ProcessEmail(object):
         subject = headers.get('Subject')
         if subject:
             if isinstance(subject, str):
+                headers['Subject'] = subject.replace('\r\n', '')
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject).replace('\r\n', '')
 
         to_data = headers.get('To')
