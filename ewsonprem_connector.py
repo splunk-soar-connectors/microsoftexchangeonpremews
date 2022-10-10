@@ -132,7 +132,7 @@ class EWSOnPremConnector(BaseConnector):
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
-            except Exception:
+            except Exception as e:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
                 self.error_print("Error loading custom script. Does not contain preprocess_container function.", dump_object=e)
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
@@ -182,8 +182,8 @@ class EWSOnPremConnector(BaseConnector):
                     error_msg = e.args[1]
                 elif len(e.args) == 1:
                     error_msg = e.args[0]
-        except Exception:
-            self.debug_print("Error occurred while fetching exception information. Details: {}".format(str(e)))
+        except Exception as e:
+            self.error_print("Error occurred while fetching exception information. Details: {}".format(str(e)))
 
         return error_code, error_msg
 
