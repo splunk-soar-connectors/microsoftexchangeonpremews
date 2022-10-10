@@ -786,6 +786,8 @@ class ProcessEmail(object):
 
         if headers:
             self._update_headers(headers)
+            if 'Subject' in headers and isinstance(headers['Subject'], str):
+                headers['Subject'] = headers['Subject'].replace('\r\n', '')
             cef_artifact['emailHeaders'] = dict(headers)
 
         for curr_key in list(cef_artifact['emailHeaders'].keys()):
