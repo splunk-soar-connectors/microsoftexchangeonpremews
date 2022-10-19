@@ -690,7 +690,9 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'emails_matched': items_matched})
 
         # Set the Status
-        return action_result.set_status(phantom.APP_SUCCESS)
+        # return action_result.set_status(phantom.APP_SUCCESS)
+        return action_result.set_status(phantom.APP_SUCCESS, """Emails matched: {}.
+         If you didn't find what you were looking for, try again using more specific search terms""".format(items_matched))
 
     def _get_container_id(self, email_id):
 
