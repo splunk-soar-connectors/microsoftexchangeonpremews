@@ -89,9 +89,8 @@
             "data_type": "string",
             "order": 2,
             "description": "EWS Version",
-            "default": "2010",
+            "default": "2013",
             "value_list": [
-                "2010",
                 "2013",
                 "2016"
             ]

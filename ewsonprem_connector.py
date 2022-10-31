@@ -206,7 +206,7 @@ class EWSOnPremConnector(BaseConnector):
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
 
-        self._version = config.get('version', '2010')
+        self._version = config.get('version', '2013')
 
         self._session = requests.Session()
 
