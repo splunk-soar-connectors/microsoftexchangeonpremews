@@ -365,6 +365,7 @@ class ProcessEmail(object):
             artifact['source_data_identifier'] = start_index + added_artifacts
             artifact['cef'] = item
             artifact['name'] = artifact_name
+            artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
             self._debug_print('Artifact:', artifact)
             artifacts.append(artifact)
             added_artifacts += 1
@@ -749,6 +750,10 @@ class ProcessEmail(object):
         CC_data = headers.get('CC')
         if CC_data:
             headers['decodedCC'] = self._decode_uni_string(CC_data, CC_data)
+
+        BCC_data = headers.get('BCC')
+        if BCC_data:
+            headers['decodedBCC'] = self._decode_uni_string(BCC_data, BCC_data)
 
         return headers
 

@@ -15,7 +15,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.3.4",
+    "min_phantom_version": "5.3.5",
     "fips_compliant": false,
     "python_version": "3",
     "logo": "logo_microsoft.svg",
