@@ -27,7 +27,12 @@ and limitations under the License.
 <h2 id="poll_now">POLL NOW</h2>
     <p>
     POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine the oldest or latest is what EWS calls <b>item:LastModifiedTime</b> and <b>item:DateTimeCreated</b>, which is dependent on the parameter <i>Sort mails by</i>. If an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved. But, its DateTimeCreated will be the same.
-    <br/> <br/> <b>Note</b>: "Mailbox folder to be polled" parameter is case-sensitive.
+    <br/> <br/> 
+    <b>Note:</b>
+    <ul>
+      <li>"Mailbox folder to be polled" parameter is case-sensitive.</li>
+      <li>The "Container Severity" value set in the asset configuration parameter will be applicable to the container as well as all the artifacts created inside the container.</li>
+    </ul>
     </p>
 <h2 id="scheduled_polling">Scheduled Polling</h2>
     <p>This mode is used to schedule a polling action on the asset at regular intervals, which is configured via the INGEST SETTINGS tab of the asset. It makes use of the following asset configuration parameters (among others):</p>
