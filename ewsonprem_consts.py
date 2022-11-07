@@ -16,7 +16,7 @@ EWSONPREM_JSON_DEVICE_URL = "url"
 EWSONPREM_JSON_TEST_USER = "test_user"
 EWSONPREM_JSON_SUBJECT = "subject"
 EWSONPREM_JSON_FROM = "sender"
-EWSONPREM_JSON_INT_MSG_ID = "internet_message_id"
+EWSONPREM_JSON_INT_MESSAGE_ID = "internet_message_id"
 EWSONPREM_JSON_EMAIL = "email"
 EWSONPREM_JSON_FOLDER = "folder"
 EWSONPREM_JSON_BODY = "body"
@@ -43,7 +43,7 @@ EWS_JSON_IS_PUBLIC_FOLDER = "is_public_folder"
 
 EWSONPREM_ERR_CONNECTIVITY_TEST = "Test Connectivity Failed"
 EWSONPREM_SUCC_CONNECTIVITY_TEST = "Test Connectivity Passed"
-EWSONPREM_ERR_SERVER_CONNECTION = "Connection failed"
+EWSONPREM_ERR_SERVER_CONNECTIVITY = "Connection failed"
 EWSONPREM_ERR_FROM_SERVER = "API failed. Status code: {code}. Message: {message}"
 EWSONPREM_USING_BASE_URL = "Using url: {base_url}"
 EWSONPREM_ERR_VAULT_INFO = "Could not retrieve vault file"
@@ -53,10 +53,10 @@ EWSONPREM_ERR_CODE_MESSAGE = "Error code unavailable"
 EWSONPREM_ERR_MESSAGE = "Error message unavailable. Please check the asset configuration and|or action parameters."
 TYPE_ERR_MESSAGE = "Error occurred while connecting to the EWS server. Please check the asset configuration and|or the action parameters."
 EWSONPREM_VALIDATE_INTEGER_MESSAGE = "Please provide a valid integer value in the {key} parameter"
-EWSONPREM_MIME_CONTENT_CONVERSION_ERROR = "Error occurred due to 'Mime-Content' conversion failure"
+EWSONPREM_MIME_CONTENT_CONVERSION_ERR = "Error occurred due to 'Mime-Content' conversion failure"
 EWSONPREM_MIME_CONTENT_CONVERSION_MESSAGE = "While getting email data for id {0} 'ErrorMimeContentConversionFailed' error occurred. \
 Skipping the email."
-EWSONPREM_ERROR_MIME_CONTENT_CONVERSION = 'ErrorMimeContentConversionFailed'
+EWSONPREM_ERR_MIME_CONTENT_CONVERSION = 'ErrorMimeContentConversionFailed'
 
 EWSONPREM_MAIL_TYPES = [
     "t:Message",
