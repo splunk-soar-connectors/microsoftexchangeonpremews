@@ -648,7 +648,7 @@ class EWSOnPremConnector(BaseConnector):
                 data = ews_soap.get_search_request_aqs([folder_id], aqs, email_range)
             else:
                 data = ews_soap.get_search_request_filter([folder_id], subject=subject, sender=sender,
-                                                          body=body, int_message_id=int_message_id, email_range=email_range)
+                                                          body=body, int_msg_id=int_message_id, email_range=email_range)
 
             ret_val, resp_json = self._make_rest_call(ar_folder, data, self._check_find_response)
 
