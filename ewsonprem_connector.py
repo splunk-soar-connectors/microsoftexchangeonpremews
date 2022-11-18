@@ -582,12 +582,6 @@ class EWSOnPremConnector(BaseConnector):
         if not subject and not sender and not aqs and not body and not int_message_id:
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
 
-        # Use parameters to create an aqs string
-        '''
-        if (not aqs):
-            aqs = self._create_aqs(subject, sender, body)
-        '''
-
         self.debug_print("AQS_STR: {}".format(UnicodeDammit(aqs).unicode_markup.encode('utf-8')))
 
         # Connectivity
@@ -690,7 +684,6 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'emails_matched': items_matched})
 
         # Set the Status
-        # return action_result.set_status(phantom.APP_SUCCESS)
         return action_result.set_status(phantom.APP_SUCCESS, """Emails matched: {}.
          If you didn't find what you were looking for, try again using more specific search terms""".format(items_matched))
 
