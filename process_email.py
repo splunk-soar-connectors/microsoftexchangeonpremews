@@ -685,7 +685,8 @@ class ProcessEmail(object):
         for curr_header_lower in self._headers_from_ews:
             if headers_ci.get('message-id', 'default_value1').strip() == curr_header_lower.get('message-id', 'default_value2').strip():
                 # the headers match with the one that we got from the ews API, so update it
-                headers.update(curr_header_lower)
+                curr_header_lower.update(headers)
+                headers = curr_header_lower
 
         return phantom.APP_SUCCESS
 
@@ -1029,6 +1030,9 @@ class ProcessEmail(object):
             pass
 
         ret_val, message, results = self._int_process_email(rfc822_email, email_id, epoch)
+        if not ret_val:
+            self._del_tmp_dirs()
+            return (phantom.APP_ERROR, message)
 
         data = results[0].get('files', [])
         if data:
@@ -1060,10 +1064,6 @@ class ProcessEmail(object):
                         else:
                             file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value],
                                     con_disp_decode)
-
-        if not ret_val:
-            self._del_tmp_dirs()
-            return (phantom.APP_ERROR, message)
 
         try:
             self._parse_results(results, container_id)

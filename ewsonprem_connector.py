@@ -694,7 +694,11 @@ class EWSOnPremConnector(BaseConnector):
         except Exception:
             email_id = urllib.parse.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
-        url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
+
+        config = self.get_config()
+        container_label = config.get('ingest', {}).get('container_label')
+        url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}&_filter_label="{2}"'.format(
+            email_id, self.get_asset_id(), container_label)
 
         try:
             # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
@@ -936,10 +940,11 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
 
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
-
-        action_result.update_summary({"container_id": container_id})
+        if target_container_id:
+            action_result.update_summary({"container_id": target_container_id})
+        else:
+            container_id = self._get_container_id(email_id)
+            action_result.update_summary({"container_id": container_id})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -980,8 +985,11 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
 
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
+        if target_container_id:
+            action_result.update_summary({"container_id": target_container_id})
+        else:
+            container_id = self._get_container_id(email_id)
+            action_result.update_summary({"container_id": container_id})
 
         action_result.update_summary({"container_id": container_id})
 
@@ -1082,7 +1090,6 @@ class EWSOnPremConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, "Error processing email. {0}".format(error_text))
 
         if target_container_id is None:
-            # get the container id that of the email that was ingested
             container_id = self._get_container_id(email_id)
             action_result.update_summary({"container_id": container_id})
         else:
@@ -2031,13 +2038,13 @@ class EWSOnPremConnector(BaseConnector):
 
     def _on_poll(self, param):
 
-        action_result = self.add_action_result(ActionResult(dict(param)))
         # on poll action that is supposed to be scheduled
         if self.is_poll_now():
             self.debug_print("DEBUGGER: Starting polling now")
             return self._poll_now(param)
 
         config = self.get_config()
+        action_result = self.add_action_result(ActionResult(dict(param)))
         total_ingested = 0
 
         if self._state.get('first_run', True):
