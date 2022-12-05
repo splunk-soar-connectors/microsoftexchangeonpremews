@@ -991,8 +991,6 @@ class EWSOnPremConnector(BaseConnector):
             container_id = self._get_container_id(email_id)
             action_result.update_summary({"container_id": container_id})
 
-        action_result.update_summary({"container_id": container_id})
-
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_email(self, param):
