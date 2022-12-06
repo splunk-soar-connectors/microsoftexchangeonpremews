@@ -675,10 +675,10 @@ class ProcessEmail(object):
         # compare the various values of the passed header (param: headers)
         # to the header that the class got self._headers_from_ews
         if not self._headers_from_ews:
-            return phantom.APP_SUCCESS
+            return headers
 
         if not headers:
-            return phantom.APP_SUCCESS
+            return headers
 
         headers_ci = CaseInsensitiveDict(headers)
 
@@ -688,7 +688,7 @@ class ProcessEmail(object):
                 curr_header_lower.update(headers)
                 headers = curr_header_lower
 
-        return phantom.APP_SUCCESS
+        return headers
 
     def _get_email_headers_from_part(self, part, charset=None):
 
@@ -714,8 +714,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print("{}. {}. {}".format(err, error_code, error_msg))
 
         # Convert "Cc" and "Bcc" fields to uppercase
-        # when the unify_cef_fields asset configuration parameter is set to True
-        if self._base_connector and self._base_connector._unify_cef_fields:
+        if self._base_connector:
             if headers.get("CC"):
                 headers["CC"] = headers.get("CC")
             if headers.get("BCC"):
@@ -789,7 +788,7 @@ class ProcessEmail(object):
         cef_types.update({'fromEmail': ['email'], 'toEmail': ['email']})
 
         if headers:
-            self._update_headers(headers)
+            headers = self._update_headers(headers)
             if 'Subject' in headers and isinstance(headers['Subject'], str):
                 headers['Subject'] = headers['Subject'].replace('\r\n', '')
             cef_artifact['emailHeaders'] = dict(headers)

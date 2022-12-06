@@ -99,8 +99,6 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session = None
 
-        self._unify_cef_fields = None
-
         # Target user in case of impersonation
         self._target_user = None
 
@@ -211,8 +209,6 @@ class EWSOnPremConnector(BaseConnector):
         self._session = requests.Session()
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
-
-        self._unify_cef_fields = config.get('unify_cef_fields', False)
 
         password = config[phantom.APP_JSON_PASSWORD]
         username = config[phantom.APP_JSON_USERNAME]

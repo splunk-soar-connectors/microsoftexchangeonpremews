@@ -235,16 +235,11 @@
             "description": "Script with functions to preprocess containers and artifacts",
             "order": 21
         },
-        "unify_cef_fields": {
-            "data_type": "boolean",
-            "description": "Unify CC/BCC CEF fields (to uppercase)",
-            "order": 24
-        },
         "automation_on_duplicate": {
             "data_type": "boolean",
             "description": "Run automation on duplicate event",
             "default": true,
-            "order": 25
+            "order": 24
         }
     },
     "actions": [

@@ -281,3 +281,5 @@ of the associated domain artifacts will be incorrect as well, since they will al
       </tr>
     </table>
   </p>
+  <h2>Playbook Backward Compatibility</h2>
+	<p>With this release, we are removing the asset parameter 'unify_cef_fields', and the CC and BCC CEF fields will be in uppercase only. In order to avoid confusion, playbooks that use these CEF fields in lowercase should be updated to uppercase.</p>
