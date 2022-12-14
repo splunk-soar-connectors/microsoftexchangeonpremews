@@ -192,6 +192,7 @@ class ProcessEmail(object):
 
         # try to load the email
         try:
+            file_data = unescape(file_data)
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
@@ -226,7 +227,6 @@ class ProcessEmail(object):
                 if uri_text:
                     uris.extend(uri_text)
         else:
-            file_data = unescape(file_data)
             # Parse it as a text file
             uris = [self._clean_url(x.group(0)) for x in re.finditer(uri_regexc, file_data)]
 
