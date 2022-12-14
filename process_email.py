@@ -32,6 +32,7 @@ import magic
 import phantom.app as phantom
 import phantom.rules as phantom_rules
 import phantom.utils as ph_utils
+import requests
 from bs4 import BeautifulSoup, UnicodeDammit
 from django.core.validators import URLValidator
 from requests.structures import CaseInsensitiveDict
@@ -935,7 +936,7 @@ class ProcessEmail(object):
         container_data = dict(self._parsed_mail)
 
         # delete the header info, we dont make it a part of the container json
-        del(container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
+        del (container_data[PROC_EMAIL_JSON_EMAIL_HEADERS])
         self._container['source_data_identifier'] = email_id
         self._container['name'] = container_name
         self._container['data'] = {'raw_email': rfc822_email}
@@ -1072,6 +1073,40 @@ class ProcessEmail(object):
 
         return (phantom.APP_SUCCESS, "Email Processed")
 
+    def _update_container(self, container_id, container):
+        rest_endpoint = SPLUNK_SOAR_CONTAINER_INFO_URL.format(url=self._base_connector.get_phantom_base_url(), container_id=container_id)
+
+        try:
+            data = json.dumps(container)
+        except Exception as e:
+            error_message = self._base_connector._get_error_message_from_exception(e)
+            self._debug_print(
+                "json.dumps failed while updating the container: {}. "
+                "Possibly a value in the container dictionary is not encoded properly. "
+                "Exception: {}"
+            ).format(container_id, error_message)
+            return phantom.APP_ERROR
+        try:
+            resp = requests.post(rest_endpoint, verify=VERIFY_SERVER_CERT_FAIL, data=data)
+        except Exception:
+            self._debug_print("Error occurred while calling the container api")
+            return phantom.APP_ERROR
+
+        try:
+            error_data = json.loads(resp.text)
+        except Exception as e:
+            error_message = self._base_connector._get_error_message_from_exception(e)
+            self._debug_print(
+                "json.dumps failed while parsing the response "
+                "Exception: {}"
+            ).format(error_message)
+            return phantom.APP_ERROR
+
+        if error_data.get("failed", False) and error_data.get("message"):
+            self._debug_print("Error occurred while updating the container: {}".format(error_data.get("message")))
+            return phantom.APP_ERROR
+        return phantom.APP_SUCCESS
+
     def _handle_save_ingested(self, artifacts, container, container_id, files):
         """ This method is used to save all the ingested data as artifacts into a container along with saving the container.
         This method will first create a container and save it using save_container.
@@ -1088,14 +1123,7 @@ class ProcessEmail(object):
         using_dummy = False
         duplicate_container = False
 
-        if container_id:
-            # We are adding artifacts to an existing container
-            using_dummy = True
-            container = {
-                'name': 'Dummy Container',
-                'dummy': True,
-                'id': container_id
-            }
+        using_dummy = container_id is not None
 
         if hasattr(self._base_connector, '_preprocess_container'):
             container = self._base_connector._preprocess_container(container)
@@ -1111,6 +1139,11 @@ class ProcessEmail(object):
                 )
             )
             duplicate_container = (message == "Duplicate container found")
+        else:
+            self._update_container(container_id, container)
+
+        if container_id and duplicate_container:
+            self._update_container(container_id, container)
 
         if duplicate_container and (not self._base_connector.is_poll_now() and self._base_connector.get_action_identifier() != "get_email"):
             self._base_connector._dup_emails += 1
@@ -1276,15 +1309,10 @@ class ProcessEmail(object):
 
         for result in results:
 
-            if container_id is None:
+            container = result.get('container')
 
-                container = result.get('container')
-
-                if not container:
-                    continue
-
-            else:
-                container = None
+            if not container:
+                continue
 
             # run a loop to first set the sdi which will create the hash
             artifacts = result.get('artifacts', [])

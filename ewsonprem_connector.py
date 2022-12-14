@@ -173,6 +173,7 @@ class EWSOnPremConnector(BaseConnector):
         error_code = EWSONPREM_ERR_CODE_MESSAGE
         error_message = EWSONPREM_ERR_MESSAGE
 
+        self.error_print("Error occurred:", e)
         try:
             if e.args:
                 if len(e.args) > 1:
@@ -923,15 +924,8 @@ class EWSOnPremConnector(BaseConnector):
         if not ingest_email:
             return action_result.set_status(phantom.APP_SUCCESS, "Successfully fetched email headers")
 
-        config = {
-                "extract_attachments": True,
-                "extract_domains": True,
-                "extract_hashes": True,
-                "extract_ips": True,
-                "extract_urls": True }
-
         process_email = ProcessEmail()
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
+        ret_val, message = process_email.process_email(self, email_data, email_id, self.get_config(), None, target_container_id)
 
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -968,15 +962,8 @@ class EWSOnPremConnector(BaseConnector):
         if not ingest_email:
             return action_result.set_status(phantom.APP_SUCCESS, "Successfully fetched email headers")
 
-        config = {
-                "extract_attachments": True,
-                "extract_domains": True,
-                "extract_hashes": True,
-                "extract_ips": True,
-                "extract_urls": True }
-
         process_email = ProcessEmail()
-        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
+        ret_val, message = process_email.process_email(self, email_data, email_id, self.get_config(), None, target_container_id)
 
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -1379,7 +1366,7 @@ class EWSOnPremConnector(BaseConnector):
 
         # finally see if impersonation has been enabled/disabled for this action
         # as of right now copy or move email is the only action that allows over-ride
-        impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
+        impersonate = not (param.get(EWS_JSON_DONT_IMPERSONATE, False))
 
         self._impersonate = impersonate
 

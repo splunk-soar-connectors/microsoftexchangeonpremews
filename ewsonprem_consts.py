@@ -77,3 +77,6 @@ STATE_FILE_CORRUPT_ERR = (
     "Error occurred while loading the state file due to its unexpected format. "
     "Resetting the state file with the default format. Please try again."
 )
+
+SPLUNK_SOAR_CONTAINER_INFO_URL = "{url}rest/container/{container_id}"
+VERIFY_SERVER_CERT_FAIL = False
