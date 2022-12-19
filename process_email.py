@@ -445,6 +445,8 @@ class ProcessEmail(object):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
+
+        input_str = input_str.replace('\r\n', '')
         encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
@@ -464,8 +466,6 @@ class ProcessEmail(object):
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
-        new_str = ''
-        new_str_create_count = 0
         for i, encoded_string in enumerate(encoded_strings):
 
             decoded_string = decoded_strings.get(i)
@@ -486,8 +486,7 @@ class ProcessEmail(object):
                 # the UnicodeDammit and working correctly with the decode function.
                 # keeping previous logic in the except block incase of failure.
                 value = value.decode(encoding)
-                new_str += value
-                new_str_create_count += 1
+                input_str = input_str.replace(encoded_string, value)
             except Exception:
                 try:
                     if encoding != 'utf-8':
@@ -496,21 +495,11 @@ class ProcessEmail(object):
                     pass
 
                 try:
-                    # commenting the existing approach due to a new approach being deployed below
-                    # substitute the encoded string with the decoded one
-                    # input_str = input_str.replace(encoded_string, value)
-
-                    # make new string insted of replacing in the input string because issue find in PAPP-9531
                     if value:
-                        new_str += UnicodeDammit(value).unicode_markup
-                        new_str_create_count += 1
+                        value = UnicodeDammit(value).unicode_markup
+                        input_str = input_str.replace(encoded_string, value)
                 except Exception:
                     pass
-
-        # replace input string with new string because issue find in PAPP-9531
-        if new_str and new_str_create_count == len(encoded_strings):
-            self._debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
-            input_str = new_str
 
         return input_str
 
@@ -1041,29 +1030,13 @@ class ProcessEmail(object):
                 if isinstance(con_des, str):
                     file_info['meta_info']['headers']['decodedContentDescription'] = self._decode_uni_string(con_des, con_des)
 
-                con_type = file_info.get('meta_info', {}).get('headers', {}).get('Content-Type', '')
-                con_type_uni = re.findall(r'=\?.*\?=', con_type)
-                for value in range(len(con_type_uni)):
-                    if isinstance(con_type_uni[value], str):
-                        con_type_decode = self._decode_uni_string(con_type_uni[value], con_type_uni[value])
-                        if 'decodedContentType' in file_info['meta_info']['headers']:
-                            decoded_type = file_info['meta_info']['headers']['decodedContentType'].replace(con_type_uni[value], con_type_decode)
-                            file_info['meta_info']['headers']['decodedContentType'] = decoded_type
-                        else:
-                            file_info['meta_info']['headers']['decodedContentType'] = con_type.replace(con_type_uni[value], con_type_decode)
+                con_type = file_info.get('meta_info', {}).get('headers', {}).get('Content-Type')
+                if isinstance(con_type, str):
+                    file_info['meta_info']['headers']['decodedContentType'] = self._decode_uni_string(con_type, con_type)
 
-                con_disp = file_info.get('meta_info', {}).get('headers', {}).get('Content-Disposition', '')
-                con_disp_uni = re.findall(r'=\?.*\?=', con_disp)
-                for value in range(len(con_disp_uni)):
-                    if isinstance(con_disp_uni[value], str):
-                        con_disp_decode = self._decode_uni_string(con_disp_uni[value], con_disp_uni[value])
-                        if 'decodedContentDisposition' in file_info['meta_info']['headers']:
-                            decoded_disposition = file_info['meta_info']['headers']['decodedContentDisposition'].replace(con_disp_uni[value],
-                                    con_disp_decode)
-                            file_info['meta_info']['headers']['decodedContentDisposition'] = decoded_disposition
-                        else:
-                            file_info['meta_info']['headers']['decodedContentDisposition'] = con_disp.replace(con_disp_uni[value],
-                                    con_disp_decode)
+                con_disp = file_info.get('meta_info', {}).get('headers', {}).get('Content-Disposition')
+                if isinstance(con_disp, str):
+                    file_info['meta_info']['headers']['decodedContentDisposition'] = self._decode_uni_string(con_disp, con_disp)
 
         try:
             self._parse_results(results, container_id)
@@ -1083,7 +1056,7 @@ class ProcessEmail(object):
             self._debug_print(
                 "json.dumps failed while updating the container: {}. "
                 "Possibly a value in the container dictionary is not encoded properly. "
-                "Exception: {}"
+                "{}"
             ).format(container_id, error_message)
             return phantom.APP_ERROR
         try:
@@ -1092,19 +1065,23 @@ class ProcessEmail(object):
             self._debug_print("Error occurred while calling the container api")
             return phantom.APP_ERROR
 
-        try:
-            error_data = json.loads(resp.text)
-        except Exception as e:
-            error_message = self._base_connector._get_error_message_from_exception(e)
-            self._debug_print(
-                "json.dumps failed while parsing the response "
-                "Exception: {}"
-            ).format(error_message)
-            return phantom.APP_ERROR
+        if not (200 <= resp.status_code <= 399):
+            try:
+                error_data = json.loads(resp.text)
+            except Exception as e:
+                error_message = self._base_connector._get_error_message_from_exception(e)
+                self._debug_print(
+                    "json.dumps failed while parsing the response "
+                    "{}"
+                ).format(error_message)
+                return phantom.APP_ERROR
 
-        if error_data.get("failed", False) and error_data.get("message"):
-            self._debug_print("Error occurred while updating the container: {}".format(error_data.get("message")))
-            return phantom.APP_ERROR
+            if error_data.get("failed", False) and error_data.get("message"):
+                self._debug_print("Error occurred while updating the container: {}".format(error_data.get("message")))
+                return phantom.APP_ERROR
+        else:
+            self._debug_print("Successfully Updated the container")
+
         return phantom.APP_SUCCESS
 
     def _handle_save_ingested(self, artifacts, container, container_id, files):

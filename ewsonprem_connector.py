@@ -125,14 +125,14 @@ class EWSOnPremConnector(BaseConnector):
                 exec(script, self._script_module.__dict__)
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
-                self.error_print("Error loading custom script.", dump_object=e)
+                self._dump_error_log(e, "Error loading custom script.")
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
             except Exception as e:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
-                self.error_print("Error loading custom script. Does not contain preprocess_container function.", dump_object=e)
+                self._dump_error_log(e, "Error loading custom script. Does not contain preprocess_container function.")
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
         return phantom.APP_SUCCESS
@@ -164,6 +164,9 @@ class EWSOnPremConnector(BaseConnector):
 
         return input_str
 
+    def _dump_error_log(self, error, message="Exception occurred."):
+        self.error_print(message, dump_object=error)
+
     def _get_error_message_from_exception(self, e):
         """ This method is used to get appropriate error message from the exception.
         :param e: Exception object
@@ -173,7 +176,7 @@ class EWSOnPremConnector(BaseConnector):
         error_code = EWSONPREM_ERR_CODE_MESSAGE
         error_message = EWSONPREM_ERR_MESSAGE
 
-        self.error_print("Error occurred:", e)
+        self._dump_error_log(e)
         try:
             if e.args:
                 if len(e.args) > 1:
@@ -182,7 +185,7 @@ class EWSOnPremConnector(BaseConnector):
                 elif len(e.args) == 1:
                     error_message = e.args[0]
         except Exception as e:
-            self.error_print("Error occurred while fetching exception information. Details: {}".format(str(e)))
+            self._dump_error_log(e, "Error occurred while fetching exception information. Details:")
 
         return error_code, error_message
 
@@ -358,7 +361,6 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_message = self._get_error_message_from_exception(e)
             error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
-            self.error_print(error_text, dump_object=e)
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTIVITY, error_text), resp_json)
 
         try:
@@ -394,7 +396,6 @@ class EWSOnPremConnector(BaseConnector):
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=resp_body)
             error_code, error_message = self._get_error_message_from_exception(e)
             error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
-            self.error_print(error_text, dump_object=e)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
         # Check if there is a fault node present
@@ -410,7 +411,6 @@ class EWSOnPremConnector(BaseConnector):
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=resp_body)
             error_code, error_message = self._get_error_message_from_exception(e)
             error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
-            self.error_print(error_text, dump_object=e)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
         if not isinstance(resp_message, dict):
@@ -794,6 +794,8 @@ class EWSOnPremConnector(BaseConnector):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
+
+        input_str = input_str.replace('\r\n', '')
         encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
@@ -813,8 +815,6 @@ class EWSOnPremConnector(BaseConnector):
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
-        new_str = ''
-        new_str_create_count = 0
         for i, encoded_string in enumerate(encoded_strings):
 
             decoded_string = decoded_strings.get(i)
@@ -835,8 +835,7 @@ class EWSOnPremConnector(BaseConnector):
                 # the UnicodeDammit and working correctly with the decode function.
                 # keeping previous logic in the except block incase of failure.
                 value = value.decode(encoding)
-                new_str += value
-                new_str_create_count += 1
+                input_str = input_str.replace(encoded_string, value)
             except Exception:
                 try:
                     if encoding != 'utf-8':
@@ -845,21 +844,11 @@ class EWSOnPremConnector(BaseConnector):
                     pass
 
                 try:
-                    # commenting the existing approach due to a new approach being deployed below
-                    # substitute the encoded string with the decoded one
-                    # input_str = input_str.replace(encoded_string, value)
-
-                    # make new string insted of replacing in the input string because issue find in PAPP-9531
                     if value:
-                        new_str += UnicodeDammit(value).unicode_markup
-                        new_str_create_count += 1
+                        value = UnicodeDammit(value).unicode_markup
+                        input_str = input_str.replace(encoded_string, value)
                 except Exception:
                     pass
-
-        # replace input string with new string because issue find in PAPP-9531
-        if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
-            input_str = new_str
 
         return input_str
 
@@ -924,8 +913,16 @@ class EWSOnPremConnector(BaseConnector):
         if not ingest_email:
             return action_result.set_status(phantom.APP_SUCCESS, "Successfully fetched email headers")
 
+        config = {
+            "extract_attachments": True,
+            "extract_domains": True,
+            "extract_hashes": True,
+            "extract_ips": True,
+            "extract_urls": True,
+            "extract_email_addresses": True }
+
         process_email = ProcessEmail()
-        ret_val, message = process_email.process_email(self, email_data, email_id, self.get_config(), None, target_container_id)
+        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -951,7 +948,6 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_message = self._get_error_message_from_exception(e)
             error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
-            self.error_print("Unable to get email header string from message.", dump_object=e)
             return action_result.set_status(phantom.APP_ERROR, "Unable to get email header string from message. {0}".format(error_text)), None
 
         if not headers:
@@ -962,8 +958,16 @@ class EWSOnPremConnector(BaseConnector):
         if not ingest_email:
             return action_result.set_status(phantom.APP_SUCCESS, "Successfully fetched email headers")
 
+        config = {
+                "extract_attachments": True,
+                "extract_domains": True,
+                "extract_hashes": True,
+                "extract_ips": True,
+                "extract_urls": True,
+                "extract_email_addresses": True }
+
         process_email = ProcessEmail()
-        ret_val, message = process_email.process_email(self, email_data, email_id, self.get_config(), None, target_container_id)
+        ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
 
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
@@ -1066,11 +1070,12 @@ class EWSOnPremConnector(BaseConnector):
             except Exception as e:
                 error_code, error_message = self._get_error_message_from_exception(e)
                 error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
-                self.error_print("Error occurred in _process_email_id with Message ID: {0}. {1}".format(email_id, error_text), dump_object=e)
+                self.debug_print("Error occurred in _process_email_id with Message ID: {0}. {1}".format(email_id, error_text))
                 action_result.update_summary({"container_id": None})
                 return action_result.set_status(phantom.APP_ERROR, "Error processing email. {0}".format(error_text))
 
         if target_container_id is None:
+            # get the container id that of the email that was ingested
             container_id = self._get_container_id(email_id)
             action_result.update_summary({"container_id": container_id})
         else:
@@ -1524,7 +1529,7 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             error_code, error_message = self._get_error_message_from_exception(e)
             error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
-            self.error_print("Unable to decode Email Mime Content. {0}".format(error_text), dump_object=e)
+            self.debug_print("Unable to decode Email Mime Content. {0}".format(error_text))
             return action_result.set_status(phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
         return (phantom.APP_SUCCESS, rfc822_email)
@@ -1803,7 +1808,7 @@ class EWSOnPremConnector(BaseConnector):
             rfc822_email = base64.b64decode(mime_content)
             rfc822_email = UnicodeDammit(rfc822_email).unicode_markup
         except Exception as e:
-            self.error_print("Unable to decode Email Mime Content.", dump_object=e)
+            self._dump_error_log(e, "Unable to decode Email Mime Content.")
             return (phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
         epoch = self._get_email_epoch(resp_json)
@@ -1947,7 +1952,6 @@ class EWSOnPremConnector(BaseConnector):
                 error_code, error_message = self._get_error_message_from_exception(e)
                 error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
                 self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
-                self.error_print("Exception occurred.", dump_object=e)
         if self._skipped_emails > 0:
             self.save_progress("Skipped emails: {}. (For more details, check the logs)".format(self._skipped_emails))
         return action_result.set_status(phantom.APP_SUCCESS)

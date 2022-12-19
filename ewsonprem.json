@@ -934,7 +934,7 @@
             },
             "render": {
                 "width": 12,
-                "title": "Copy Email",
+                "title": "Move Email",
                 "type": "table",
                 "height": 5
             },

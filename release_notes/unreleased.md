@@ -2,5 +2,9 @@
 * Escaped some special characters from the file name [PAPP-26522]
 * Removed new line characters from the email subject [PAPP-27016]
 * Fixed URL extraction issues [PAPP-27936]
-* Removed 'unify_cef_fields' asset configuration parameter [PAPP-28623]
-* Updates the container name if the email has been updated [PAPP-28693]
+* Added support to extract iocs for promotional emails
+* Added 'decodedBCC' field in the email artifact
+* Updated 'get email' action message with ingested container id
+* Fixed 'get email' ingested artifact fields in case of updated email
+* Removed the 'unify_cef_fields' asset configuration parameter 
+* Added support for updating the container name if the email has been updated 
