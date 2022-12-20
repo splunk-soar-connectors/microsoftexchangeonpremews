@@ -89,8 +89,8 @@ PROC_EMAIL_JSON_MSG_ID = "message_id"
 PROC_EMAIL_JSON_EMAIL_HEADERS = "email_headers"
 PROC_EMAIL_CONTENT_TYPE_MESSAGE = "message/rfc822"
 
-URI_REGEX = r'([Hh][Tt][Tt][Pp][Ss]?:\/\/)((?:[:@\.\-_0-9]|[^ -@\[-\`\{-\~\s]|' \
-    r'[\[\(][^\s\[\]\(\)]*[\]\)])+)((?:[\/\?]+(?:[^\[\(\{\)\]\}\s]|[\[\(][^\[\]\(\)]*[\]\)])*)*)[\/]?'
+URI_REGEX = r'([Hh][Tt][Tt][Pp][Ss]?:\/\/)((?:[:@\.\-_0-9]|[^\"\„\“\‟\”\’\❝\❞\〝\〞\〟\＂\‚\‘\‛\❛\❜\' -@\[-\`\{-\~\s]|' \
+    r'[\[\(][^\s\[\]\(\)]*[\]\)])+)((?:[\/\?]+(?:[^\"\„\“\‟\”\’\❝\❞\〝\〞\〟\＂\‚\‘\‛\❛\❜\'\[\(\{\)\]\}\s]|[\[\(][^\[\]\(\)]*[\]\)])*)*)[\/]?'
 EMAIL_REGEX = r"\b[A-Z0-9._%+-]+@+[A-Z0-9.-]+\.[A-Z]{2,}\b"
 EMAIL_REGEX2 = r'".*"@[A-Z0-9.-]+\.[A-Z]{2,}\b'
 HASH_REGEX = r"\b[0-9a-fA-F]{32}\b|\b[0-9a-fA-F]{40}\b|\b[0-9a-fA-F]{64}\b"
@@ -192,7 +192,6 @@ class ProcessEmail(object):
 
         # try to load the email
         try:
-            file_data = unescape(file_data)
             soup = BeautifulSoup(file_data, "html.parser")
         except Exception as e:
             error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
@@ -227,6 +226,7 @@ class ProcessEmail(object):
                 if uri_text:
                     uris.extend(uri_text)
         else:
+            file_data = unescape(file_data)
             # Parse it as a text file
             uris = [self._clean_url(x.group(0)) for x in re.finditer(uri_regexc, file_data)]
 
@@ -344,6 +344,16 @@ class ProcessEmail(object):
 
         return phantom.APP_SUCCESS
 
+    def _sanitize_dict(self, obj):
+
+        if isinstance(obj, str):
+            return obj.replace('\x00', '')
+        if isinstance(obj, list):
+            return [self._sanitize_dict(item) for item in obj]
+        if isinstance(obj, dict):
+            return {k: self._sanitize_dict(v) for k, v in obj.items()}
+        return obj
+
     def _add_artifacts(self, input_set, artifact_name, start_index, artifacts):
 
         added_artifacts = 0
@@ -368,6 +378,8 @@ class ProcessEmail(object):
             artifact['name'] = artifact_name
             artifact['severity'] = self._base_connector.get_config().get('container_severity', 'medium')
             self._debug_print('Artifact:', artifact)
+            if artifact:
+                artifact = self._sanitize_dict(artifact)
             artifacts.append(artifact)
             added_artifacts += 1
 
@@ -395,6 +407,8 @@ class ProcessEmail(object):
         for artifact in email_header_artifacts:
 
             artifact['source_data_identifier'] = start_index + added_artifacts
+            if artifact:
+                artifact = self._sanitize_dict(artifact)
             artifacts.append(artifact)
             added_artifacts += 1
 

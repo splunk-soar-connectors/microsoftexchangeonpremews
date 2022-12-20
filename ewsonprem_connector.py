@@ -887,12 +887,30 @@ class EWSOnPremConnector(BaseConnector):
         if received_headers:
             headers['Received'] = received_headers
 
-        # handle the subject string, if required add a new key
+        return headers
+
+    def _add_decoded_headers(self, headers):
         subject = headers.get('Subject')
         if subject:
             if isinstance(subject, str):
                 headers['Subject'] = subject.replace('\r\n', '')
-                headers['decodedSubject'] = self._decode_uni_string(subject, subject).replace('\r\n', '')
+                headers['decodedSubject'] = self._decode_uni_string(subject, subject)
+
+        to_data = headers.get('To')
+        if to_data:
+            headers['decodedTo'] = self._decode_uni_string(to_data, to_data)
+
+        from_data = headers.get('From')
+        if from_data:
+            headers['decodedFrom'] = self._decode_uni_string(from_data, from_data)
+
+        CC_data = headers.get('CC')
+        if CC_data:
+            headers['decodedCC'] = self._decode_uni_string(CC_data, CC_data)
+
+        BCC_data = headers.get('BCC')
+        if BCC_data:
+            headers['decodedBCC'] = self._decode_uni_string(BCC_data, BCC_data)
 
         return headers
 
@@ -908,7 +926,8 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        action_result.add_data(header_dict)
+        headers = self._add_decoded_headers(header_dict)
+        action_result.add_data(headers)
 
         if not ingest_email:
             return action_result.set_status(phantom.APP_SUCCESS, "Successfully fetched email headers")
@@ -953,6 +972,7 @@ class EWSOnPremConnector(BaseConnector):
         if not headers:
             return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the headers information from the provided file"), None
 
+        headers = self._add_decoded_headers(headers)
         action_result.add_data(dict(headers))
 
         if not ingest_email:

@@ -1346,10 +1346,38 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.decodedBCC",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.decodedCC",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.decodedFrom",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.decodedSubject",
                     "data_type": "string",
                     "example_values": [
                         "test subject"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.decodedTo",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
                     ]
                 },
                 {
