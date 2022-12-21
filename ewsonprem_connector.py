@@ -173,7 +173,7 @@ class EWSOnPremConnector(BaseConnector):
         :return: error message
         """
 
-        error_code = EWSONPREM_ERR_CODE_MESSAGE
+        error_code = None
         error_message = EWSONPREM_ERR_MESSAGE
 
         self._dump_error_log(e)

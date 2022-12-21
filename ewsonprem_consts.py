@@ -47,7 +47,6 @@ EWSONPREM_ERR_FROM_SERVER = "API failed. Status code: {code}. Message: {message}
 EWSONPREM_ERR_VAULT_INFO = "Could not retrieve vault file"
 EWSONPREM_ERR_JSON_PARSE = "Unable to parse reply, raw string reply: '{raw_text}'"
 EWSONPREM_EXCEPTION_ERR_MESSAGE = "Error Code: {0}. Error Message: {1}"
-EWSONPREM_ERR_CODE_MESSAGE = "Error code unavailable"
 EWSONPREM_ERR_MESSAGE = "Error message unavailable. Please check the asset configuration and|or action parameters."
 EWSONPREM_VALIDATE_INTEGER_MESSAGE = "Please provide a valid integer value in the {key} parameter"
 EWSONPREM_MIME_CONTENT_CONVERSION_ERR = "Error occurred due to 'Mime-Content' conversion failure"
