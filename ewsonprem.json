@@ -19,7 +19,7 @@
     "python_version": "3",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
-    "license": "Copyright (c) 2016-2022 Splunk Inc.",
+    "license": "Copyright (c) 2016-2023 Splunk Inc.",
     "pip_dependencies": {
         "wheel": [
             {

@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -289,7 +289,7 @@ class ProcessEmail(object):
     def _handle_body(self, body, parsed_mail, body_index, email_id):
 
         local_file_path = body['file_path']
-        charset = body.get('charset')
+        charset = body.get('charset', 'utf-8')
         parent_id = None
 
         # parent_id = parsed_mail['email_headers'][body_index]['cef'].get('parentInternetMessageId')
@@ -309,10 +309,10 @@ class ProcessEmail(object):
         with open(local_file_path, 'rb') as f:
             file_data = f.read()
 
-        file_data = self._base_connector._get_string(file_data, 'utf-8')
+        file_data = self._base_connector._get_string(file_data, charset)
         if file_data is None or len(file_data) == 0:
             return phantom.APP_ERROR
-
+        file_data = file_data.replace("\r\n ", "").replace("\r\n", " ").replace("\\n", " ")
         self._parse_email_headers_as_inline(file_data, parsed_mail, charset, email_id)
 
         if self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] or self._config[PROC_EMAIL_JSON_EXTRACT_EMAIL_ADDRESSES]:
