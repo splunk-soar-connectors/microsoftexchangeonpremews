@@ -290,6 +290,8 @@ class ProcessEmail(object):
 
         local_file_path = body['file_path']
         charset = body.get('charset', 'utf-8')
+        if not charset:
+            charset = 'utf-8'
         parent_id = None
 
         # parent_id = parsed_mail['email_headers'][body_index]['cef'].get('parentInternetMessageId')
