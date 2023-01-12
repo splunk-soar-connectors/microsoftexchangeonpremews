@@ -1096,7 +1096,7 @@ class ProcessEmail(object):
                 self._debug_print("Error occurred while updating the container: {}".format(error_data.get("message")))
                 return phantom.APP_ERROR
         else:
-            self._debug_print("Successfully Updated the container")
+            self._debug_print("Successfully updated the container")
 
         return phantom.APP_SUCCESS
 
