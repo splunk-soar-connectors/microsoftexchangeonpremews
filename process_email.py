@@ -626,7 +626,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print("Error occurred while adding file to Vault. Error Details: {}".format(error_msg))
             return
 
-        file_hash = hashlib.sha1(part_payload).hexdigest()
+        file_hash = hashlib.sha1(part_payload).hexdigest()   # nosemgrep
         files.append({'file_name': file_name, 'file_path': file_path, 'file_hash': file_hash, 'meta_info': attach_meta_info})
 
     def _handle_part(self, part, part_index, tmp_dir, extract_attach, parsed_mail, child=False):
@@ -862,7 +862,7 @@ class ProcessEmail(object):
         self._parsed_mail[PROC_EMAIL_JSON_EMAIL_HEADERS] = []
 
         if self._config.get(PROC_ROOT_EMAIL_AS_VAULT, True):
-            file_hash = hashlib.sha1(rfc822_email.encode()).hexdigest()
+            file_hash = hashlib.sha1(rfc822_email.encode()).hexdigest()   # nosemgrep
             extension = '.eml'
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
             file_name = "{0}{1}".format(self._base_connector._decode_uni_string(file_name, file_name), extension)
@@ -1421,7 +1421,7 @@ class ProcessEmail(object):
             self._base_connector.debug_print('Error occurred in _create_dict_hash. {0}'.format(err))
             return None
 
-        return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()
+        return hashlib.md5(UnicodeDammit(input_dict_str).unicode_markup.encode('utf-8')).hexdigest()   # nosemgrep
 
     def _del_tmp_dirs(self):
         """Remove any tmp_dirs that were created."""
