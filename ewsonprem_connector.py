@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@
 # >Remove-MailboxPermission -Identity Phantom -User Administrator -AccessRights FullAccess -InheritanceType All
 import base64
 import email
-import imp
 import json
 import os
 import re
@@ -100,8 +99,6 @@ class EWSOnPremConnector(BaseConnector):
 
         self._session = None
 
-        self._unify_cef_fields = None
-
         # Target user in case of impersonation
         self._target_user = None
 
@@ -121,23 +118,21 @@ class EWSOnPremConnector(BaseConnector):
         self._preprocess_container = lambda x: x
 
         if script:
-            try:  # Try to laod in script to preprocess artifacts
-                if self._python_version < 3:
-                    self._script_module = imp.new_module('preprocess_methods')
-                    exec(script, self._script_module.__dict__)
-                else:
-                    import importlib.util
-                    preprocess_methods = importlib.util.spec_from_loader('preprocess_methods', loader=None)
-                    self._script_module = importlib.util.module_from_spec(preprocess_methods)
-                    exec(script, self._script_module.__dict__)
+            try:  # Try to load in script to preprocess artifacts
+                import importlib.util
+                preprocess_methods = importlib.util.spec_from_loader('preprocess_methods', loader=None)
+                self._script_module = importlib.util.module_from_spec(preprocess_methods)
+                exec(script, self._script_module.__dict__)
             except Exception as e:
                 self.save_progress("Error loading custom script. Error: {}".format(str(e)))
+                self._dump_error_log(e, "Error loading custom script.")
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
             try:
                 self._preprocess_container = self._script_module.preprocess_container
-            except Exception:
+            except Exception as e:
                 self.save_progress("Error loading custom script. Does not contain preprocess_container function")
+                self._dump_error_log(e, "Error loading custom script. Does not contain preprocess_container function.")
                 return self.set_status(phantom.APP_ERROR, EWSONPREM_ERR_CONNECTIVITY_TEST)
 
         return phantom.APP_SUCCESS
@@ -159,47 +154,18 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, parameter
 
-    def _handle_py_ver_compat_for_input_str(self, input_str):
-        """
-        This method returns the encoded|original string based on the Python version.
-        :param input_str: Input string to be processed
-        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
-        """
-
-        try:
-            if input_str and self._python_version == 2:
-                input_str = UnicodeDammit(input_str).unicode_markup.encode('utf-8')
-        except Exception:
-            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
-
-        return input_str
-
-    def _handle_py_ver_compat_for_input_unicode(self, input_str):
-        """
-        This method returns the unicode|string based on the Python version.
-        :param input_str: Input string to be processed
-        :return: input_str (Processed input string based on following logic 'input_str - Python 3; input_str converted to Unicode - Python 2')
-        """
-        try:
-            if input_str and self._python_version == 2:
-                input_str = UnicodeDammit(input_str).unicode_markup
-        except Exception:
-            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string|unicode")
-
-        return input_str
-
     def _get_string(self, input_str, charset):
 
         try:
             if input_str:
-                if self._python_version == 2:
-                    input_str = UnicodeDammit(input_str).unicode_markup.encode(charset)
-                else:
-                    input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
+                input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
         except Exception:
             self.debug_print("Error occurred while converting to string with specific encoding")
 
         return input_str
+
+    def _dump_error_log(self, error, message="Exception occurred."):
+        self.error_print(message, dump_object=error)
 
     def _get_error_message_from_exception(self, e):
         """ This method is used to get appropriate error message from the exception.
@@ -207,29 +173,21 @@ class EWSOnPremConnector(BaseConnector):
         :return: error message
         """
 
+        error_code = None
+        error_message = EWSONPREM_ERR_MESSAGE
+
+        self._dump_error_log(e)
         try:
             if e.args:
                 if len(e.args) > 1:
                     error_code = e.args[0]
-                    error_msg = e.args[1]
+                    error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = EWSONPREM_ERR_CODE_MESSAGE
-                    error_msg = e.args[0]
-            else:
-                error_code = EWSONPREM_ERR_CODE_MESSAGE
-                error_msg = EWSONPREM_ERR_MESSAGE
-        except Exception:
-            error_code = EWSONPREM_ERR_CODE_MESSAGE
-            error_msg = EWSONPREM_ERR_MESSAGE
+                    error_message = e.args[0]
+        except Exception as e:
+            self._dump_error_log(e, "Error occurred while fetching exception information. Details:")
 
-        try:
-            error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
-        except TypeError:
-            error_msg = TYPE_ERR_MESSAGE
-        except Exception:
-            error_msg = EWSONPREM_ERR_MESSAGE
-
-        return error_code, error_msg
+        return error_code, error_message
 
     def finalize(self):
         self.save_state(self._state)
@@ -247,25 +205,17 @@ class EWSOnPremConnector(BaseConnector):
 
         config = self.get_config()
 
-        # Fetching the Python major version
-        try:
-            self._python_version = int(sys.version_info[0])
-        except Exception:
-            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
-
         # The headers, initialize them here once and use them for all other REST calls
         self._headers = {'Content-Type': 'text/xml; charset=utf-8', 'Accept': 'text/xml'}
 
-        self._version = config.get('version', '2010')
+        self._version = config.get('version', '2013')
 
         self._session = requests.Session()
 
         self._base_url = config[EWSONPREM_JSON_DEVICE_URL]
 
-        self._unify_cef_fields = config.get('unify_cef_fields', False)
-
         password = config[phantom.APP_JSON_PASSWORD]
-        username = self._handle_py_ver_compat_for_input_str(config[phantom.APP_JSON_USERNAME])
+        username = config[phantom.APP_JSON_USERNAME]
         username = username.replace('/', '\\')
 
         self._session.auth = HttpNtlmAuth(username, password)
@@ -371,8 +321,8 @@ class EWSOnPremConnector(BaseConnector):
                 # convert from OrderedDict to plain dict
                 resp_json = json.loads(json.dumps(resp_json))
             except Exception as e:
-                error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+                error_code, error_message = self._get_error_message_from_exception(e)
+                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
                 self.debug_print("Error occurred while parsing the HTTP error response. {0}".format(error_text))
                 return "Unable to parse error details"
 
@@ -409,9 +359,9 @@ class EWSOnPremConnector(BaseConnector):
         try:
             r = self._session.post(self._base_url, data=data, headers=self._headers, verify=config[phantom.APP_JSON_VERIFY])
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
-            return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTION, error_text), resp_json)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
+            return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_SERVER_CONNECTIVITY, error_text), resp_json)
 
         try:
             resp_body = r.text
@@ -444,8 +394,8 @@ class EWSOnPremConnector(BaseConnector):
         except Exception as e:
             # resp_body is guaranteed to be NON None, it will be empty, but not None
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=resp_body)
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
         # Check if there is a fault node present
@@ -459,8 +409,8 @@ class EWSOnPremConnector(BaseConnector):
             resp_message = check_response(resp_json)
         except Exception as e:
             msg_string = EWSONPREM_ERR_JSON_PARSE.format(raw_text=resp_body)
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             return (result.set_status(phantom.APP_ERROR, msg_string, error_text), resp_json)
 
         if not isinstance(resp_message, dict):
@@ -469,7 +419,7 @@ class EWSOnPremConnector(BaseConnector):
         resp_class = resp_message.get('@ResponseClass', '')
 
         if resp_class == 'Error':
-            if resp_message.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+            if resp_message.get('m:ResponseCode') == EWSONPREM_ERR_MIME_CONTENT_CONVERSION:
                 return (phantom.APP_SUCCESS, resp_message)
             return (result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_FROM_SERVER.format(**(self._get_error_details(resp_message)))), resp_json)
 
@@ -610,10 +560,10 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        subject = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_SUBJECT, ""))
-        sender = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_FROM, ""))
-        body = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_BODY, ""))
-        int_msg_id = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_INT_MSG_ID, ""))
+        subject = param.get(EWSONPREM_JSON_SUBJECT, "")
+        sender = param.get(EWSONPREM_JSON_FROM, "")
+        body = param.get(EWSONPREM_JSON_BODY, "")
+        int_message_id = param.get(EWSONPREM_JSON_INT_MESSAGE_ID, "")
         aqs = param.get(EWSONPREM_JSON_QUERY, "")
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
@@ -621,27 +571,21 @@ class EWSOnPremConnector(BaseConnector):
             if aqs:
                 UnicodeDammit(aqs).unicode_markup
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             self.debug_print("Parameter validation failed for the AQS query. {0}".format(error_text))
             return action_result.set_status(phantom.APP_ERROR, "Parameter validation failed for the query. Unicode value found.")
 
-        if not subject and not sender and not aqs and not body and not int_msg_id:
+        if not subject and not sender and not aqs and not body and not int_message_id:
             return action_result.set_status(phantom.APP_ERROR, "Please specify at-least one search criteria")
-
-        # Use parameters to create an aqs string
-        '''
-        if (not aqs):
-            aqs = self._create_aqs(subject, sender, body)
-        '''
 
         self.debug_print("AQS_STR: {}".format(UnicodeDammit(aqs).unicode_markup.encode('utf-8')))
 
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        user = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_EMAIL])
-        folder_path = self._handle_py_ver_compat_for_input_str(param.get(EWSONPREM_JSON_FOLDER))
+        user = param[EWSONPREM_JSON_EMAIL]
+        folder_path = param.get(EWSONPREM_JSON_FOLDER)
         self._target_user = user
         ignore_subfolders = param.get('ignore_subfolders', False)
 
@@ -695,7 +639,7 @@ class EWSOnPremConnector(BaseConnector):
                 data = ews_soap.get_search_request_aqs([folder_id], aqs, email_range)
             else:
                 data = ews_soap.get_search_request_filter([folder_id], subject=subject, sender=sender,
-                                                          body=body, int_msg_id=int_msg_id, email_range=email_range)
+                                                          body=body, int_msg_id=int_message_id, email_range=email_range)
 
             ret_val, resp_json = self._make_rest_call(ar_folder, data, self._check_find_response)
 
@@ -737,7 +681,8 @@ class EWSOnPremConnector(BaseConnector):
         action_result.update_summary({'emails_matched': items_matched})
 
         # Set the Status
-        return action_result.set_status(phantom.APP_SUCCESS)
+        return action_result.set_status(phantom.APP_SUCCESS, """Emails matched: {}.
+         If you didn't find what you were looking for, try again using more specific search terms""".format(items_matched))
 
     def _get_container_id(self, email_id):
 
@@ -746,15 +691,19 @@ class EWSOnPremConnector(BaseConnector):
         except Exception:
             email_id = urllib.parse.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
-        url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}'.format(email_id, self.get_asset_id())
+
+        config = self.get_config()
+        container_label = config.get('ingest', {}).get('container_label')
+        url = temp_base_url + 'rest/container?_filter_source_data_identifier="{0}"&_filter_asset={1}&_filter_label="{2}"'.format(
+            email_id, self.get_asset_id(), container_label)
 
         try:
             # Ignored the verify semgrep check as the following is a call to the phantom's REST API on the instance itself
             r = requests.get(url, verify=False)  # nosemgrep
             resp_json = r.json()
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             self.debug_print("Unable to query Email container", error_text)
             return None
 
@@ -765,8 +714,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             container_id = resp_json.get('data', [])[0]['id']
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             self.debug_print("Container results, not proper", error_text)
             return None
 
@@ -845,6 +794,8 @@ class EWSOnPremConnector(BaseConnector):
         # try to find all the decoded strings, we could have multiple decoded strings
         # or a single decoded string between two normal strings separated by \r\n
         # YEAH...it could get that messy
+
+        input_str = input_str.replace('\r\n', '')
         encoded_strings = re.findall(r'=\?.*\?=', input_str, re.I)
 
         # return input_str as is, no need to do any conversion
@@ -856,16 +807,14 @@ class EWSOnPremConnector(BaseConnector):
             decoded_strings = [decode_header(x)[0] for x in encoded_strings]
             decoded_strings = [{'value': x[0], 'encoding': x[1]} for x in decoded_strings]
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            err = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            err = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             self.debug_print("Decoding: {0}. {1}".format(encoded_strings, err))
             return def_name
 
         # convert to dict for safe access, if it's an empty list, the dict will be empty
         decoded_strings = dict(enumerate(decoded_strings))
 
-        new_str = ''
-        new_str_create_count = 0
         for i, encoded_string in enumerate(encoded_strings):
 
             decoded_string = decoded_strings.get(i)
@@ -886,8 +835,7 @@ class EWSOnPremConnector(BaseConnector):
                 # the UnicodeDammit and working correctly with the decode function.
                 # keeping previous logic in the except block incase of failure.
                 value = value.decode(encoding)
-                new_str += value
-                new_str_create_count += 1
+                input_str = input_str.replace(encoded_string, value)
             except Exception:
                 try:
                     if encoding != 'utf-8':
@@ -896,21 +844,11 @@ class EWSOnPremConnector(BaseConnector):
                     pass
 
                 try:
-                    # commenting the existing approach due to a new approach being deployed below
-                    # substitute the encoded string with the decoded one
-                    # input_str = input_str.replace(encoded_string, value)
-
-                    # make new string insted of replacing in the input string because issue find in PAPP-9531
                     if value:
-                        new_str += UnicodeDammit(value).unicode_markup
-                        new_str_create_count += 1
+                        value = UnicodeDammit(value).unicode_markup
+                        input_str = input_str.replace(encoded_string, value)
                 except Exception:
                     pass
-
-        # replace input string with new string because issue find in PAPP-9531
-        if new_str and new_str_create_count == len(encoded_strings):
-            self.debug_print("Creating a new string entirely from the encoded_strings and assigning into input_str")
-            input_str = new_str
 
         return input_str
 
@@ -933,27 +871,46 @@ class EWSOnPremConnector(BaseConnector):
         try:
             [headers.update({x[0]: self._get_string(x[1], charset)}) for x in email_headers]
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
+            error_code, error_message = self._get_error_message_from_exception(e)
             err = "Error occurred while converting the header tuple into a dictionary"
-            self.debug_print("{}. {}. {}".format(err, error_code, error_msg))
+            self.debug_print("{}. {}. {}".format(err, error_code, error_message))
 
         # Handle received seperately
         try:
             received_headers = list()
             received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == 'received']
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
+            error_code, error_message = self._get_error_message_from_exception(e)
             err = "Error occurred while handling the received header tuple separately"
-            self.debug_print("{}. {}. {}".format(err, error_code, error_msg))
+            self.debug_print("{}. {}. {}".format(err, error_code, error_message))
 
         if received_headers:
             headers['Received'] = received_headers
 
-        # handle the subject string, if required add a new key
+        return headers
+
+    def _add_decoded_headers(self, headers):
         subject = headers.get('Subject')
         if subject:
             if isinstance(subject, str):
+                headers['Subject'] = subject.replace('\r\n', '')
                 headers['decodedSubject'] = self._decode_uni_string(subject, subject)
+
+        to_data = headers.get('To')
+        if to_data:
+            headers['decodedTo'] = self._decode_uni_string(to_data, to_data)
+
+        from_data = headers.get('From')
+        if from_data:
+            headers['decodedFrom'] = self._decode_uni_string(from_data, from_data)
+
+        CC_data = headers.get('CC')
+        if CC_data:
+            headers['decodedCC'] = self._decode_uni_string(CC_data, CC_data)
+
+        BCC_data = headers.get('BCC')
+        if BCC_data:
+            headers['decodedBCC'] = self._decode_uni_string(BCC_data, BCC_data)
 
         return headers
 
@@ -969,17 +926,19 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        action_result.add_data(header_dict)
+        headers = self._add_decoded_headers(header_dict)
+        action_result.add_data(headers)
 
         if not ingest_email:
             return action_result.set_status(phantom.APP_SUCCESS, "Successfully fetched email headers")
 
         config = {
-                "extract_attachments": True,
-                "extract_domains": True,
-                "extract_hashes": True,
-                "extract_ips": True,
-                "extract_urls": True }
+            "extract_attachments": True,
+            "extract_domains": True,
+            "extract_hashes": True,
+            "extract_ips": True,
+            "extract_urls": True,
+            "extract_email_addresses": True }
 
         process_email = ProcessEmail()
         ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
@@ -987,10 +946,11 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
 
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
-
-        action_result.update_summary({"container_id": container_id})
+        if target_container_id:
+            action_result.update_summary({"container_id": target_container_id})
+        else:
+            container_id = self._get_container_id(email_id)
+            action_result.update_summary({"container_id": container_id})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -1005,13 +965,14 @@ class EWSOnPremConnector(BaseConnector):
             mail = email.message_from_string(email_data)
             headers = self._get_email_headers_from_mail(mail)
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             return action_result.set_status(phantom.APP_ERROR, "Unable to get email header string from message. {0}".format(error_text)), None
 
         if not headers:
             return action_result.set_status(phantom.APP_ERROR, "Unable to fetch the headers information from the provided file"), None
 
+        headers = self._add_decoded_headers(headers)
         action_result.add_data(dict(headers))
 
         if not ingest_email:
@@ -1022,7 +983,8 @@ class EWSOnPremConnector(BaseConnector):
                 "extract_domains": True,
                 "extract_hashes": True,
                 "extract_ips": True,
-                "extract_urls": True }
+                "extract_urls": True,
+                "extract_email_addresses": True }
 
         process_email = ProcessEmail()
         ret_val, message = process_email.process_email(self, email_data, email_id, config, None, target_container_id)
@@ -1030,10 +992,11 @@ class EWSOnPremConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return action_result.set_status(phantom.APP_ERROR, message)
 
-        # get the container id that of the email that was ingested
-        container_id = self._get_container_id(email_id)
-
-        action_result.update_summary({"container_id": container_id})
+        if target_container_id:
+            action_result.update_summary({"container_id": target_container_id})
+        else:
+            container_id = self._get_container_id(email_id)
+            action_result.update_summary({"container_id": container_id})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -1044,7 +1007,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        email_id = self._handle_py_ver_compat_for_input_unicode(param.get(EWSONPREM_JSON_ID, ""))
+        email_id = param.get(EWSONPREM_JSON_ID, "")
         container_id = param.get(EWS_JSON_CONTAINER_ID)
         vault_id = param.get(EWS_JSON_VAULT_ID)
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
@@ -1076,15 +1039,14 @@ class EWSOnPremConnector(BaseConnector):
 
             # Process errors
             if phantom.is_fail(ret_val):
-                message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id),
-                        action_result.get_message())
+                message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
                 self.debug_print(message)
                 self.send_progress(message)
                 return phantom.APP_ERROR
 
-            if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
-                self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
-                return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+            if resp_json.get('m:ResponseCode') == EWSONPREM_ERR_MIME_CONTENT_CONVERSION:
+                self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERR)
+                return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERR)
 
             self._cleanse_key_names(resp_json)
 
@@ -1126,8 +1088,8 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self._process_email_id(email_id, target_container_id)
             except Exception as e:
-                error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+                error_code, error_message = self._get_error_message_from_exception(e)
+                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
                 self.debug_print("Error occurred in _process_email_id with Message ID: {0}. {1}".format(email_id, error_text))
                 action_result.update_summary({"container_id": None})
                 return action_result.set_status(phantom.APP_ERROR, "Error processing email. {0}".format(error_text))
@@ -1148,10 +1110,10 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        email_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
+        email_id = param[EWSONPREM_JSON_ID]
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
-        category = self._handle_py_ver_compat_for_input_unicode(param.get('category'))
-        subject = self._handle_py_ver_compat_for_input_unicode(param.get('subject'))
+        category = param.get('category')
+        subject = param.get('subject')
 
         if subject is None and category is None:
             return action_result.set_status(phantom.APP_ERROR, "Please specify one of the email properties to update")
@@ -1163,15 +1125,14 @@ class EWSOnPremConnector(BaseConnector):
 
         # Process errors
         if phantom.is_fail(ret_val):
-            message = "Error while getting email data for id {0}. Error: {1}".format(self._handle_py_ver_compat_for_input_str(email_id),
-                    action_result.get_message())
+            message = "Error while getting email data for id {0}. Error: {1}".format(email_id, action_result.get_message())
             self.debug_print(message)
             self.send_progress(message)
             return phantom.APP_ERROR
 
-        if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
-            self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
-            return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERROR)
+        if resp_json.get('m:ResponseCode') == EWSONPREM_ERR_MIME_CONTENT_CONVERSION:
+            self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_ERR)
+            return action_result.set_status(phantom.APP_ERROR, EWSONPREM_MIME_CONTENT_CONVERSION_ERR)
 
         try:
             change_key = next(iter(resp_json['m:Items'].values()))['t:ItemId']['@ChangeKey']
@@ -1238,7 +1199,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
+        message_id = param[EWSONPREM_JSON_ID]
         self._target_user = param.get(EWSONPREM_JSON_EMAIL)
 
         message_ids = ph_utils.get_list_from_string(message_id)
@@ -1332,7 +1293,7 @@ class EWSOnPremConnector(BaseConnector):
 
         for curr_folder in folder_list:
             curr_folder_path = self._extract_folder_path(curr_folder.get('t:ExtendedProperty'))
-            if self._handle_py_ver_compat_for_input_str(curr_folder_path) == folder_path:
+            if curr_folder_path == folder_path:
                 return (phantom.APP_SUCCESS, curr_folder)
 
         return (action_result.set_status(phantom.APP_ERROR, "Folder paths did not match while searching for folder: '{0}'"
@@ -1414,23 +1375,23 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        message_id = self._handle_py_ver_compat_for_input_unicode(param[EWSONPREM_JSON_ID])
+        message_id = param[EWSONPREM_JSON_ID]
 
-        folder_path = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_FOLDER])
-        user = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_EMAIL])
+        folder_path = param[EWSONPREM_JSON_FOLDER]
+        user = param[EWSONPREM_JSON_EMAIL]
         is_public_folder = param.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
 
         # Set the user to impersonate (i.e. target_user), by default it is the destination user
         self._target_user = user
 
         # Use a different email if specified
-        impersonate_email = self._handle_py_ver_compat_for_input_str(param.get(EWS_JSON_IMPERSONATE_EMAIL))
+        impersonate_email = param.get(EWS_JSON_IMPERSONATE_EMAIL)
         if impersonate_email:
             self._target_user = impersonate_email
 
         # finally see if impersonation has been enabled/disabled for this action
         # as of right now copy or move email is the only action that allows over-ride
-        impersonate = not(param.get(EWS_JSON_DONT_IMPERSONATE, False))
+        impersonate = not (param.get(EWS_JSON_DONT_IMPERSONATE, False))
 
         self._impersonate = impersonate
 
@@ -1476,7 +1437,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        email = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_EMAIL])
+        email = param[EWSONPREM_JSON_EMAIL]
 
         self._impersonate = False
 
@@ -1530,7 +1491,7 @@ class EWSOnPremConnector(BaseConnector):
         # Connectivity
         self.save_progress(phantom.APP_PROG_CONNECTING_TO_ELLIPSES, self._host)
 
-        group = self._handle_py_ver_compat_for_input_str(param[EWSONPREM_JSON_GROUP])
+        group = param[EWSONPREM_JSON_GROUP]
         self._group_list.append(group)
 
         self._impersonate = False
@@ -1586,8 +1547,8 @@ class EWSOnPremConnector(BaseConnector):
         try:
             rfc822_email = base64.b64decode(mime_content)
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+            error_code, error_message = self._get_error_message_from_exception(e)
+            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
             self.debug_print("Unable to decode Email Mime Content. {0}".format(error_text))
             return action_result.set_status(phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
@@ -1688,8 +1649,8 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 curr_attachment_data = curr_attachment_data['m:Attachments']
             except Exception as e:
-                error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+                error_code, error_message = self._get_error_message_from_exception(e)
+                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
                 self.debug_print("Could not parse the attachments response", error_text)
                 continue
 
@@ -1729,18 +1690,18 @@ class EWSOnPremConnector(BaseConnector):
         try:
             [headers.update({x[0]: self._get_string(x[1], charset)}) for x in email_headers]
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
+            error_code, error_message = self._get_error_message_from_exception(e)
             err = "Error occurred while converting the header tuple into a dictionary"
-            self.debug_print("{}. {}. {}".format(err, error_code, error_msg))
+            self.debug_print("{}. {}. {}".format(err, error_code, error_message))
 
         # Handle received seperately
         try:
             received_headers = list()
             received_headers = [self._get_string(x[1], charset) for x in email_headers if x[0].lower() == 'received']
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
+            error_code, error_message = self._get_error_message_from_exception(e)
             err = "Error occurred while handling the received header tuple separately"
-            self.debug_print("{}. {}. {}".format(err, error_code, error_msg))
+            self.debug_print("{}. {}. {}".format(err, error_code, error_message))
 
         if received_headers:
             headers['Received'] = received_headers
@@ -1865,12 +1826,9 @@ class EWSOnPremConnector(BaseConnector):
 
         try:
             rfc822_email = base64.b64decode(mime_content)
-            if not self._python_version == 2:
-                rfc822_email = UnicodeDammit(rfc822_email).unicode_markup
+            rfc822_email = UnicodeDammit(rfc822_email).unicode_markup
         except Exception as e:
-            error_code, error_msg = self._get_error_message_from_exception(e)
-            error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
-            self.debug_print("Unable to decode Email Mime Content. {0}".format(error_text))
+            self._dump_error_log(e, "Unable to decode Email Mime Content.")
             return (phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
         epoch = self._get_email_epoch(resp_json)
@@ -1911,7 +1869,7 @@ class EWSOnPremConnector(BaseConnector):
             self.send_progress(message)
             return phantom.APP_ERROR
 
-        if resp_json.get('m:ResponseCode') == EWSONPREM_ERROR_MIME_CONTENT_CONVERSION:
+        if resp_json.get('m:ResponseCode') == EWSONPREM_ERR_MIME_CONTENT_CONVERSION:
             self.debug_print(EWSONPREM_MIME_CONTENT_CONVERSION_MESSAGE.format(email_id))
             self._skipped_emails += 1
             return phantom.APP_SUCCESS
@@ -1935,7 +1893,7 @@ class EWSOnPremConnector(BaseConnector):
 
         self._target_user = poll_user
 
-        folder_path = self._handle_py_ver_compat_for_input_str(config.get(EWS_JSON_POLL_FOLDER, 'Inbox'))
+        folder_path = config.get(EWS_JSON_POLL_FOLDER, 'Inbox')
 
         is_public_folder = config.get(EWS_JSON_IS_PUBLIC_FOLDER, False)
         ret_val, folder_info = self._get_folder_info(poll_user, folder_path, action_result, is_public_folder)
@@ -2011,8 +1969,8 @@ class EWSOnPremConnector(BaseConnector):
             try:
                 self._process_email_id(email_id)
             except Exception as e:
-                error_code, error_msg = self._get_error_message_from_exception(e)
-                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_msg)
+                error_code, error_message = self._get_error_message_from_exception(e)
+                error_text = EWSONPREM_EXCEPTION_ERR_MESSAGE.format(error_code, error_message)
                 self.debug_print("Error occurred in _process_email_id # {0} with Message ID: {1}. {2}".format(i, email_id, error_text))
         if self._skipped_emails > 0:
             self.save_progress("Skipped emails: {}. (For more details, check the logs)".format(self._skipped_emails))
@@ -2085,13 +2043,13 @@ class EWSOnPremConnector(BaseConnector):
 
     def _on_poll(self, param):
 
-        action_result = self.add_action_result(ActionResult(dict(param)))
         # on poll action that is supposed to be scheduled
         if self.is_poll_now():
             self.debug_print("DEBUGGER: Starting polling now")
             return self._poll_now(param)
 
         config = self.get_config()
+        action_result = self.add_action_result(ActionResult(dict(param)))
         total_ingested = 0
 
         if self._state.get('first_run', True):
