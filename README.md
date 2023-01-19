@@ -2,16 +2,16 @@
 # Microsoft Exchange On\-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3\.10\.0  
+Connector Version: 3\.11\.0  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.2\.0  
+Minimum Product Version: 5\.4\.0  
 
 This app performs email ingestion, investigative and containment actions on an on\-premise Exchange installation
 
 [comment]: # " File: README.md"
-[comment]: # "  Copyright (c) 2016-2022 Splunk Inc."
+[comment]: # "  Copyright (c) 2016-2023 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
@@ -71,7 +71,11 @@ dependent on the parameter *Sort mails by* . If an email that arrived a week ago
 folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved.
 But, its DateTimeCreated will be the same.  
   
-**Note** : "Mailbox folder to be polled" parameter is case-sensitive.
+**Note:**
+
+-   "Mailbox folder to be polled" parameter is case-sensitive.
+-   The "Container Severity" value set in the asset configuration parameter will be applicable to
+    the container as well as all the artifacts created inside the container.
 
 ## Scheduled Polling
 
@@ -239,6 +243,8 @@ The app will create the following type of artifacts:
         enabled) and added to the vault of the Container.
     -   At the same time, the vault ID and file name of this item is represented by a Vault
         Artifact.
+    -   Some special characters will be removed from the file name before ingestion. Such as
+        comma(,), single quote(') and double quote(").
     -   The same file can be added to the vault multiple times. In this scenario, the file name of
         the item added the second time onwards will be slightly different, but the vault ID will
         still be the same. However, there will be multiple artifacts created.
@@ -346,6 +352,12 @@ Server. Below are the default ports used by Splunk SOAR.
 | http         | tcp                | 80   |
 | https        | tcp                | 443  |
 
+## Playbook Backward Compatibility
+
+With this release, we are removing the asset parameter 'unify_cef_fields', and the CC and BCC CEF
+fields will be in uppercase only. In order to avoid confusion, playbooks that use these CEF fields
+in lowercase should be updated to uppercase.
+
 
 ### Configuration Variables
 The below configuration variables are required for this Connector to operate.  These variables are specified when configuring a Exchange asset in SOAR.
@@ -376,7 +388,6 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **add\_body\_to\_header\_artifacts** |  optional  | boolean | Add email body to the Email Artifact
 **extract\_root\_email\_as\_vault** |  optional  | boolean | Extract root \(primary\) email as Vault
 **preprocess\_script** |  optional  | file | Script with functions to preprocess containers and artifacts
-**unify\_cef\_fields** |  optional  | boolean | Unify CC/BCC CEF fields \(to uppercase\)
 **automation\_on\_duplicate** |  optional  | boolean | Run automation on duplicate event
 
 ### Supported Actions  
@@ -617,7 +628,11 @@ action\_result\.data\.\*\.X\-SOHU\-Antispam\-Bayes | string |
 action\_result\.data\.\*\.X\-SOHU\-Antispam\-Language | string | 
 action\_result\.data\.\*\.X\-Spam\-Status | string | 
 action\_result\.data\.\*\.X\-UIDL | string | 
+action\_result\.data\.\*\.decodedBCC | string | 
+action\_result\.data\.\*\.decodedCC | string | 
+action\_result\.data\.\*\.decodedFrom | string | 
 action\_result\.data\.\*\.decodedSubject | string | 
+action\_result\.data\.\*\.decodedTo | string | 
 action\_result\.data\.\*\.t\_AdjacentMeetingCount | string | 
 action\_result\.data\.\*\.t\_AssociatedCalendarItemId\.\@ChangeKey | string | 
 action\_result\.data\.\*\.t\_AssociatedCalendarItemId\.\@Id | string | 
@@ -812,7 +827,7 @@ Update an email on the server
 Type: **generic**  
 Read only: **False**
 
-Currently this action only updates the category and subject of an email\. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter\.
+Currently this action only updates the category and subject of an email\. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter\.<br>NOTE\: If the user tries to update the categories, then the existing categories of the email will be replaced with the new categories provided as input\.
 
 #### Action Parameters
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS

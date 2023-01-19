@@ -1,5 +1,5 @@
 <!-- File: readme.html
-  Copyright (c) 2016-2022 Splunk Inc.
+  Copyright (c) 2016-2023 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,7 +27,12 @@ and limitations under the License.
 <h2 id="poll_now">POLL NOW</h2>
     <p>
     POLL NOW should be used to get a sense of the containers and artifacts that are created by the app. The POLL NOW window allows the user to set the "Maximum containers" that should be ingested at this instance. Since a single container is created for each email, this value equates to the maximum emails that are ingested by the app. The app will either get the oldest email first or the latest, depending upon the configuration parameter <i>How to ingest</i>. The date used to determine the oldest or latest is what EWS calls <b>item:LastModifiedTime</b> and <b>item:DateTimeCreated</b>, which is dependent on the parameter <i>Sort mails by</i>. If an email that arrived a week ago, is moved from one folder to the folder being ingested, its LastModifiedTime will be set to the time that it was moved. But, its DateTimeCreated will be the same.
-    <br/> <br/> <b>Note</b>: "Mailbox folder to be polled" parameter is case-sensitive.
+    <br/> <br/>
+    <b>Note:</b>
+    <ul>
+      <li>"Mailbox folder to be polled" parameter is case-sensitive.</li>
+      <li>The "Container Severity" value set in the asset configuration parameter will be applicable to the container as well as all the artifacts created inside the container.</li>
+    </ul>
     </p>
 <h2 id="scheduled_polling">Scheduled Polling</h2>
     <p>This mode is used to schedule a polling action on the asset at regular intervals, which is configured via the INGEST SETTINGS tab of the asset. It makes use of the following asset configuration parameters (among others):</p>
@@ -136,6 +141,7 @@ and limitations under the License.
         <ul>
           <li>If the email contains any attachments, these are extracted (if <b>extract_attachments</b> is enabled) and added to the vault of the Container.</li>
           <li>At the same time, the vault ID and file name of this item is represented by a Vault Artifact.</li>
+          <li>Some special characters will be removed from the file name before ingestion. Such as comma(,), single quote(') and double quote("). </li>
           <li>The same file can be added to the vault multiple times. In this scenario, the file name of the item added the second time onwards will be slightly different, but the vault ID will still be the same. However, there will be multiple artifacts created.</li>
           <li>Do note that the system does <i>not</i> duplicate the file bytes, only the metadata in the database.
           <table style="width:100%">
@@ -275,3 +281,5 @@ of the associated domain artifacts will be incorrect as well, since they will al
       </tr>
     </table>
   </p>
+  <h2>Playbook Backward Compatibility</h2>
+	<p>With this release, we are removing the asset parameter 'unify_cef_fields', and the CC and BCC CEF fields will be in uppercase only. In order to avoid confusion, playbooks that use these CEF fields in lowercase should be updated to uppercase.</p>

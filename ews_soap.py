@@ -1,6 +1,6 @@
 # File: ews_soap.py
 #
-# Copyright (c) 2016-2022 Splunk Inc.
+# Copyright (c) 2016-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -185,11 +185,9 @@ def xml_get_emails_data(email_ids, version):
             T.ExtendedFieldURI({'PropertyTag': EXTENDED_PROPERTY_BODY_TEXT, 'PropertyType': 'String'}),
             T.FieldURI({'FieldURI': 'item:DateTimeReceived'}),
             T.FieldURI({'FieldURI': 'item:LastModifiedTime'}),
-            T.FieldURI({'FieldURI': 'item:Body'})
+            T.FieldURI({'FieldURI': 'item:Body'}),
+            T.FieldURI({'FieldURI': 'item:TextBody'})
         ]
-
-    if version != '2010':
-        additional_properties.append(T.FieldURI({'FieldURI': 'item:TextBody'}))
 
     item_shape = M.ItemShape(
             T.BaseShape('Default'),

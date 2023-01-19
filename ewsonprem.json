@@ -5,9 +5,8 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.10.0",
+    "app_version": "3.11.0",
     "latest_tested_versions": [
-        "Exchange Server(on-prem) 2013",
         "Exchange Server(on-prem) 2016"
     ],
     "utctime_updated": "2022-01-20T01:40:36.000000Z",
@@ -15,12 +14,12 @@
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.2.0",
+    "min_phantom_version": "5.4.0",
     "fips_compliant": false,
     "python_version": "3",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
-    "license": "Copyright (c) 2016-2022 Splunk Inc.",
+    "license": "Copyright (c) 2016-2023 Splunk Inc.",
     "pip_dependencies": {
         "wheel": [
             {
@@ -29,7 +28,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -65,7 +64,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
@@ -89,9 +88,8 @@
             "data_type": "string",
             "order": 2,
             "description": "EWS Version",
-            "default": "2010",
+            "default": "2013",
             "value_list": [
-                "2010",
                 "2013",
                 "2016"
             ]
@@ -237,16 +235,11 @@
             "description": "Script with functions to preprocess containers and artifacts",
             "order": 21
         },
-        "unify_cef_fields": {
-            "data_type": "boolean",
-            "description": "Unify CC/BCC CEF fields (to uppercase)",
-            "order": 24
-        },
         "automation_on_duplicate": {
             "data_type": "boolean",
             "description": "Run automation on duplicate event",
             "default": true,
-            "order": 25
+            "order": 24
         }
     },
     "actions": [
@@ -941,7 +934,7 @@
             },
             "render": {
                 "width": 12,
-                "title": "Copy Email",
+                "title": "Move Email",
                 "type": "table",
                 "height": 5
             },
@@ -1353,10 +1346,38 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.decodedBCC",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.decodedCC",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.decodedFrom",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.decodedSubject",
                     "data_type": "string",
                     "example_values": [
                         "test subject"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.decodedTo",
+                    "data_type": "string",
+                    "example_values": [
+                        "test_user <test_user@e2016.local>"
                     ]
                 },
                 {
@@ -2430,7 +2451,7 @@
         {
             "action": "update email",
             "description": "Update an email on the server",
-            "verbose": "Currently this action only updates the category and subject of an email. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter.",
+            "verbose": "Currently this action only updates the category and subject of an email. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter.<br>NOTE: If the user tries to update the categories, then the existing categories of the email will be replaced with the new categories provided as input.",
             "type": "generic",
             "identifier": "update_email",
             "read_only": false,
@@ -3142,7 +3163,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -3178,7 +3199,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
