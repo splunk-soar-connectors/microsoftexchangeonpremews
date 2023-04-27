@@ -14,7 +14,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.4.0",
+    "min_phantom_version": "5.5.0",
     "fips_compliant": false,
     "python_version": "3",
     "logo": "logo_microsoft.svg",
@@ -40,7 +40,7 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py36/lxml-4.6.3-cp36-cp36m-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+                "input_file": "wheels/py36/lxml-4.9.2-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
             },
             {
                 "module": "ntlm_auth",
@@ -3175,7 +3175,7 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-4.6.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+                "input_file": "wheels/py39/lxml-4.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
             },
             {
                 "module": "ntlm_auth",
