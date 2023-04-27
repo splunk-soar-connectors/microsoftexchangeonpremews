@@ -1,2 +1,1 @@
 **Unreleased**
-* Update lxml to 4.9.2 to fix vulnerability issues [PAPP-30338]

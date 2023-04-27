@@ -2,7 +2,7 @@
 # Microsoft Exchange On-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3.11.0  
+Connector Version: 3.11.1  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): ".\*"  
