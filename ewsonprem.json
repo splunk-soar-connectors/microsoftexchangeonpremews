@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.12.0",
+    "app_version": "3.13.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2016"
     ],
@@ -3166,8 +3166,16 @@
                 "input_file": "wheels/py3/certifi-2022.12.7-py3-none-any.whl"
             },
             {
+                "module": "cffi",
+                "input_file": "wheels/py39/cffi-1.15.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+            },
+            {
                 "module": "chardet",
                 "input_file": "wheels/shared/chardet-3.0.4-py2.py3-none-any.whl"
+            },
+            {
+                "module": "cryptography",
+                "input_file": "wheels/py36/cryptography-40.0.2-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
             },
             {
                 "module": "idna",
@@ -3175,11 +3183,15 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-4.6.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+                "input_file": "wheels/py39/lxml-4.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
             },
             {
-                "module": "ntlm_auth",
-                "input_file": "wheels/shared/ntlm_auth-1.5.0-py2.py3-none-any.whl"
+                "module": "pycparser",
+                "input_file": "wheels/shared/pycparser-2.21-py2.py3-none-any.whl"
+            },
+            {
+                "module": "pyspnego",
+                "input_file": "wheels/py3/pyspnego-0.9.0-py3-none-any.whl"
             },
             {
                 "module": "python_magic",
@@ -3191,15 +3203,15 @@
             },
             {
                 "module": "requests_ntlm",
-                "input_file": "wheels/shared/requests_ntlm-1.0.0-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/requests_ntlm-1.2.0-py3-none-any.whl"
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.4.1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.13-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.15-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",

@@ -27,7 +27,6 @@ from copy import deepcopy
 from email.header import decode_header
 from html import unescape
 from urllib.parse import urlparse
-from django.utils.regex_helper import _lazy_re_compile
 
 import magic
 import phantom.app as phantom
@@ -36,6 +35,7 @@ import phantom.utils as ph_utils
 import requests
 from bs4 import BeautifulSoup, UnicodeDammit
 from django.core.validators import URLValidator
+from django.utils.regex_helper import _lazy_re_compile
 from requests.structures import CaseInsensitiveDict
 
 from ewsonprem_consts import *
@@ -115,18 +115,20 @@ hash_regexc = re.compile(HASH_REGEX)
 ip_regexc = re.compile(IP_REGEX)
 ipv6_regexc = re.compile(IPV6_REGEX)
 
+
 class CustomURLValidator(URLValidator):
     def __init__(self, **kwargs):
         super(CustomURLValidator, self).__init__(**kwargs)
         self.regex = _lazy_re_compile(
-        r"^(?:[a-z0-9.+-]*)://"  # scheme is validated separately
-        r"(?:(?:[^\s:@/]+(?::[^\s:@/]*)?)?@)?"  # user:pass authentication
-        r"(?:" + self.ipv4_re + "|" + self.ipv6_re + "|" + self.host_re + ")"
-        r"(?::[0-9]{1,5})?"  # port
-        r"(?:[/?#][^\s]*)?"  # resource path
-        r"\Z",
-        re.IGNORECASE,
-    )
+            r"^(?:[a-z0-9.+-]*)://"  # scheme is validated separately
+            r"(?:(?:[^\s:@/]+(?::[^\s:@/]*)?)?@)?"  # user:pass authentication
+            r"(?:" + self.ipv4_re + "|" + self.ipv6_re + "|" + self.host_re + ")"
+            r"(?::[0-9]{1,5})?"  # port
+            r"(?:[/?#][^\s]*)?"  # resource path
+            r"\Z",
+            re.IGNORECASE,
+        )
+
 
 class ProcessEmail(object):
 
