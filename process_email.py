@@ -529,7 +529,7 @@ class ProcessEmail(object):
 
         # if no subject then return the default
         if not subject:
-            return def_cont_name
+            return "Empty Email Subject. " + def_cont_name
 
         return self._decode_uni_string(subject, def_cont_name)
 
