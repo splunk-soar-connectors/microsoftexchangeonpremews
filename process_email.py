@@ -537,7 +537,7 @@ class ProcessEmail(object):
     def _get_container_name(self, parsed_mail, email_id):
 
         # Create the default name
-        def_cont_name = "Email ID: {0}".format(email_id)
+        def_cont_name = "Message ID: {0}".format(email_id)
 
         # get the subject from the parsed mail
         subject = parsed_mail.get(PROC_EMAIL_JSON_SUBJECT)
