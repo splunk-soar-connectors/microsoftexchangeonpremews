@@ -35,6 +35,7 @@ import phantom.utils as ph_utils
 import requests
 from bs4 import BeautifulSoup, UnicodeDammit
 from django.core.validators import URLValidator
+from django.utils.regex_helper import _lazy_re_compile
 from requests.structures import CaseInsensitiveDict
 
 from ewsonprem_consts import *
@@ -113,6 +114,20 @@ email_regexc2 = re.compile(EMAIL_REGEX2, re.IGNORECASE)
 hash_regexc = re.compile(HASH_REGEX)
 ip_regexc = re.compile(IP_REGEX)
 ipv6_regexc = re.compile(IPV6_REGEX)
+
+
+class CustomURLValidator(URLValidator):
+    def __init__(self, **kwargs):
+        super(CustomURLValidator, self).__init__(**kwargs)
+        self.regex = _lazy_re_compile(
+            r"^(?:[a-z0-9.+-]*)://"  # scheme is validated separately
+            r"(?:(?:[^\s:@/]+(?::[^\s:@/]*)?)?@)?"  # user:pass authentication
+            r"(?:" + self.ipv4_re + "|" + self.ipv6_re + "|" + self.host_re + ")"
+            r"(?::[0-9]{1,5})?"  # port
+            r"(?:[/?#][^\s]*)?"  # resource path
+            r"\Z",
+            re.IGNORECASE,
+        )
 
 
 class ProcessEmail(object):
@@ -230,7 +245,7 @@ class ProcessEmail(object):
             # Parse it as a text file
             uris = [self._clean_url(x.group(0)) for x in re.finditer(uri_regexc, file_data)]
 
-        validate_url = URLValidator(schemes=['http', 'https'])
+        validate_url = CustomURLValidator(schemes=['http', 'https'])
         validated_urls = list()
         for uri in uris:
             try:
@@ -522,14 +537,14 @@ class ProcessEmail(object):
     def _get_container_name(self, parsed_mail, email_id):
 
         # Create the default name
-        def_cont_name = "Email ID: {0}".format(email_id)
+        def_cont_name = "Message ID: {0}".format(email_id)
 
         # get the subject from the parsed mail
         subject = parsed_mail.get(PROC_EMAIL_JSON_SUBJECT)
 
         # if no subject then return the default
         if not subject:
-            return def_cont_name
+            return f"Empty Email Subject. {def_cont_name}"
 
         return self._decode_uni_string(subject, def_cont_name)
 
