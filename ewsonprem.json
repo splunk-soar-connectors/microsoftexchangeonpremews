@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.12.0",
+    "app_version": "3.13.0",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2016"
     ],
@@ -14,7 +14,7 @@
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "6.0.2",
+    "min_phantom_version": "6.1.1",
     "fips_compliant": false,
     "python_version": "3",
     "logo": "logo_microsoft.svg",
@@ -212,6 +212,12 @@
             "data_type": "boolean",
             "description": "Extract root (primary) email as Vault",
             "order": 23,
+            "default": true
+        },
+        "save_raw_email_to_container": {
+            "data_type": "boolean",
+            "description": "Save raw email to container data dictionary",
+            "order": 25,
             "default": true
         },
         "preprocess_script": {
