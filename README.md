@@ -2,11 +2,11 @@
 # Microsoft Exchange On-Premise EWS
 
 Publisher: Splunk  
-Connector Version: 3.12.0  
+Connector Version: 3.13.0  
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 6.0.2  
+Minimum Product Version: 6.1.1  
 
 This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation
 
@@ -149,6 +149,12 @@ In case the asset is configured to poll **oldest first** , it becomes important 
 number of emails to poll* configured should be greater than the maximum number of emails generated
 **per second** . If the app detects it got the maximum configured emails and all occurred in the
 same second, it will start polling from the next second in the next polling cycle.
+
+### Save raw email content to container
+
+This asset configuration parameter determines whether or not the raw email content of the ingested 
+email will be saved to the container. If the box is checked, the raw email data will be saved to the 
+**data** dictionary. The default setting is TRUE.
 
 ### Run automation on duplicate event
 
@@ -387,6 +393,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **extract_email_addresses** |  optional  | boolean | Extract Email Addresses
 **add_body_to_header_artifacts** |  optional  | boolean | Add email body to the Email Artifact
 **extract_root_email_as_vault** |  optional  | boolean | Extract root (primary) email as Vault
+**save_raw_email_to_container** |  optional  | boolean | Save raw email to container data dictionary
 **preprocess_script** |  optional  | file | Script with functions to preprocess containers and artifacts
 **automation_on_duplicate** |  optional  | boolean | Run automation on duplicate event
 
