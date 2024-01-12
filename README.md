@@ -6,7 +6,7 @@ Connector Version: 3.13.0
 Product Vendor: Microsoft  
 Product Name: Exchange  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 6.1.1  
+Minimum Product Version: 6.0.2  
 
 This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation
 
