@@ -138,12 +138,6 @@ number of emails to poll* configured should be greater than the maximum number o
 **per second** . If the app detects it got the maximum configured emails and all occurred in the
 same second, it will start polling from the next second in the next polling cycle.
 
-### Save raw email content to container
-
-This asset configuration parameter determines whether or not the raw email content of the ingested 
-email will be saved to the container. If the box is checked, the raw email data will be saved to the 
-**data** dictionary. The default setting is TRUE.
-
 ### Run automation on duplicate event
 
 Set this parameter to run the automation, when there is a modification in the email which is already
