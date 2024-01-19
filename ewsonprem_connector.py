@@ -742,7 +742,6 @@ class EWSOnPremConnector(BaseConnector):
             return RetVal3(action_result.set_status(phantom.APP_ERROR,
                 "Raw email data not found in container"), None, None)
 
-
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
     def _get_email_data_from_vault(self, vault_id, action_result):
