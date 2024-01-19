@@ -740,7 +740,8 @@ class EWSOnPremConnector(BaseConnector):
 
         if not email_data:
             return RetVal3(action_result.set_status(phantom.APP_ERROR,
-                "Container does not seem to be created by the same app, raw_email data not found."), None, None)
+                "Raw email data not found in container"), None, None)
+
 
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
