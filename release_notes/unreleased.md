@@ -1,2 +1,3 @@
 **Unreleased**
-Added asset configuration option to include raw email in data dictionary [PAPP-32613]
+* Added asset configuration option to include raw email in data dictionary [PAPP-32613]
+* Updated documentation to reflect how this change affects 'get email' action from container

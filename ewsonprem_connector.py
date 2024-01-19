@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2023 Splunk Inc.
+# Copyright (c) 2016-2024 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -740,7 +740,7 @@ class EWSOnPremConnector(BaseConnector):
 
         if not email_data:
             return RetVal3(action_result.set_status(phantom.APP_ERROR,
-                "Container does not seem to be created by the same app, raw_email data not found."), None, None)
+                "Raw email data not found in container"), None, None)
 
         return RetVal3(phantom.APP_SUCCESS, email_data, email_id)
 
