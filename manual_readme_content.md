@@ -1,5 +1,5 @@
 [comment]: # " File: README.md"
-[comment]: # "  Copyright (c) 2016-2023 Splunk Inc."
+[comment]: # "  Copyright (c) 2016-2024 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
@@ -137,6 +137,12 @@ In case the asset is configured to poll **oldest first** , it becomes important 
 number of emails to poll* configured should be greater than the maximum number of emails generated
 **per second** . If the app detects it got the maximum configured emails and all occurred in the
 same second, it will start polling from the next second in the next polling cycle.
+
+### Save raw email content to container
+
+This asset configuration parameter determines whether or not the raw email content of the ingested 
+email will be saved to the container. If the box is checked, the raw email data will be saved to the 
+**data** dictionary. The default setting is TRUE.
 
 ### Run automation on duplicate event
 
