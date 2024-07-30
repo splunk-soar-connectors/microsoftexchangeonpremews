@@ -1,4 +1,5 @@
 beautifulsoup4==4.9.1
+charset-normalizer==3.3.2
 lxml==4.9.2
 python-magic==0.4.18
 requests_ntlm==1.2.0

@@ -43,6 +43,7 @@ import phantom.utils as ph_utils
 import requests
 import xmltodict
 from bs4 import BeautifulSoup, UnicodeDammit
+from charset_normalizer import from_bytes
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 from requests.structures import CaseInsensitiveDict
@@ -155,14 +156,22 @@ class EWSOnPremConnector(BaseConnector):
         return phantom.APP_SUCCESS, parameter
 
     def _get_string(self, input_str, charset):
-
+        output_str = None
         try:
             if input_str:
-                input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except Exception:
-            self.debug_print("Error occurred while converting to string with specific encoding")
-
-        return input_str
+                output_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
+        except Exception as e:
+            try:
+                self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
+                detected = from_bytes(input_str).best()
+                if detected:
+                    self.debug_print(f"Detected encoding: {detected.encoding}")
+                    output_str = detected.unicode_markup.encode(detected.encoding).decode(detected.encoding)
+                else:
+                    self.debug_print("Unable to detect encoding")
+            except Exception:
+                self.debug_print(f"Error: error occurred while converting to string with detected encoding: {charset=}.")
+        return output_str
 
     def _dump_error_log(self, error, message="Exception occurred."):
         self.error_print(message, dump_object=error)
