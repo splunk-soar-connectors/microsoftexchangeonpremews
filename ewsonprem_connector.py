@@ -878,7 +878,7 @@ class EWSOnPremConnector(BaseConnector):
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
         try:
-            [headers.update({x[0]: self._get_string(x[1], charset)}) for x in email_headers]
+            [headers.update({x[0]: value for x in email_headers if (value := self._get_string(x[1], charset)) is not None})]
         except Exception as e:
             error_code, error_message = self._get_error_message_from_exception(e)
             err = "Error occurred while converting the header tuple into a dictionary"
