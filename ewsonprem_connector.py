@@ -155,7 +155,7 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, parameter
 
-    def _handle_different_encodig(self, input_str, charset):
+    def _handle_different_encoding(self, input_str, charset):
         try:
             self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
             if (detected := from_bytes(input_str).best()):
@@ -173,7 +173,7 @@ class EWSOnPremConnector(BaseConnector):
                 return UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
             return None
         except UnicodeDecodeError:
-            return self._handle_different_encodig(input_str, charset)
+            return self._handle_different_encoding(input_str, charset)
 
     def _dump_error_log(self, error, message="Exception occurred."):
         self.error_print(message, dump_object=error)
