@@ -155,23 +155,26 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, parameter
 
+    def _handle_different_encodig(self, input_str, charset):
+        try:
+            self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
+            detected = from_bytes(input_str).best()
+            if detected:
+                self.debug_print(f"Detected encoding: {detected.encoding}")
+                return detected.unicode_markup.encode(detected.encoding).decode(detected.encoding)
+            else:
+                self.debug_print("Unable to detect encoding")
+        except Exception:
+            self.debug_print(f"Error: error occurred while converting to string with detected encoding: {charset=}.")
+        return None
+
     def _get_string(self, input_str, charset):
-        output_str = None
         try:
             if input_str:
-                output_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except Exception as e:
-            try:
-                self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
-                detected = from_bytes(input_str).best()
-                if detected:
-                    self.debug_print(f"Detected encoding: {detected.encoding}")
-                    output_str = detected.unicode_markup.encode(detected.encoding).decode(detected.encoding)
-                else:
-                    self.debug_print("Unable to detect encoding")
-            except Exception:
-                self.debug_print(f"Error: error occurred while converting to string with detected encoding: {charset=}.")
-        return output_str
+                return UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
+            return None
+        except UnicodeDecodeError:
+            return self._handle_different_encodig(input_str, charset)
 
     def _dump_error_log(self, error, message="Exception occurred."):
         self.error_print(message, dump_object=error)
