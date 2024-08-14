@@ -158,8 +158,7 @@ class EWSOnPremConnector(BaseConnector):
     def _handle_different_encodig(self, input_str, charset):
         try:
             self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
-            detected = from_bytes(input_str).best()
-            if detected:
+            if (detected := from_bytes(input_str).best()):
                 self.debug_print(f"Detected encoding: {detected.encoding}")
                 return detected.unicode_markup.encode(detected.encoding).decode(detected.encoding)
             else:
