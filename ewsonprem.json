@@ -3115,28 +3115,12 @@
     "pip39_dependencies": {
         "wheel": [
             {
-                "module": "beautifulsoup4",
-                "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
-            },
-            {
-                "module": "certifi",
-                "input_file": "wheels/py3/certifi-2024.7.4-py3-none-any.whl"
-            },
-            {
                 "module": "cffi",
-                "input_file": "wheels/py39/cffi-1.16.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-            },
-            {
-                "module": "charset_normalizer",
-                "input_file": "wheels/py39/charset_normalizer-3.3.2-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+                "input_file": "wheels/py39/cffi-1.17.0-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
             },
             {
                 "module": "cryptography",
                 "input_file": "wheels/py39/cryptography-43.0.0-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
-            },
-            {
-                "module": "idna",
-                "input_file": "wheels/py3/idna-3.7-py3-none-any.whl"
             },
             {
                 "module": "lxml",
@@ -3155,24 +3139,8 @@
                 "input_file": "wheels/shared/python_magic-0.4.18-py2.py3-none-any.whl"
             },
             {
-                "module": "requests",
-                "input_file": "wheels/py3/requests-2.32.3-py3-none-any.whl"
-            },
-            {
                 "module": "requests_ntlm",
                 "input_file": "wheels/py3/requests_ntlm-1.2.0-py3-none-any.whl"
-            },
-            {
-                "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.5-py3-none-any.whl"
-            },
-            {
-                "module": "urllib3",
-                "input_file": "wheels/py3/urllib3-2.2.2-py3-none-any.whl"
-            },
-            {
-                "module": "xmltodict",
-                "input_file": "wheels/shared/xmltodict-0.12.0-py2.py3-none-any.whl"
             }
         ]
     }
