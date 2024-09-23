@@ -1,2 +1,1 @@
 **Unreleased**
-* [PAPP-34334] fixed issue with handling bytes like object when polling e-mail
