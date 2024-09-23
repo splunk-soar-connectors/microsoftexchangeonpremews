@@ -43,6 +43,7 @@ import phantom.utils as ph_utils
 import requests
 import xmltodict
 from bs4 import BeautifulSoup, UnicodeDammit
+from charset_normalizer import from_bytes
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 from requests.structures import CaseInsensitiveDict
@@ -154,15 +155,25 @@ class EWSOnPremConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, parameter
 
-    def _get_string(self, input_str, charset):
+    def _handle_different_encoding(self, input_str, charset):
+        try:
+            self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
+            if (detected := from_bytes(input_str).best()):
+                self.debug_print(f"Detected encoding: {detected.encoding}")
+                return detected.unicode_markup.encode(detected.encoding).decode(detected.encoding)
+            else:
+                self.debug_print("Unable to detect encoding")
+        except Exception:
+            self.debug_print(f"Error: error occurred while converting to string with detected encoding: {charset=}.")
+        return None
 
+    def _get_string(self, input_str, charset):
         try:
             if input_str:
-                input_str = UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
-        except Exception:
-            self.debug_print("Error occurred while converting to string with specific encoding")
-
-        return input_str
+                return UnicodeDammit(input_str).unicode_markup.encode(charset).decode(charset)
+            return None
+        except UnicodeDecodeError:
+            return self._handle_different_encoding(input_str, charset)
 
     def _dump_error_log(self, error, message="Exception occurred."):
         self.error_print(message, dump_object=error)
@@ -869,7 +880,11 @@ class EWSOnPremConnector(BaseConnector):
         # Convert the header tuple into a dictionary
         headers = CaseInsensitiveDict()
         try:
-            [headers.update({x[0]: self._get_string(x[1], charset)}) for x in email_headers]
+            for x in email_headers:
+                if (value := self._get_string(x[1], charset)) is not None:
+                    headers.update(
+                        {x[0]: value}
+                    )
         except Exception as e:
             error_code, error_message = self._get_error_message_from_exception(e)
             err = "Error occurred while converting the header tuple into a dictionary"
