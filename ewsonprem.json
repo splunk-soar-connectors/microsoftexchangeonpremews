@@ -20,9 +20,6 @@
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
     "license": "Copyright (c) 2016-2024 Splunk Inc.",
-    "pip_dependencies": {
-        "wheel": []
-    },
     "configuration": {
         "url": {
             "data_type": "string",
@@ -3116,15 +3113,15 @@
         "wheel": [
             {
                 "module": "cffi",
-                "input_file": "wheels/py39/cffi-1.17.0-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+                "input_file": "wheels/py39/cffi-1.17.1-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "cryptography",
-                "input_file": "wheels/py39/cryptography-43.0.0-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+                "input_file": "wheels/py39/cryptography-43.0.1-cp39-abi3-manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-4.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
+                "input_file": "wheels/py39/lxml-4.9.4-cp39-cp39-manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "pycparser",
@@ -3136,7 +3133,7 @@
             },
             {
                 "module": "python_magic",
-                "input_file": "wheels/shared/python_magic-0.4.18-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/python_magic-0.4.27-py2.py3-none-any.whl"
             },
             {
                 "module": "requests_ntlm",

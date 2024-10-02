@@ -52,15 +52,9 @@ EWSONPREM_VALIDATE_INTEGER_MESSAGE = "Please provide a valid integer value in th
 EWSONPREM_MIME_CONTENT_CONVERSION_ERR = "Error occurred due to 'Mime-Content' conversion failure"
 EWSONPREM_MIME_CONTENT_CONVERSION_MESSAGE = "While getting email data for id {0} 'ErrorMimeContentConversionFailed' error occurred. \
 Skipping the email."
-EWSONPREM_ERR_MIME_CONTENT_CONVERSION = 'ErrorMimeContentConversionFailed'
+EWSONPREM_ERR_MIME_CONTENT_CONVERSION = "ErrorMimeContentConversionFailed"
 
-EWSONPREM_MAIL_TYPES = [
-    "t:Message",
-    "t:MeetingRequest",
-    "t:MeetingResponse",
-    "t:MeetingMessage",
-    "t:MeetingCancellation"
-]
+EWSONPREM_MAIL_TYPES = ["t:Message", "t:MeetingRequest", "t:MeetingResponse", "t:MeetingMessage", "t:MeetingCancellation"]
 EWSONPREM_MAX_END_OFFSET_VAL = 2147483646
 EWS_MODIFY_CONFIG = "Toggling the impersonation configuration on the asset might help, or login user does not have privileges to the mailbox."
 
