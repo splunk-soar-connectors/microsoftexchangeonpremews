@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.13.2",
+    "app_version": "3.13.3",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2016"
     ],
@@ -14,44 +14,12 @@
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
     "product_version_regex": ".*",
-    "min_phantom_version": "6.1.1",
+    "min_phantom_version": "6.2.1",
     "fips_compliant": false,
     "python_version": "3",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
     "license": "Copyright (c) 2016-2024 Splunk Inc.",
-    "pip_dependencies": {
-        "wheel": [
-            {
-                "module": "beautifulsoup4",
-                "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
-            },
-            {
-                "module": "lxml",
-                "input_file": "wheels/py36/lxml-4.9.2-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
-            },
-            {
-                "module": "ntlm_auth",
-                "input_file": "wheels/shared/ntlm_auth-1.5.0-py2.py3-none-any.whl"
-            },
-            {
-                "module": "python_magic",
-                "input_file": "wheels/shared/python_magic-0.4.18-py2.py3-none-any.whl"
-            },
-            {
-                "module": "requests_ntlm",
-                "input_file": "wheels/shared/requests_ntlm-1.0.0-py2.py3-none-any.whl"
-            },
-            {
-                "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
-            },
-            {
-                "module": "xmltodict",
-                "input_file": "wheels/shared/xmltodict-0.12.0-py2.py3-none-any.whl"
-            }
-        ]
-    },
     "configuration": {
         "url": {
             "data_type": "string",
@@ -3144,40 +3112,32 @@
     "pip39_dependencies": {
         "wheel": [
             {
-                "module": "beautifulsoup4",
-                "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
+                "module": "cffi",
+                "input_file": "wheels/py39/cffi-1.17.1-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl"
             },
             {
-                "module": "cffi",
-                "input_file": "wheels/py39/cffi-1.16.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+                "module": "cryptography",
+                "input_file": "wheels/py39/cryptography-43.0.1-cp39-abi3-manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-4.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl"
+                "input_file": "wheels/py39/lxml-4.9.4-cp39-cp39-manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "pycparser",
-                "input_file": "wheels/shared/pycparser-2.21-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/pycparser-2.22-py3-none-any.whl"
             },
             {
                 "module": "pyspnego",
-                "input_file": "wheels/py3/pyspnego-0.10.2-py3-none-any.whl"
+                "input_file": "wheels/py3/pyspnego-0.11.1-py3-none-any.whl"
             },
             {
                 "module": "python_magic",
-                "input_file": "wheels/shared/python_magic-0.4.18-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/python_magic-0.4.27-py2.py3-none-any.whl"
             },
             {
                 "module": "requests_ntlm",
                 "input_file": "wheels/py3/requests_ntlm-1.2.0-py3-none-any.whl"
-            },
-            {
-                "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.5-py3-none-any.whl"
-            },
-            {
-                "module": "xmltodict",
-                "input_file": "wheels/shared/xmltodict-0.12.0-py2.py3-none-any.whl"
             }
         ]
     }
