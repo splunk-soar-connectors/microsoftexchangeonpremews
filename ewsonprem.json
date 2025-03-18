@@ -19,7 +19,7 @@
     "python_version": "3",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
-    "license": "Copyright (c) 2016-2024 Splunk Inc.",
+    "license": "Copyright (c) 2016-2025 Splunk Inc.",
     "configuration": {
         "url": {
             "data_type": "string",
@@ -817,6 +817,10 @@
                     "example_values": [
                         1
                     ]
+                },
+                {
+                    "data_path": "action_result.parameter.ph",
+                    "data_type": "ph"
                 }
             ],
             "versions": "EQ(*)"
@@ -999,6 +1003,10 @@
                     "example_values": [
                         1
                     ]
+                },
+                {
+                    "data_path": "action_result.parameter.ph",
+                    "data_type": "ph"
                 }
             ],
             "versions": "EQ(*)"
