@@ -1,6 +1,6 @@
 # File: ews_soap.py
 #
-# Copyright (c) 2016-2024 Splunk Inc.
+# Copyright (c) 2016-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 from bs4 import UnicodeDammit
 from lxml import etree
 from lxml.builder import ElementMaker
+
 
 # The name spaces
 SOAP_ENVELOPE_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -43,12 +44,11 @@ EXTENDED_PROPERTY_BODY_HTML = "0x1013"
 
 
 def xml_get_restriction(greater_than_time=None, message_id=None, field_uri="LastModifiedTime"):
-
     filters = []
 
     if greater_than_time:
         greater_than_time = T.IsGreaterThan(
-            T.FieldURI({"FieldURI": "item:{}".format(field_uri)}), T.FieldURIOrConstant(T.Constant({"Value": greater_than_time}))
+            T.FieldURI({"FieldURI": f"item:{field_uri}"}), T.FieldURIOrConstant(T.Constant({"Value": greater_than_time}))
         )
         filters.append(greater_than_time)
 
@@ -68,7 +68,6 @@ def xml_get_restriction(greater_than_time=None, message_id=None, field_uri="Last
 
 
 def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction, field_uri="LastModifiedTime"):
-
     elements = []
 
     additional_properties = T.AdditionalProperties(
@@ -86,7 +85,7 @@ def xml_get_email_ids(user, folder_id, order, offset, max_emails, restriction, f
     if restriction:
         elements.append(restriction)
 
-    sort_order = M.SortOrder(T.FieldOrder({"Order": order}, T.FieldURI({"FieldURI": "item:{}".format(field_uri)})))
+    sort_order = M.SortOrder(T.FieldOrder({"Order": order}, T.FieldURI({"FieldURI": f"item:{field_uri}"})))
 
     elements.append(sort_order)
 
@@ -184,7 +183,6 @@ def xml_get_emails_data(email_ids, version):
 
 
 def get_search_request_aqs(folder_ids, aqs, email_range="0-10"):
-
     elements = []
 
     # Item Shape
@@ -319,7 +317,6 @@ def get_search_request_filter(folder_ids, subject=None, sender=None, body=None, 
 
 
 def get_update_email(email_id, change_key, categories=None, subject=None):
-
     item_id = T.ItemId({"Id": email_id, "ChangeKey": change_key})
 
     update_node = []
@@ -346,7 +343,6 @@ def get_update_email(email_id, change_key, categories=None, subject=None):
 
 
 def get_delete_email(message_ids):
-
     if not isinstance(message_ids, list):
         message_ids = [message_ids]
 
@@ -359,12 +355,10 @@ def get_delete_email(message_ids):
 
 
 def get_move_email(message_id, folder_id):
-
     return M.MoveItem(M.ToFolderId(T.FolderId({"Id": folder_id})), M.ItemIds(T.ItemId({"Id": message_id})))
 
 
 def get_copy_email(message_id, folder_id):
-
     return M.CopyItem(M.ToFolderId(T.FolderId({"Id": folder_id})), M.ItemIds(T.ItemId({"Id": message_id})))
 
 
@@ -385,7 +379,6 @@ def xml_get_root_folder_id(user, root_folder_id="root"):
 
 
 def xml_get_children_info(user, child_folder_name=None, parent_folder_id="root", query_range=None):
-
     elements = []
 
     folder_shape = M.FolderShape(
@@ -466,8 +459,7 @@ def xml_get_children_info(user, child_folder_name=None, parent_folder_id="root",
 
 
 def add_to_envelope(lxml_obj, version, target_user=None):
-
-    header = S.Header(T.RequestServerVersion({"Version": "Exchange{0}".format(version)}))
+    header = S.Header(T.RequestServerVersion({"Version": f"Exchange{version}"}))
 
     if target_user:
         impersonation = T.ExchangeImpersonation(
