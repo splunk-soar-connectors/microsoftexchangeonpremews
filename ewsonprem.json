@@ -3125,11 +3125,11 @@
             },
             {
                 "module": "cryptography",
-                "input_file": "wheels/py39/cryptography-43.0.1-cp39-abi3-manylinux_2_28_x86_64.whl"
+                "input_file": "wheels/py39/cryptography-44.0.2-cp39-abi3-manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-4.9.4-cp39-cp39-manylinux_2_28_x86_64.whl"
+                "input_file": "wheels/py39/lxml-5.3.0-cp39-cp39-manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "pycparser",
@@ -3137,7 +3137,7 @@
             },
             {
                 "module": "pyspnego",
-                "input_file": "wheels/py3/pyspnego-0.11.1-py3-none-any.whl"
+                "input_file": "wheels/py3/pyspnego-0.11.2-py3-none-any.whl"
             },
             {
                 "module": "python_magic",
