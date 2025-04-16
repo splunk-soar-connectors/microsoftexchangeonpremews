@@ -1,4 +1,3 @@
 **Unreleased**
 
-* chore(ci): Pre-commit config updates
-* update dependencies in requirements [PSAAS-22812]
+* chore(ci): update pre-commit config
