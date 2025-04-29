@@ -5,11 +5,11 @@
     "publisher": "Splunk",
     "type": "email",
     "main_module": "ewsonprem_connector.py",
-    "app_version": "3.13.3",
+    "app_version": "3.13.4",
     "latest_tested_versions": [
         "Exchange Server(on-prem) 2016"
     ],
-    "utctime_updated": "2023-04-27T23:51:24.000000Z",
+    "utctime_updated": "2025-04-29T19:45:14.904893Z",
     "package_name": "phantom_ewsexchange",
     "product_vendor": "Microsoft",
     "product_name": "Exchange",
