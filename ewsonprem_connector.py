@@ -53,12 +53,7 @@ from ewsonprem_consts import *
 from process_email import ProcessEmail
 
 
-try:
-    import urllib
-except Exception:
-    import urllib.error
-    import urllib.parse
-    import urllib.request
+import urllib.parse
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -159,7 +154,7 @@ class EWSOnPremConnector(BaseConnector):
 
     def _handle_different_encoding(self, input_str, charset):
         try:
-            self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}: {e}.")
+            self.debug_print(f"Warning: error occurred while converting to string with given encoding: {charset=}.")
             if detected := from_bytes(input_str).best():
                 self.debug_print(f"Detected encoding: {detected.encoding}")
                 return detected.unicode_markup.encode(detected.encoding).decode(detected.encoding)
@@ -703,10 +698,7 @@ class EWSOnPremConnector(BaseConnector):
         )
 
     def _get_container_id(self, email_id):
-        try:
-            email_id = urllib.quote_plus(email_id)
-        except Exception:
-            email_id = urllib.parse.quote_plus(email_id)
+        email_id = urllib.parse.quote_plus(email_id)
         temp_base_url = self.get_phantom_base_url()
 
         config = self.get_config()
@@ -1855,7 +1847,7 @@ class EWSOnPremConnector(BaseConnector):
             self._dump_error_log(e, "Unable to decode Email Mime Content.")
             return (phantom.APP_ERROR, "Unable to decode Email Mime Content")
 
-        epoch = self._get_email_epoch(resp_json)
+        epoch = self._get_email_epoch(resp_json)  # pylint: disable=assignment-from-none
 
         email_header_list = list()
         attach_meta_info_list = list()
