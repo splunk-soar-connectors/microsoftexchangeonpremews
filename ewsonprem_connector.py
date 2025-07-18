@@ -32,6 +32,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 import uuid
 from datetime import datetime
 from email.header import decode_header
@@ -51,9 +52,6 @@ from requests.structures import CaseInsensitiveDict
 import ews_soap
 from ewsonprem_consts import *
 from process_email import ProcessEmail
-
-
-import urllib.parse
 
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
