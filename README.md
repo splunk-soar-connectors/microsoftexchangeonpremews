@@ -1,9 +1,9 @@
 # Microsoft Exchange On-Premise EWS
 
-Publisher: Splunk \
-Connector Version: 3.13.4 \
-Product Vendor: Microsoft \
-Product Name: Exchange \
+Publisher: Splunk <br>
+Connector Version: 3.13.4 <br>
+Product Vendor: Microsoft <br>
+Product Name: Exchange <br>
 Minimum Product Version: 6.2.1
 
 This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation
@@ -360,22 +360,22 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration \
-[run query](#action-run-query) - Search emails \
-[delete email](#action-delete-email) - Delete emails \
-[copy email](#action-copy-email) - Copy an email to a folder \
-[move email](#action-move-email) - Move an email to a folder \
-[get email](#action-get-email) - Get an email from the server \
-[list addresses](#action-list-addresses) - Get the email addresses that make up a Distribution List \
-[lookup email](#action-lookup-email) - Resolve an Alias name or email address, into mailboxes \
-[update email](#action-update-email) - Update an email on the server \
+[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration <br>
+[run query](#action-run-query) - Search emails <br>
+[delete email](#action-delete-email) - Delete emails <br>
+[copy email](#action-copy-email) - Copy an email to a folder <br>
+[move email](#action-move-email) - Move an email to a folder <br>
+[get email](#action-get-email) - Get an email from the server <br>
+[list addresses](#action-list-addresses) - Get the email addresses that make up a Distribution List <br>
+[lookup email](#action-lookup-email) - Resolve an Alias name or email address, into mailboxes <br>
+[update email](#action-update-email) - Update an email on the server <br>
 [on poll](#action-on-poll) - Ingest emails from the server into Splunk SOAR
 
 ## action: 'test connectivity'
 
 Validate the asset configuration for connectivity using supplied configuration
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -390,7 +390,7 @@ No Output
 
 Search emails
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 The <b>run query</b> action provides more than one method to search a user's mailbox:<br><ul><li>Simple Search<br>Use the <b>subject</b> and <b>body</b> parameters to search for substring matches. The <b>sender</b> parameter can be used to search for emails from a specific address. However it has been noticed that a match with the <b>sender</b> email address fails for emails that have been never sent or received, but instead have been created manually as a draft and copied to the searched mailbox. In such cases an AQS is a better option. If more than one parameter is specified, the search is an <b>And</b> of the given values including the <b>internet_message_id</b>.<br> <b>Simple Search</b> implements search filters. More details regarding search filters can be found on this <a href="https://msdn.microsoft.com/en-us/library/office/dn579422(v=exchg.150).aspx">MSDN Link</a>.<br></li><li>Query Search<br>For a more fine-grained email search, the use of the <b>query</b> parameter is recommended. If this parameter is specified, the <b>subject</b>, <b>sender</b>, <b>internet_message_id</b> and <b>body</b> parameters are ignored.<br>This parameter supports AQS queries to search in a Mailbox. More details regarding AQS keywords supported by Exchange can be found on this <a href="https://msdn.microsoft.com/en-us/library/office/dn579420(v=exchg.150).aspx">MSDN Link.</a><br>Searching with AQS strings does have one notable restriction, however. The AQS search string will only match substrings from the start of a word. If a substring needs to be found in the middle of a word, use a <b>Simple Search</b>.<br>Some examples:<br><ul><li>All emails from user1@contoso.com or user2@contoso.com<br>from:user1@contoso.com OR from:user2@contoso.com</li><li>All emails containing the string <i>free vacations</i><br>body: free vacations</li><li>This will match an email with subject containing the word <i>Details</i> but not <i>Cadet</i><br>subject:det</li></li></ul></ul>If the <b>folder</b> parameter is not specified, each email based folder such as Inbox, Sent etc. will be searched, including the children (nested) folders.<br>The action supports searching a folder that is nested within another.<br>To search in such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For e.g. to search in a folder named <i>phishing</i> which is nested within (a child of) <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>NOTE: In some cases search results may return more emails than are visible in an email client. This is due to emails that have been just deleted, but not yet completely cleaned by the server.<br><br>The action supports limiting the number of emails returned using the <b>range</b> parameter. The input should be of the form <i>min_offset</i>-<i>max_offset</i>. The results are always sorted in <i>descending</i> order to place the latest emails at the top. For example to get the latest 10 emails that matched the filter, specify the range as 0-9. If multiple folders are searched for, then the range will be applied for each folder.<br>So if the folder being searched for example <i>Inbox</i> has a child (nested) folder called <i>phishing</i> and the range specified is 2-10, then the action will return 9 max emails for each folder. If the range parameter is not specified by default the action will use <b>0-10</b>.<br><br>NOTE: The <b>email</b> parameter is required.<br><br>Many actions such as <b>delete email</b> and <b>copy email</b> require the <b>exchange email ID</b> as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like \<tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com>. Use this as the value (including the < and > chars if present) of <b>internet_message_id</b> parameter and execute the action. The results will contain the <b>exchange email ID</b> of an email, which can be used as input for other actions.
@@ -449,7 +449,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Delete emails
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 This action supports a comma separated list of message IDs as input. This results in multiple emails getting deleted in a single call to the server. If impersonation is enabled on the asset, the <b>email</b> parameter is required, else <b>email</b> will be ignored.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like \<tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com>. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.
@@ -478,7 +478,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Copy an email to a folder
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 The action supports copying to a folder that is nested within another.<br>To copy to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For example, to copy email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like \<tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com>. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.\*.new_email_id</b>, however this value is not available for cross-mailbox or mailbox to public folder <b>copy email</b> actions (please see the documentation of the <a href="https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx">CopyItem operation on MSDN</a>). However in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>copy email</b> action, for reasons explained in this section, <b>copy email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>
@@ -516,7 +516,7 @@ action_result.parameter.ph | ph | | |
 
 Move an email to a folder
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 The action supports moving an email to a folder that is nested within another.<br>To move to such a folder, specify the complete path using the <b>'/'</b> (forward slash) as the separator.<br>For example, to move email to a folder named <i>phishing</i> which is nested within <i>Inbox</i>, set the value as <b>Inbox/phishing</b>.<br>The action requires the exchange email ID as input. Many times this value is not easily available, since not many email clients display it. However every email header has a value called <b>Message-ID</b> assigned to it. It's usually something like \<tS10Ncty2SyeJsjdNMsxV+dguQ+jd7RwiFgmZsLN@contoso.com>. Use this <b>Internet Message ID</b> as input to the <b>run query</b> action to get the <b>exchange email ID</b> of an email.<br>The action will return the ID of the newly copied email in the data path <b>action_result.data.\*.new_email_id</b>, however this value is not available for cross-mailbox or mailbox to public folder <b>move email</b> actions (please see the documentation of the <a href="https://msdn.microsoft.com/en-us/library/office/aa565012(v=exchg.150).aspx">MoveItem operation on MSDN</a>). However in such scenarios, do a <b>run query</b> on the new mailbox plus folder with a specific parameter like <b>Internet Message ID</b> to get the <b>Exchange email ID</b>.<br><br><b>Impersonation</b><p>Impersonation plays a big role in the <b>move email</b> action, for reasons explained in this section, <b>move email</b> is the only action that overrides the asset config parameter <b>use_impersonation</b>. By default, the action will <i>impersonate</i> the user specified in the <b>email</b> parameter, if impersonation is enabled (by setting the <b>dont_impersonate</b> action parameter to False or Unchecked).<br>However depending on the server configuration, this action might fail with an <i>Access Denied</i> error. If an email is being copied from one folder to another in the same mailbox, the action will succeed, however if the email is being copied from one mailbox's folder to a different mailbox, the impersonated user will require access to both the mailboxes. In this case the action might require to impersonate a user other than the one specified in the <b>email</b> parameter. In such a scenario use the <b>impersonate_email</b> to specify an alternate email to <i>impersonate</i>.<br>Set the <b>dont_impersonate</b> parameter to <b>True</b> to disable impersonation all together. This value will override the one configured on the asset. The default value of this param is <b>False</b>.</p>
@@ -554,7 +554,7 @@ action_result.parameter.ph | ph | | |
 
 Get an email from the server
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 Every container that is created by the app has the following values:<ul><li>The container ID that is generated by the Splunk SOAR platform.</li><li>The Source ID that the app equates to the email ID on the server if known or the vault ID if asked to parse from the vault.</li><li>If the asset configuration parameter "Save raw email to container data dictionary" is checked, then the raw_email data in the container's data field is set to the RFC822 format of the email.</li></ul>This action parses email data and if specified creates containers and artifacts. The email data to parse is either extracted from the remote server if an email ID is specified, from a Splunk SOAR container, if the <b>container_id</b> is specified or from the vault item if the <b>vault_id</b> is specified.<br>If all three parameters are specified, the action will use the <b>container_id</b>.<br>The data paths differ depending on where the email data is parsed from.<br><br><p>If parsed from the server:<br><ul><li>The data path <b>action_result.data.\*.t_MimeContent.#text</b> contains the email in RFC822 format, but base64 encoded.</li><li>The data path <b>action_result.data.\*.t_Body.#text</b> contains the email body.</li><li>The widget for this action will render a text version of the email body if possible.</li><li>If impersonation is enabled on the asset, the <b>email</b> parameter is required, else <b>email</b> will be ignored.</li></ul></p><p>If parsed from the container or vault:<br><ul><li>The widget does not render the email body.</li><li>The email headers are listed in a table.</li></ul></p><p>If <b>ingest_email</b> is set to </b>True</b>:<br><ul><li>The ID of the container created or updated will be set in the <b>action_result.summary.container_id</b> data path.</li><li>The widget will display this ID as <b>Ingested Container ID</b>.</li></ul></p>Do note that any containers and artifacts created will use the label configured in the asset.<br>The action will fail if the vault item asked to parse and ingest is not an email item (.eml).
@@ -738,7 +738,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get the email addresses that make up a Distribution List
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 The <b>group</b> parameter supports, as input, the email (for e.g. dleng@corp.contoso.com) or the name (for e.g. dleng) of the distribution list.<br><br>The <b>recursive</b> parameter will cause the action to recursively search for distribution lists inside of the initial distribution lists and expand those.<br>Each discovered distribution list will be submitted as a separate set of results, causing multiple sets of action results to be created.
@@ -770,7 +770,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Resolve an Alias name or email address, into mailboxes
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -820,7 +820,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Update an email on the server
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 Currently this action only updates the category and subject of an email. To set multiple categories, please pass a comma separated list to the <b>category</b> parameter.<br>NOTE: If the user tries to update the categories, then the existing categories of the email will be replaced with the new categories provided as input.
@@ -930,7 +930,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Ingest emails from the server into Splunk SOAR
 
-Type: **ingest** \
+Type: **ingest** <br>
 Read only: **True**
 
 Please see sections <a href="#poll_now">POLL NOW</a> and <a href="#scheduled_polling">Scheduled Polling</a> for more info on how this action is implemented by the app.
