@@ -16,7 +16,7 @@
     "product_version_regex": ".*",
     "min_phantom_version": "6.2.1",
     "fips_compliant": false,
-    "python_version": "3",
+    "python_version": "3.9, 3.13",
     "logo": "logo_microsoft.svg",
     "logo_dark": "logo_microsoft_dark.svg",
     "license": "Copyright (c) 2016-2025 Splunk Inc.",
@@ -3129,7 +3129,7 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-6.0.0-cp39-cp39-manylinux_2_26_x86_64.manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+                "input_file": "wheels/py39/lxml-6.0.1-cp39-cp39-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "pycparser",
@@ -3161,7 +3161,7 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py313/lxml-6.0.0-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+                "input_file": "wheels/py313/lxml-6.0.1-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl"
             },
             {
                 "module": "pycparser",
