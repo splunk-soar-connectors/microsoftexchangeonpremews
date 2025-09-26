@@ -1,7 +1,7 @@
 # Microsoft Exchange On-Premise EWS
 
 Publisher: Splunk <br>
-Connector Version: 3.13.4 <br>
+Connector Version: 3.13.5 <br>
 Product Vendor: Microsoft <br>
 Product Name: Exchange <br>
 Minimum Product Version: 6.2.1
