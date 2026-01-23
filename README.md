@@ -543,7 +543,8 @@ action_result.parameter.use_current_container | boolean | | |
 action_result.data.\*.t_Subject | string | | |
 action_result.data.\*.t_DateTimeCreated | string | | |
 action_result.data.\*.t_DateTimeSent | string | | |
-action_result.data.\*.t_ItemId_Id | string | `exchange email id` | |
+action_result.data.\*.t_ItemId.@Id | string | `exchange email id` | |
+action_result.data.\*.t_ItemId.@ChangeKey | string | | |
 action_result.data.\*.CC | string | | |
 action_result.data.\*.Content_Language | string | | |
 action_result.data.\*.Content_Type | string | | |
@@ -585,7 +586,6 @@ action_result.data.\*.t_IsRead | string | | |
 action_result.data.\*.t_IsReadReceiptRequested | string | | |
 action_result.data.\*.t_IsDeliveryReceiptRequested | string | | |
 action_result.data.\*.t_IsAssociated | string | | |
-action_result.data.\*.t_ItemId_ChangeKey | string | | |
 action_result.data.\*.t_Categories | string | | |
 action_result.data.\*.t_From | string | | |
 action_result.data.\*.t_Sender | string | | |
@@ -732,20 +732,20 @@ action_result.parameter.range | string | | |
 action_result.parameter.ignore_subfolders | boolean | | |
 action_result.parameter.is_public_folder | boolean | | |
 action_result.data.\*.t_Subject | string | | |
-action_result.data.\*.t_Sender_EmailAddress | string | `email` | |
 action_result.data.\*.t_DateTimeReceived | string | | |
 action_result.data.\*.folder | string | `mail folder` | |
 action_result.data.\*.folder_path | string | `mail folder path` | |
 action_result.data.\*.t_InternetMessageId | string | `internet message id` | |
-action_result.data.\*.t_ItemId_Id | string | `exchange email id` | |
-action_result.data.\*.t_ItemId_ChangeKey | string | | |
-action_result.data.\*.t_Sender_Name | string | `user name` | |
-action_result.data.\*.t_Sender_MailboxType | string | | |
-action_result.data.\*.t_Sender_RoutingType | string | | |
-action_result.data.\*.t_From_EmailAddress | string | | |
-action_result.data.\*.t_From_Name | string | `user name` | |
-action_result.data.\*.t_From_MailboxType | string | | |
-action_result.data.\*.t_From_RoutingType | string | | |
+action_result.data.\*.t_ItemId.@Id | string | `exchange email id` | |
+action_result.data.\*.t_ItemId.@ChangeKey | string | | |
+action_result.data.\*.t_Sender.t_Name | string | `user name` | |
+action_result.data.\*.t_Sender.t_EmailAddress | string | `email` | |
+action_result.data.\*.t_Sender.t_MailboxType | string | | |
+action_result.data.\*.t_Sender.t_RoutingType | string | | |
+action_result.data.\*.t_From.t_Name | string | `user name` | |
+action_result.data.\*.t_From.t_EmailAddress | string | `email` | |
+action_result.data.\*.t_From.t_MailboxType | string | | |
+action_result.data.\*.t_From.t_RoutingType | string | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 

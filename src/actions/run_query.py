@@ -65,11 +65,20 @@ class RunQueryParams(Params):
     )
 
 
+class ItemId(ActionOutput):
+    id: str | None = OutputField(alias="@Id", cef_types=["exchange email id"])
+    change_key: str | None = OutputField(alias="@ChangeKey")
+
+
+class Mailbox(ActionOutput):
+    t_Name: str | None = OutputField(cef_types=["user name"])
+    t_EmailAddress: str | None = OutputField(cef_types=["email"])
+    t_MailboxType: str | None = None
+    t_RoutingType: str | None = None
+
+
 class EmailResult(ActionOutput):
     t_Subject: str | None = OutputField(column_name="Subject")
-    t_Sender_EmailAddress: str | None = OutputField(
-        column_name="Sender", cef_types=["email"]
-    )
     t_DateTimeReceived: str | None = OutputField(column_name="Received Time")
     folder: str | None = OutputField(column_name="Folder", cef_types=["mail folder"])
     folder_path: str | None = OutputField(
@@ -78,17 +87,9 @@ class EmailResult(ActionOutput):
     t_InternetMessageId: str | None = OutputField(
         column_name="Internet Message ID", cef_types=["internet message id"]
     )
-    t_ItemId_Id: str | None = OutputField(
-        column_name="Message ID", cef_types=["exchange email id"]
-    )
-    t_ItemId_ChangeKey: str | None = None
-    t_Sender_Name: str | None = OutputField(cef_types=["user name"])
-    t_Sender_MailboxType: str | None = None
-    t_Sender_RoutingType: str | None = None
-    t_From_EmailAddress: str | None = None
-    t_From_Name: str | None = OutputField(cef_types=["user name"])
-    t_From_MailboxType: str | None = None
-    t_From_RoutingType: str | None = None
+    t_ItemId: ItemId | None = None
+    t_Sender: Mailbox | None = None
+    t_From: Mailbox | None = None
 
 
 class RunQuerySummary(ActionOutput):
@@ -171,9 +172,29 @@ def run_query(
                     mail_items = [mail_items]
 
                 for item in mail_items:
-                    item_id = item.get("t:ItemId", {})
-                    sender = item.get("t:Sender", {}).get("t:Mailbox", {})
-                    from_mailbox = item.get("t:From", {}).get("t:Mailbox", {})
+                    item_id_data = item.get("t:ItemId", {})
+                    sender_data = item.get("t:Sender", {}).get("t:Mailbox", {})
+                    from_data = item.get("t:From", {}).get("t:Mailbox", {})
+
+                    item_id = ItemId(
+                        id=item_id_data.get("@Id"),
+                        change_key=item_id_data.get("@ChangeKey"),
+                    )
+
+                    sender = Mailbox(
+                        t_Name=sender_data.get("t:Name") or from_data.get("t:Name"),
+                        t_EmailAddress=sender_data.get("t:EmailAddress")
+                        or from_data.get("t:EmailAddress"),
+                        t_MailboxType=sender_data.get("t:MailboxType"),
+                        t_RoutingType=sender_data.get("t:RoutingType"),
+                    )
+
+                    from_mailbox = Mailbox(
+                        t_Name=from_data.get("t:Name"),
+                        t_EmailAddress=from_data.get("t:EmailAddress"),
+                        t_MailboxType=from_data.get("t:MailboxType"),
+                        t_RoutingType=from_data.get("t:RoutingType"),
+                    )
 
                     result = EmailResult(
                         folder=params.folder,
@@ -181,18 +202,9 @@ def run_query(
                         t_DateTimeReceived=item.get("t:DateTimeReceived"),
                         t_Subject=item.get("t:Subject"),
                         t_InternetMessageId=item.get("t:InternetMessageId"),
-                        t_ItemId_Id=item_id.get("@Id"),
-                        t_ItemId_ChangeKey=item_id.get("@ChangeKey"),
-                        t_Sender_Name=sender.get("t:Name")
-                        or from_mailbox.get("t:Name"),
-                        t_Sender_EmailAddress=sender.get("t:EmailAddress")
-                        or from_mailbox.get("t:EmailAddress"),
-                        t_Sender_MailboxType=sender.get("t:MailboxType"),
-                        t_Sender_RoutingType=sender.get("t:RoutingType"),
-                        t_From_EmailAddress=from_mailbox.get("t:EmailAddress"),
-                        t_From_Name=from_mailbox.get("t:Name"),
-                        t_From_MailboxType=from_mailbox.get("t:MailboxType"),
-                        t_From_RoutingType=from_mailbox.get("t:RoutingType"),
+                        t_ItemId=item_id,
+                        t_Sender=sender,
+                        t_From=from_mailbox,
                     )
                     results.append(result)
 

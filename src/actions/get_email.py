@@ -47,14 +47,17 @@ class GetEmailParams(Params):
     )
 
 
+class ItemId(ActionOutput):
+    id: str | None = OutputField(alias="@Id", cef_types=["exchange email id"])
+    change_key: str | None = OutputField(alias="@ChangeKey")
+
+
 class GetEmailOutput(ActionOutput):
     # Core fields with column display
     t_Subject: str | None = OutputField(column_name="Subject")
     t_DateTimeCreated: str | None = OutputField(column_name="Create Time")
     t_DateTimeSent: str | None = OutputField(column_name="Sent Time")
-    t_ItemId_Id: str | None = OutputField(
-        column_name="Email ID", cef_types=["exchange email id"]
-    )
+    t_ItemId: ItemId | None = None
 
     # Email headers (from container/vault parsing)
     CC: str | None = None
@@ -102,7 +105,6 @@ class GetEmailOutput(ActionOutput):
     t_IsReadReceiptRequested: str | None = None
     t_IsDeliveryReceiptRequested: str | None = None
     t_IsAssociated: str | None = None
-    t_ItemId_ChangeKey: str | None = None
     t_Categories: str | None = None
 
     # From/Sender mailbox (JSON serialized)
@@ -198,9 +200,9 @@ def _get_email_from_vault(soar: SOARClient, vault_id: str) -> tuple[str, str]:
         raise ValueError(f"Vault file {vault_id} not found")
 
     attachment = attachments[0]
-    email_data = attachment.file_content
-    if isinstance(email_data, bytes):
-        email_data = email_data.decode("utf-8", errors="replace")
+    with attachment.open("rb") as f:
+        email_bytes = f.read()
+    email_data = email_bytes.decode("utf-8", errors="replace")
 
     return email_data, vault_id
 
@@ -275,7 +277,7 @@ def _handle_email_from_raw_data(
         t_Subject=subject,
         t_DateTimeCreated=date,
         t_DateTimeSent=date,
-        t_ItemId_Id=email_id,
+        t_ItemId=ItemId(id=email_id),
         t_InternetMessageId=headers.get("Message-ID"),
         # Email headers
         CC=headers.get("CC"),
@@ -414,7 +416,7 @@ def get_email(params: GetEmailParams, soar: SOARClient, asset: Asset) -> GetEmai
         t_Subject=subject,
         t_DateTimeCreated=create_time,
         t_DateTimeSent=sent_time,
-        t_ItemId_Id=email_id,
+        t_ItemId=ItemId(id=email_id, change_key=change_key),
         t_InternetMessageId=internet_msg_id,
         # MIME content
         t_MimeContent=mime_content,
@@ -438,7 +440,6 @@ def get_email(params: GetEmailParams, soar: SOARClient, asset: Asset) -> GetEmai
         t_IsReadReceiptRequested=message.get("t:IsReadReceiptRequested"),
         t_IsDeliveryReceiptRequested=message.get("t:IsDeliveryReceiptRequested"),
         t_IsAssociated=message.get("t:IsAssociated"),
-        t_ItemId_ChangeKey=change_key,
         t_Categories=_serialize(message.get("t:Categories")),
         # Sender/From (JSON serialized)
         t_From=_serialize(message.get("t:From")),
