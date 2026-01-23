@@ -367,7 +367,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [list addresses](#action-list-addresses) - Get the email addresses that make up a Distribution List <br>
 [get email](#action-get-email) - Get an email from the server <br>
 [move email](#action-move-email) - Move an email to a folder <br>
-[resolve name](#action-resolve-name) - Resolve an Alias name or email address, into mailboxes <br>
+[lookup email](#action-lookup-email) - Resolve an Alias name or email address, into mailboxes <br>
 [run query](#action-run-query) - Search emails <br>
 [update email](#action-update-email) - Update an email on the server
 
@@ -651,7 +651,7 @@ action_result.data.\*.status_message | string | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
-## action: 'resolve name'
+## action: 'lookup email'
 
 Resolve an Alias name or email address, into mailboxes
 

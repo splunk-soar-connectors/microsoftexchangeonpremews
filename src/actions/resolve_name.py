@@ -57,6 +57,7 @@ def _serialize(val):
 
 
 @app.action(
+    name="lookup email",
     description="Resolve an Alias name or email address, into mailboxes",
     action_type="investigate",
     render_as="table",
