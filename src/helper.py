@@ -211,10 +211,7 @@ class EWSHelper:
     def _get_folder_info(
         self, user: str, folder_name: str, parent_folder_id: str, is_public_folder: bool
     ) -> dict | None:
-        target_user = user if is_public_folder else None
-        input_xml = ews_soap.xml_get_children_info(
-            target_user, folder_name, parent_folder_id
-        )
+        input_xml = ews_soap.xml_get_children_info(user, folder_name, parent_folder_id)
 
         try:
             resp_json = self.make_rest_call(input_xml, self.check_findfolder_response)
@@ -247,16 +244,21 @@ class EWSHelper:
         }
 
     def get_email_based_folder_ids(
-        self, user: str, parent_folder_id: str = "root", is_public_folder: bool = False
+        self,
+        user: str,
+        parent_folder_id: str | None = None,
+        is_public_folder: bool = False,
     ) -> list[dict]:
+        if parent_folder_id is None:
+            parent_folder_id = "publicfoldersroot" if is_public_folder else "root"
+
         folder_ids = []
         step_size = 500
 
         for curr_step_value in range(0, 10000, step_size):
             curr_range = f"{curr_step_value}-{curr_step_value + step_size - 1}"
-            target_user = user if not is_public_folder else None
             input_xml = ews_soap.xml_get_children_info(
-                target_user, parent_folder_id=parent_folder_id, query_range=curr_range
+                user, parent_folder_id=parent_folder_id, query_range=curr_range
             )
 
             try:
