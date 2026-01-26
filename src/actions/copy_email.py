@@ -79,9 +79,9 @@ def copy_email(
 
     new_email_id = None
     items = resp_json.get("m:Items", {})
-    message = items.get("t:Message", {})
-    if message:
-        new_email_id = message.get("t:ItemId", {}).get("@Id")
+    if items:
+        first_item = next(iter(items.values()), {})
+        new_email_id = first_item.get("t:ItemId", {}).get("@Id")
 
     soar.set_message("Email copied")
     return CopyEmailOutput(
