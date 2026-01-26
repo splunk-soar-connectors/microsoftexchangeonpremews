@@ -491,7 +491,7 @@ def on_poll(
 
     state = dict(asset.ingest_state.get_all()) if hasattr(asset, "ingest_state") else {}
 
-    is_poll_now = params.container_count is not None
+    is_poll_now = params.is_manual_poll()
     if is_poll_now:
         max_emails = params.container_count if params.container_count > 0 else 100
         last_time = None
