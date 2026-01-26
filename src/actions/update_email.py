@@ -94,9 +94,9 @@ def update_email(
 
     new_change_key = None
     items = update_resp.get("m:Items", {})
-    message = items.get("t:Message", {})
-    if message:
-        new_change_key = message.get("t:ItemId", {}).get("@ChangeKey")
+    if items:
+        first_item = next(iter(items.values()), {})
+        new_change_key = first_item.get("t:ItemId", {}).get("@ChangeKey")
 
     soar.set_message("Email updated")
     return UpdateEmailOutput(new_change_key=new_change_key)
