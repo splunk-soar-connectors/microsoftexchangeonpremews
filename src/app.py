@@ -20,7 +20,7 @@ from typing import Any
 
 from soar_sdk.abstract import SOARClient
 from soar_sdk.app import App
-from soar_sdk.asset import AssetField, BaseAsset, ESIngestMixin, FieldCategory
+from soar_sdk.asset import AssetField, BaseAsset, FieldCategory
 from soar_sdk.extras.email.processor import HASH_REGEX, IP_REGEX
 from soar_sdk.extras.email.rfc5322 import (
     extract_domains_from_urls,
@@ -34,7 +34,7 @@ from soar_sdk.extras.email.utils import is_ip
 from soar_sdk.logging import getLogger
 from soar_sdk.models.artifact import Artifact
 from soar_sdk.models.container import Container
-from soar_sdk.models.finding import Finding
+from soar_sdk.models.finding import Finding, FindingAttachment
 from soar_sdk.params import OnESPollParams, OnPollParams
 
 from . import ews_soap
@@ -71,7 +71,7 @@ def _load_preprocess_script(script: str) -> Callable[[dict[str, Any]], dict[str,
 APP_ID = "badc5252-4a82-4a6d-bc53-d1e503857124"
 
 
-class Asset(BaseAsset, ESIngestMixin):
+class Asset(BaseAsset):
     # Connectivity fields
     url: str = AssetField(
         required=True,
@@ -759,21 +759,23 @@ def on_es_poll(
 
         subject = email_data.get("subject") or f"Email {email_id[:30]}..."
 
-        container_id = yield Finding(
+        attachments = []
+        if mime_content:
+            attachments.append(
+                FindingAttachment(
+                    file_name=f"email_{email_id[:30]}.eml",
+                    data=mime_content.encode("utf-8")
+                    if isinstance(mime_content, str)
+                    else mime_content,
+                )
+            )
+
+        yield Finding(
             rule_title=f"Email: {subject[:100]}"
             if subject
             else f"Email ID: {email_id[:50]}",
-            security_domain=asset.es_security_domain,
-            urgency=asset.es_urgency,
+            attachments=attachments if attachments else None,
         )
-
-        if container_id and mime_content:
-            soar.vault.create_attachment(
-                container_id,
-                file_content=mime_content,
-                file_name=f"email_{email_id[:30]}.eml",
-                metadata={"type": "email", "email_id": email_id},
-            )
 
         emails_processed += 1
 
