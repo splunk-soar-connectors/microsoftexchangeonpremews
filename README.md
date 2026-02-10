@@ -332,6 +332,8 @@ This table lists the configuration variables required to operate Microsoft Excha
 
 VARIABLE | REQUIRED | TYPE | DESCRIPTION
 -------- | -------- | ---- | -----------
+**es_security_domain** | optional | string | Security domain for ES findings |
+**es_urgency** | optional | string | Urgency level for ES findings |
 **url** | required | string | EWS URL |
 **version** | optional | string | EWS Version |
 **verify_server_cert** | optional | boolean | Verify server certificate |
@@ -362,6 +364,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 [test connectivity](#action-test-connectivity) - test connectivity <br>
 [on poll](#action-on-poll) - on poll <br>
+[on es poll](#action-on-es-poll) - Poll for new emails and create ES findings for each email. <br>
 [copy email](#action-copy-email) - Copy an email to a folder <br>
 [delete email](#action-delete-email) - Delete emails <br>
 [list addresses](#action-list-addresses) - Get the email addresses that make up a Distribution List <br>
@@ -411,6 +414,29 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 **container_count** | optional | Maximum number of container records to query for. | numeric | |
 **artifact_count** | optional | Maximum number of artifact records to query for. | numeric | |
 **container_id** | optional | Comma-separated list of container IDs to limit the ingestion to. | string | |
+
+#### Action Output
+
+No Output
+
+## action: 'on es poll'
+
+Poll for new emails and create ES findings for each email.
+
+Type: **ingest** <br>
+Read only: **True**
+
+Callback action for the on_es_poll ingest functionality
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**start_time** | optional | Start of time range, in epoch time (milliseconds). | numeric | |
+**end_time** | optional | End of time range, in epoch time (milliseconds). | numeric | |
+**container_count** | optional | Maximum number of container records to query for. | numeric | |
+**es_base_url** | required | Base URL for the Splunk Enterprise Security API | string | |
+**es_session_key** | required | Session token for the Splunk Enterprise Security API | string | |
 
 #### Action Output
 

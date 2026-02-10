@@ -15,7 +15,7 @@ import email
 import hashlib
 import importlib.util
 import re
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator, Iterator
 from typing import Any
 
 from soar_sdk.abstract import SOARClient
@@ -34,7 +34,8 @@ from soar_sdk.extras.email.utils import is_ip
 from soar_sdk.logging import getLogger
 from soar_sdk.models.artifact import Artifact
 from soar_sdk.models.container import Container
-from soar_sdk.params import OnPollParams
+from soar_sdk.models.finding import Finding, FindingAttachment
+from soar_sdk.params import OnESPollParams, OnPollParams
 
 from . import ews_soap
 from .consts import EWS_INGEST_LATEST_EMAILS
@@ -662,6 +663,129 @@ def on_poll(
             asset.ingest_state.put_all(state)
 
     logger.info(f"Processed {emails_processed} emails")
+
+
+@app.on_es_poll()
+def on_es_poll(
+    params: OnESPollParams, soar: SOARClient, asset: Asset
+) -> Generator[Finding, int | None]:
+    """Poll for new emails and create ES findings for each email."""
+    helper = EWSHelper(asset)
+
+    poll_user = asset.poll_user
+    if not poll_user:
+        raise ValueError("Poll user is required for ES polling")
+
+    if asset.use_impersonation:
+        helper.set_target_user(poll_user)
+
+    state = dict(asset.ingest_state.get_all()) if hasattr(asset, "ingest_state") else {}
+
+    is_first_run = state.get("es_first_run", True)
+    max_emails = asset.first_run_max_emails if is_first_run else asset.max_containers
+    last_time = state.get("es_last_time")
+
+    order = (
+        "Descending" if asset.ingest_manner == EWS_INGEST_LATEST_EMAILS else "Ascending"
+    )
+    field_uri = (
+        "DateTimeCreated" if asset.ingest_time == "created time" else "LastModifiedTime"
+    )
+
+    folder_id = helper.get_folder_id(
+        poll_user, asset.poll_folder, asset.is_public_folder
+    )
+    if not folder_id:
+        folder_id = "inbox"
+
+    restriction = None
+    if last_time:
+        restriction = ews_soap.xml_get_restriction(last_time, field_uri=field_uri)
+
+    input_xml = ews_soap.xml_get_email_ids(
+        poll_user, folder_id, order, 0, max_emails, restriction, field_uri
+    )
+
+    try:
+        resp_json = helper.make_rest_call(input_xml, helper.check_find_response)
+    except Exception as e:
+        logger.error(f"Error polling emails for ES: {e}")
+        raise
+
+    root_folder = resp_json.get("m:RootFolder", {})
+    items = root_folder.get("t:Items", {})
+
+    email_ids = []
+    for mail_type in [
+        "t:Message",
+        "t:MeetingRequest",
+        "t:MeetingResponse",
+        "t:MeetingMessage",
+        "t:MeetingCancellation",
+    ]:
+        mail_items = items.get(mail_type, [])
+        if isinstance(mail_items, dict):
+            mail_items = [mail_items]
+        for item in mail_items:
+            item_id = item.get("t:ItemId", {}).get("@Id")
+            if item_id:
+                email_ids.append(
+                    {
+                        "id": item_id,
+                        "last_modified": item.get("t:LastModifiedTime"),
+                        "created": item.get("t:DateTimeCreated"),
+                    }
+                )
+
+    latest_time = last_time
+    emails_processed = 0
+
+    for email_info in email_ids:
+        if emails_processed >= max_emails:
+            break
+
+        email_id = email_info["id"]
+        email_time = (
+            email_info.get("last_modified")
+            if field_uri == "LastModifiedTime"
+            else email_info.get("created")
+        )
+        if email_time and (not latest_time or email_time > latest_time):
+            latest_time = email_time
+
+        mime_content, email_data = _get_email_mime_content(
+            helper, email_id, asset.version
+        )
+
+        subject = email_data.get("subject") or f"Email {email_id[:30]}..."
+
+        attachments = []
+        if mime_content:
+            attachments.append(
+                FindingAttachment(
+                    file_name=f"email_{email_id[:30]}.eml",
+                    data=mime_content.encode("utf-8")
+                    if isinstance(mime_content, str)
+                    else mime_content,
+                )
+            )
+
+        yield Finding(
+            rule_title=f"Email: {subject[:100]}"
+            if subject
+            else f"Email ID: {email_id[:50]}",
+            attachments=attachments if attachments else None,
+        )
+
+        emails_processed += 1
+
+    if latest_time:
+        state["es_last_time"] = latest_time
+        state["es_first_run"] = False
+        if hasattr(asset, "ingest_state"):
+            asset.ingest_state.put_all(state)
+
+    logger.info(f"Processed {emails_processed} emails for ES findings")
 
 
 # Import action modules to register them with the app
