@@ -4,7 +4,7 @@ Publisher: Splunk <br>
 Connector Version: 3.13.5 <br>
 Product Vendor: Microsoft <br>
 Product Name: Exchange <br>
-Minimum Product Version: 6.2.1
+Minimum Product Version: 6.4.0
 
 This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation
 
@@ -953,7 +953,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2025 Splunk Inc.
+# Copyright (c) 2016-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -623,7 +623,7 @@ class ProcessEmail:
             with open(file_path, "wb") as f:
                 f.write(part_payload)
         except Exception as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            _error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
             self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_msg}")
             return
 
@@ -665,7 +665,7 @@ class ProcessEmail:
         self._debug_print(f"file_path: {file_path}")
 
         # is the part representing the body of the email
-        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
 
         if not process_further:
             return phantom.APP_SUCCESS
@@ -1261,7 +1261,7 @@ class ProcessEmail:
 
         self._debug_print("Saving artifacts")
         # save all the artifacts(Vault, IP, domain, etc.) in a single save_artifacts call
-        ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
+        ret_val, message, _ids = self._base_connector.save_artifacts(artifacts_list)
         self._base_connector.debug_print(f"save_artifacts returns, value: {ret_val}, reason: {message}")
 
         if phantom.is_fail(ret_val):
@@ -1323,7 +1323,7 @@ class ProcessEmail:
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
         try:
-            success, message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
+            _success, _message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
         except Exception:
             return phantom.APP_ERROR, "Could not retrieve vault file"
 
