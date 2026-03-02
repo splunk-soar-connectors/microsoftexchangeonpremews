@@ -332,8 +332,6 @@ This table lists the configuration variables required to operate Microsoft Excha
 
 VARIABLE | REQUIRED | TYPE | DESCRIPTION
 -------- | -------- | ---- | -----------
-**es_security_domain** | optional | string | Security domain for ES findings |
-**es_urgency** | optional | string | Urgency level for ES findings |
 **url** | required | string | EWS URL |
 **version** | optional | string | EWS Version |
 **verify_server_cert** | optional | boolean | Verify server certificate |
@@ -365,14 +363,14 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [test connectivity](#action-test-connectivity) - test connectivity <br>
 [on poll](#action-on-poll) - on poll <br>
 [on es poll](#action-on-es-poll) - Poll for new emails and create ES findings for each email. <br>
-[copy email](#action-copy-email) - Copy an email to a folder <br>
 [delete email](#action-delete-email) - Delete emails <br>
 [list addresses](#action-list-addresses) - Get the email addresses that make up a Distribution List <br>
-[get email](#action-get-email) - Get an email from the server <br>
 [move email](#action-move-email) - Move an email to a folder <br>
-[lookup email](#action-lookup-email) - Resolve an Alias name or email address, into mailboxes <br>
 [run query](#action-run-query) - Search emails <br>
-[update email](#action-update-email) - Update an email on the server
+[get email](#action-get-email) - Get an email from the server <br>
+[lookup email](#action-lookup-email) - Resolve an Alias name or email address, into mailboxes <br>
+[update email](#action-update-email) - Update an email on the server <br>
+[copy email](#action-copy-email) - Copy an email to a folder
 
 ## action: 'test connectivity'
 
@@ -434,51 +432,11 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **start_time** | optional | Start of time range, in epoch time (milliseconds). | numeric | |
 **end_time** | optional | End of time range, in epoch time (milliseconds). | numeric | |
-**container_count** | optional | Maximum number of container records to query for. | numeric | |
-**es_base_url** | required | Base URL for the Splunk Enterprise Security API | string | |
-**es_session_key** | required | Session token for the Splunk Enterprise Security API | string | |
+**container_count** | optional | Maximum number of findings to query for. | numeric | |
 
 #### Action Output
 
 No Output
-
-## action: 'copy email'
-
-Copy an email to a folder
-
-Type: **generic** <br>
-Read only: **True**
-
-#### Action Parameters
-
-PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
---------- | -------- | ----------- | ---- | --------
-**id** | required | Message ID to copy | string | `exchange email id` |
-**email** | required | Destination Mailbox (Email) | string | `email` |
-**folder** | required | Destination Mail Folder Name/Path | string | `mail folder` `mail folder path` |
-**impersonate_email** | optional | Impersonation Email | string | `email` |
-**dont_impersonate** | optional | Don't use impersonation | boolean | |
-**is_public_folder** | optional | Mailbox folder is a public folder | boolean | |
-
-#### Action Output
-
-DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
---------- | ---- | -------- | --------------
-action_result.status | string | | success failure |
-action_result.message | string | | |
-action_result.parameter.id | string | `exchange email id` | |
-action_result.parameter.email | string | `email` | |
-action_result.parameter.folder | string | `mail folder` `mail folder path` | |
-action_result.parameter.impersonate_email | string | `email` | |
-action_result.parameter.dont_impersonate | boolean | | |
-action_result.parameter.is_public_folder | boolean | | |
-action_result.data.\*.user_email | string | `email` | |
-action_result.data.\*.folder | string | | |
-action_result.data.\*.source_email_id | string | `exchange email id` | |
-action_result.data.\*.new_email_id | string | `exchange email id` | |
-action_result.data.\*.status_message | string | | |
-summary.total_objects | numeric | | 1 |
-summary.total_objects_successful | numeric | | 1 |
 
 ## action: 'delete email'
 
@@ -533,6 +491,100 @@ action_result.data.\*.email | string | `email` | |
 action_result.data.\*.user_name | string | | |
 action_result.data.\*.routing_type | string | | |
 action_result.data.\*.mailbox_type | string | | |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'move email'
+
+Move an email to a folder
+
+Type: **generic** <br>
+Read only: **True**
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**id** | required | Message ID to move | string | `exchange email id` |
+**email** | required | Destination Mailbox (Email) | string | `email` |
+**folder** | required | Destination Mail Folder Name/Path | string | `mail folder` `mail folder path` |
+**impersonate_email** | optional | Impersonation Email | string | `email` |
+**dont_impersonate** | optional | Don't use impersonation | boolean | |
+**is_public_folder** | optional | Mailbox folder is a public folder | boolean | |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.id | string | `exchange email id` | |
+action_result.parameter.email | string | `email` | |
+action_result.parameter.folder | string | `mail folder` `mail folder path` | |
+action_result.parameter.impersonate_email | string | `email` | |
+action_result.parameter.dont_impersonate | boolean | | |
+action_result.parameter.is_public_folder | boolean | | |
+action_result.data.\*.user_email | string | `email` | |
+action_result.data.\*.folder | string | | |
+action_result.data.\*.source_email_id | string | `exchange email id` | |
+action_result.data.\*.new_email_id | string | `exchange email id` | |
+action_result.data.\*.status_message | string | | |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'run query'
+
+Search emails
+
+Type: **investigate** <br>
+Read only: **True**
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**email** | required | User's Email (Mailbox to search in) | string | `email` |
+**folder** | optional | Folder Name/Path (to search in) | string | `mail folder` `mail folder path` |
+**subject** | optional | Substring to search in Subject | string | |
+**sender** | optional | Sender Email address to match | string | `email` |
+**body** | optional | Substring to search in Body | string | |
+**internet_message_id** | optional | Internet Message ID | string | `internet message id` |
+**query** | optional | AQS string | string | |
+**range** | optional | Email range to return (min_offset-max_offset) | string | |
+**ignore_subfolders** | optional | Ignore subfolders | boolean | |
+**is_public_folder** | optional | Mailbox folder is a public folder | boolean | |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.email | string | `email` | |
+action_result.parameter.folder | string | `mail folder` `mail folder path` | |
+action_result.parameter.subject | string | | |
+action_result.parameter.sender | string | `email` | |
+action_result.parameter.body | string | | |
+action_result.parameter.internet_message_id | string | `internet message id` | |
+action_result.parameter.query | string | | |
+action_result.parameter.range | string | | |
+action_result.parameter.ignore_subfolders | boolean | | |
+action_result.parameter.is_public_folder | boolean | | |
+action_result.data.\*.t_Subject | string | | |
+action_result.data.\*.t_DateTimeReceived | string | | |
+action_result.data.\*.folder | string | `mail folder` | |
+action_result.data.\*.folder_path | string | `mail folder path` | |
+action_result.data.\*.t_InternetMessageId | string | `internet message id` | |
+action_result.data.\*.t_ItemId.@Id | string | `exchange email id` | |
+action_result.data.\*.t_ItemId.@ChangeKey | string | | |
+action_result.data.\*.t_Sender.t_Name | string | `user name` | |
+action_result.data.\*.t_Sender.t_EmailAddress | string | `email` | |
+action_result.data.\*.t_Sender.t_MailboxType | string | | |
+action_result.data.\*.t_Sender.t_RoutingType | string | | |
+action_result.data.\*.t_From.t_Name | string | `user name` | |
+action_result.data.\*.t_From.t_EmailAddress | string | `email` | |
+action_result.data.\*.t_From.t_MailboxType | string | | |
+action_result.data.\*.t_From.t_RoutingType | string | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -639,44 +691,6 @@ action_result.data.\*.t_ResponseObjects | string | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
-## action: 'move email'
-
-Move an email to a folder
-
-Type: **generic** <br>
-Read only: **True**
-
-#### Action Parameters
-
-PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
---------- | -------- | ----------- | ---- | --------
-**id** | required | Message ID to move | string | `exchange email id` |
-**email** | required | Destination Mailbox (Email) | string | `email` |
-**folder** | required | Destination Mail Folder Name/Path | string | `mail folder` `mail folder path` |
-**impersonate_email** | optional | Impersonation Email | string | `email` |
-**dont_impersonate** | optional | Don't use impersonation | boolean | |
-**is_public_folder** | optional | Mailbox folder is a public folder | boolean | |
-
-#### Action Output
-
-DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
---------- | ---- | -------- | --------------
-action_result.status | string | | success failure |
-action_result.message | string | | |
-action_result.parameter.id | string | `exchange email id` | |
-action_result.parameter.email | string | `email` | |
-action_result.parameter.folder | string | `mail folder` `mail folder path` | |
-action_result.parameter.impersonate_email | string | `email` | |
-action_result.parameter.dont_impersonate | boolean | | |
-action_result.parameter.is_public_folder | boolean | | |
-action_result.data.\*.user_email | string | `email` | |
-action_result.data.\*.folder | string | | |
-action_result.data.\*.source_email_id | string | `exchange email id` | |
-action_result.data.\*.new_email_id | string | `exchange email id` | |
-action_result.data.\*.status_message | string | | |
-summary.total_objects | numeric | | 1 |
-summary.total_objects_successful | numeric | | 1 |
-
 ## action: 'lookup email'
 
 Resolve an Alias name or email address, into mailboxes
@@ -719,62 +733,6 @@ action_result.data.\*.t_Contact_PhysicalAddresses | string | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
-## action: 'run query'
-
-Search emails
-
-Type: **investigate** <br>
-Read only: **True**
-
-#### Action Parameters
-
-PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
---------- | -------- | ----------- | ---- | --------
-**email** | required | User's Email (Mailbox to search in) | string | `email` |
-**folder** | optional | Folder Name/Path (to search in) | string | `mail folder` `mail folder path` |
-**subject** | optional | Substring to search in Subject | string | |
-**sender** | optional | Sender Email address to match | string | `email` |
-**body** | optional | Substring to search in Body | string | |
-**internet_message_id** | optional | Internet Message ID | string | `internet message id` |
-**query** | optional | AQS string | string | |
-**range** | optional | Email range to return (min_offset-max_offset) | string | |
-**ignore_subfolders** | optional | Ignore subfolders | boolean | |
-**is_public_folder** | optional | Mailbox folder is a public folder | boolean | |
-
-#### Action Output
-
-DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
---------- | ---- | -------- | --------------
-action_result.status | string | | success failure |
-action_result.message | string | | |
-action_result.parameter.email | string | `email` | |
-action_result.parameter.folder | string | `mail folder` `mail folder path` | |
-action_result.parameter.subject | string | | |
-action_result.parameter.sender | string | `email` | |
-action_result.parameter.body | string | | |
-action_result.parameter.internet_message_id | string | `internet message id` | |
-action_result.parameter.query | string | | |
-action_result.parameter.range | string | | |
-action_result.parameter.ignore_subfolders | boolean | | |
-action_result.parameter.is_public_folder | boolean | | |
-action_result.data.\*.t_Subject | string | | |
-action_result.data.\*.t_DateTimeReceived | string | | |
-action_result.data.\*.folder | string | `mail folder` | |
-action_result.data.\*.folder_path | string | `mail folder path` | |
-action_result.data.\*.t_InternetMessageId | string | `internet message id` | |
-action_result.data.\*.t_ItemId.@Id | string | `exchange email id` | |
-action_result.data.\*.t_ItemId.@ChangeKey | string | | |
-action_result.data.\*.t_Sender.t_Name | string | `user name` | |
-action_result.data.\*.t_Sender.t_EmailAddress | string | `email` | |
-action_result.data.\*.t_Sender.t_MailboxType | string | | |
-action_result.data.\*.t_Sender.t_RoutingType | string | | |
-action_result.data.\*.t_From.t_Name | string | `user name` | |
-action_result.data.\*.t_From.t_EmailAddress | string | `email` | |
-action_result.data.\*.t_From.t_MailboxType | string | | |
-action_result.data.\*.t_From.t_RoutingType | string | | |
-summary.total_objects | numeric | | 1 |
-summary.total_objects_successful | numeric | | 1 |
-
 ## action: 'update email'
 
 Update an email on the server
@@ -802,6 +760,47 @@ action_result.parameter.email | string | `email` | |
 action_result.parameter.subject | string | | |
 action_result.parameter.category | string | | |
 action_result.data.\*.new_change_key | string | | |
+action_result.data.\*.email_id | string | | |
+action_result.data.\*.t_Subject | string | | |
+action_result.data.\*.t_Categories.\* | string | | |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'copy email'
+
+Copy an email to a folder
+
+Type: **generic** <br>
+Read only: **True**
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**id** | required | Message ID to copy | string | `exchange email id` |
+**email** | required | Destination Mailbox (Email) | string | `email` |
+**folder** | required | Destination Mail Folder Name/Path | string | `mail folder` `mail folder path` |
+**impersonate_email** | optional | Impersonation Email | string | `email` |
+**dont_impersonate** | optional | Don't use impersonation | boolean | |
+**is_public_folder** | optional | Mailbox folder is a public folder | boolean | |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.id | string | `exchange email id` | |
+action_result.parameter.email | string | `email` | |
+action_result.parameter.folder | string | `mail folder` `mail folder path` | |
+action_result.parameter.impersonate_email | string | `email` | |
+action_result.parameter.dont_impersonate | boolean | | |
+action_result.parameter.is_public_folder | boolean | | |
+action_result.data.\*.user_email | string | `email` | |
+action_result.data.\*.folder | string | | |
+action_result.data.\*.source_email_id | string | `exchange email id` | |
+action_result.data.\*.new_email_id | string | `exchange email id` | |
+action_result.data.\*.status_message | string | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 

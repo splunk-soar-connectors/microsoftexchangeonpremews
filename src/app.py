@@ -793,11 +793,43 @@ from .actions import (  # noqa: F401
     copy_email,
     delete_email,
     expand_dl,
-    get_email,
     move_email,
-    resolve_name,
     run_query,
+)
+
+# Register actions that use custom views
+from .actions.get_email import get_email, render_display_email
+
+
+app.register_action(
+    get_email,
+    description="Get an email from the server",
+    action_type="investigate",
+    view_handler=render_display_email,
+    view_template="display_email.html",
+)
+
+from .actions.resolve_name import render_display_resolve_names, resolve_name
+
+
+app.register_action(
+    resolve_name,
+    name="lookup email",
+    description="Resolve an Alias name or email address, into mailboxes",
+    action_type="investigate",
+    view_handler=render_display_resolve_names,
+    view_template="display_resolve_names.html",
+)
+
+from .actions.update_email import render_update_email, update_email
+
+
+app.register_action(
     update_email,
+    description="Update an email on the server",
+    action_type="generic",
+    view_handler=render_update_email,
+    view_template="update_email.html",
 )
 
 
