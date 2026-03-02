@@ -1,14 +1,18 @@
 # Copyright (c) 2016-2026 Splunk Inc.
 
 import json
+from typing import TYPE_CHECKING
 
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
 from soar_sdk.params import Param, Params
 
 from .. import ews_soap
-from ..app import Asset, app
 from ..helper import EWSHelper
+
+
+if TYPE_CHECKING:
+    from ..app import Asset
 
 
 class ResolveNameParams(Params):
@@ -56,14 +60,48 @@ def _serialize(val):
     return str(val) if val else None
 
 
-@app.action(
-    name="lookup email",
-    description="Resolve an Alias name or email address, into mailboxes",
-    action_type="investigate",
-    render_as="table",
-)
+def render_display_resolve_names(output: list[ResolvedMailbox]) -> dict:
+    entries = []
+    for item in output:
+        email_addresses = []
+        if item.t_Contact_EmailAddresses:
+            try:
+                data = (
+                    json.loads(item.t_Contact_EmailAddresses)
+                    if isinstance(item.t_Contact_EmailAddresses, str)
+                    else item.t_Contact_EmailAddresses
+                )
+                email_entries = data.get("t:Entry", [])
+                if isinstance(email_entries, dict):
+                    email_entries = [email_entries]
+                for entry in email_entries:
+                    text = entry.get("#text", "")
+                    email_addresses.append(text.split(":")[-1] if ":" in text else text)
+            except (json.JSONDecodeError, AttributeError):
+                pass
+
+        entries.append(
+            {
+                "name": item.t_Mailbox_Name,
+                "mailbox_type": item.t_Mailbox_MailboxType,
+                "routing_type": item.t_Mailbox_RoutingType,
+                "contact_source": item.t_Contact_ContactSource,
+                "email_addresses": email_addresses,
+            }
+        )
+
+    results = [
+        {
+            "data": entries if entries else None,
+            "email": None,
+            "total_entries": len(entries),
+        }
+    ]
+    return {"results": results}
+
+
 def resolve_name(
-    params: ResolveNameParams, soar: SOARClient, asset: Asset
+    params: ResolveNameParams, soar: SOARClient, asset: "Asset"
 ) -> list[ResolvedMailbox]:
     helper = EWSHelper(asset)
 
