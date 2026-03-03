@@ -29,12 +29,13 @@ from soar_sdk.extras.email.rfc5322 import (
     extract_email_body,
     extract_email_headers,
     extract_email_urls,
+    extract_rfc5322_email_data,
 )
 from soar_sdk.extras.email.utils import is_ip
 from soar_sdk.logging import getLogger
 from soar_sdk.models.artifact import Artifact
 from soar_sdk.models.container import Container
-from soar_sdk.models.finding import Finding, FindingAttachment
+from soar_sdk.models.finding import Finding, FindingAttachment, FindingEmail
 from soar_sdk.params import OnESPollParams, OnPollParams
 
 from . import ews_soap
@@ -481,9 +482,9 @@ def on_poll(
 ) -> Iterator[Container | Artifact]:
     helper = EWSHelper(asset)
 
-    poll_user = asset.poll_user
+    poll_user = asset.poll_user or asset.username
     if not poll_user:
-        raise ValueError("Poll user is required for polling")
+        raise ValueError("Polling user email not specified, cannot continue")
 
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
@@ -672,9 +673,9 @@ def on_es_poll(
     """Poll for new emails and create ES findings for each email."""
     helper = EWSHelper(asset)
 
-    poll_user = asset.poll_user
+    poll_user = asset.poll_user or asset.username
     if not poll_user:
-        raise ValueError("Poll user is required for ES polling")
+        raise ValueError("Polling user email not specified, cannot continue")
 
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
@@ -759,31 +760,61 @@ def on_es_poll(
 
         subject = email_data.get("subject") or f"Email {email_id[:30]}..."
 
-        attachments = []
+        finding_email = None
+        attachments: list[FindingAttachment] = []
+
         if mime_content:
+            raw_eml = (
+                mime_content.encode("utf-8")
+                if isinstance(mime_content, str)
+                else mime_content
+            )
             attachments.append(
                 FindingAttachment(
                     file_name=f"email_{email_id[:30]}.eml",
-                    data=mime_content.encode("utf-8")
-                    if isinstance(mime_content, str)
-                    else mime_content,
+                    data=raw_eml,
+                    is_raw_email=True,
                 )
             )
 
+            try:
+                parsed = extract_rfc5322_email_data(
+                    mime_content, email_id[:30], include_attachment_content=True
+                )
+                body_text = parsed.body.plain_text or parsed.body.html or ""
+                email_headers = {
+                    k: v for k, v in parsed.to_dict()["headers"].items() if v
+                }
+                finding_email = FindingEmail(
+                    headers=email_headers or None,
+                    body=body_text or None,
+                    urls=parsed.urls or None,
+                )
+                for att in parsed.attachments:
+                    if att.content:
+                        attachments.append(
+                            FindingAttachment(
+                                file_name=att.filename,
+                                data=att.content,
+                                is_raw_email=False,
+                            )
+                        )
+            except Exception as e:
+                logger.warning(f"Failed to parse email content: {e}")
+
         yield Finding(
-            rule_title=f"Email: {subject[:100]}"
-            if subject
-            else f"Email ID: {email_id[:50]}",
+            rule_title=subject[:100] if subject else f"Email ID: {email_id[:50]}",
+            email=finding_email,
             attachments=attachments if attachments else None,
         )
 
         emails_processed += 1
 
-    if latest_time:
-        state["es_last_time"] = latest_time
-        state["es_first_run"] = False
-        if hasattr(asset, "ingest_state"):
-            asset.ingest_state.put_all(state)
+        if latest_time:
+            state["es_last_time"] = latest_time
+            state["es_first_run"] = False
+            if hasattr(asset, "ingest_state"):
+                asset.ingest_state.put_all(state)
 
     logger.info(f"Processed {emails_processed} emails for ES findings")
 
