@@ -491,7 +491,7 @@ def on_poll(
 
     preprocess_fn = _load_preprocess_script(asset.preprocess_script)
 
-    state = dict(asset.ingest_state.get_all()) if hasattr(asset, "ingest_state") else {}
+    state = asset.ingest_state
 
     is_poll_now = params.is_manual_poll()
     if is_poll_now:
@@ -660,8 +660,6 @@ def on_poll(
     if not is_poll_now and latest_time:
         state["last_time"] = latest_time
         state["first_run"] = False
-        if hasattr(asset, "ingest_state"):
-            asset.ingest_state.put_all(state)
 
     logger.info(f"Processed {emails_processed} emails")
 
@@ -680,11 +678,12 @@ def on_es_poll(
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
 
-    state = dict(asset.ingest_state.get_all()) if hasattr(asset, "ingest_state") else {}
+    state = asset.ingest_state
 
     is_first_run = state.get("es_first_run", True)
     max_emails = asset.first_run_max_emails if is_first_run else asset.max_containers
     last_time = state.get("es_last_time")
+    boundary_ids = set(state.get("es_boundary_ids", []))
 
     order = (
         "Descending" if asset.ingest_manner == EWS_INGEST_LATEST_EMAILS else "Ascending"
@@ -740,6 +739,7 @@ def on_es_poll(
 
     latest_time = last_time
     emails_processed = 0
+    new_boundary_ids: set[str] = set()
 
     for email_info in email_ids:
         if emails_processed >= max_emails:
@@ -751,8 +751,15 @@ def on_es_poll(
             if field_uri == "LastModifiedTime"
             else email_info.get("created")
         )
+
+        if email_time == last_time and email_id in boundary_ids:
+            continue
+
         if email_time and (not latest_time or email_time > latest_time):
             latest_time = email_time
+            new_boundary_ids = set()
+        if email_time == latest_time:
+            new_boundary_ids.add(email_id)
 
         mime_content, email_data = _get_email_mime_content(
             helper, email_id, asset.version
@@ -802,19 +809,18 @@ def on_es_poll(
             except Exception as e:
                 logger.warning(f"Failed to parse email content: {e}")
 
-        yield Finding(
-            rule_title=subject[:100] if subject else f"Email ID: {email_id[:50]}",
-            email=finding_email,
-            attachments=attachments if attachments else None,
-        )
-
         emails_processed += 1
 
         if latest_time:
             state["es_last_time"] = latest_time
             state["es_first_run"] = False
-            if hasattr(asset, "ingest_state"):
-                asset.ingest_state.put_all(state)
+            state["es_boundary_ids"] = list(new_boundary_ids)
+
+        yield Finding(
+            rule_title=subject[:100] if subject else f"Email ID: {email_id[:50]}",
+            email=finding_email,
+            attachments=attachments if attachments else None,
+        )
 
     logger.info(f"Processed {emails_processed} emails for ES findings")
 
