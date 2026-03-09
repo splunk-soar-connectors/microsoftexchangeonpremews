@@ -29,12 +29,13 @@ from soar_sdk.extras.email.rfc5322 import (
     extract_email_body,
     extract_email_headers,
     extract_email_urls,
+    extract_rfc5322_email_data,
 )
 from soar_sdk.extras.email.utils import is_ip
 from soar_sdk.logging import getLogger
 from soar_sdk.models.artifact import Artifact
 from soar_sdk.models.container import Container
-from soar_sdk.models.finding import Finding, FindingAttachment
+from soar_sdk.models.finding import Finding, FindingAttachment, FindingEmail
 from soar_sdk.params import OnESPollParams, OnPollParams
 
 from . import ews_soap
@@ -481,16 +482,16 @@ def on_poll(
 ) -> Iterator[Container | Artifact]:
     helper = EWSHelper(asset)
 
-    poll_user = asset.poll_user
+    poll_user = asset.poll_user or asset.username
     if not poll_user:
-        raise ValueError("Poll user is required for polling")
+        raise ValueError("Polling user email not specified, cannot continue")
 
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
 
     preprocess_fn = _load_preprocess_script(asset.preprocess_script)
 
-    state = dict(asset.ingest_state.get_all()) if hasattr(asset, "ingest_state") else {}
+    state = asset.ingest_state
 
     is_poll_now = params.is_manual_poll()
     if is_poll_now:
@@ -659,8 +660,6 @@ def on_poll(
     if not is_poll_now and latest_time:
         state["last_time"] = latest_time
         state["first_run"] = False
-        if hasattr(asset, "ingest_state"):
-            asset.ingest_state.put_all(state)
 
     logger.info(f"Processed {emails_processed} emails")
 
@@ -672,18 +671,19 @@ def on_es_poll(
     """Poll for new emails and create ES findings for each email."""
     helper = EWSHelper(asset)
 
-    poll_user = asset.poll_user
+    poll_user = asset.poll_user or asset.username
     if not poll_user:
-        raise ValueError("Poll user is required for ES polling")
+        raise ValueError("Polling user email not specified, cannot continue")
 
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
 
-    state = dict(asset.ingest_state.get_all()) if hasattr(asset, "ingest_state") else {}
+    state = asset.ingest_state
 
     is_first_run = state.get("es_first_run", True)
     max_emails = asset.first_run_max_emails if is_first_run else asset.max_containers
     last_time = state.get("es_last_time")
+    boundary_ids = set(state.get("es_boundary_ids", []))
 
     order = (
         "Descending" if asset.ingest_manner == EWS_INGEST_LATEST_EMAILS else "Ascending"
@@ -739,6 +739,7 @@ def on_es_poll(
 
     latest_time = last_time
     emails_processed = 0
+    new_boundary_ids: set[str] = set()
 
     for email_info in email_ids:
         if emails_processed >= max_emails:
@@ -750,8 +751,15 @@ def on_es_poll(
             if field_uri == "LastModifiedTime"
             else email_info.get("created")
         )
+
+        if email_time == last_time and email_id in boundary_ids:
+            continue
+
         if email_time and (not latest_time or email_time > latest_time):
             latest_time = email_time
+            new_boundary_ids = set()
+        if email_time == latest_time:
+            new_boundary_ids.add(email_id)
 
         mime_content, email_data = _get_email_mime_content(
             helper, email_id, asset.version
@@ -759,31 +767,60 @@ def on_es_poll(
 
         subject = email_data.get("subject") or f"Email {email_id[:30]}..."
 
-        attachments = []
+        finding_email = None
+        attachments: list[FindingAttachment] = []
+
         if mime_content:
+            raw_eml = (
+                mime_content.encode("utf-8")
+                if isinstance(mime_content, str)
+                else mime_content
+            )
             attachments.append(
                 FindingAttachment(
                     file_name=f"email_{email_id[:30]}.eml",
-                    data=mime_content.encode("utf-8")
-                    if isinstance(mime_content, str)
-                    else mime_content,
+                    data=raw_eml,
+                    is_raw_email=True,
                 )
             )
 
-        yield Finding(
-            rule_title=f"Email: {subject[:100]}"
-            if subject
-            else f"Email ID: {email_id[:50]}",
-            attachments=attachments if attachments else None,
-        )
+            try:
+                parsed = extract_rfc5322_email_data(
+                    mime_content, email_id[:30], include_attachment_content=True
+                )
+                body_text = parsed.body.plain_text or parsed.body.html or ""
+                email_headers = {
+                    k: v for k, v in parsed.to_dict()["headers"].items() if v
+                }
+                finding_email = FindingEmail(
+                    headers=email_headers or None,
+                    body=body_text or None,
+                    urls=parsed.urls or None,
+                )
+                for att in parsed.attachments:
+                    if att.content:
+                        attachments.append(
+                            FindingAttachment(
+                                file_name=att.filename,
+                                data=att.content,
+                                is_raw_email=False,
+                            )
+                        )
+            except Exception as e:
+                logger.warning(f"Failed to parse email content: {e}")
 
         emails_processed += 1
 
-    if latest_time:
-        state["es_last_time"] = latest_time
-        state["es_first_run"] = False
-        if hasattr(asset, "ingest_state"):
-            asset.ingest_state.put_all(state)
+        if latest_time:
+            state["es_last_time"] = latest_time
+            state["es_first_run"] = False
+            state["es_boundary_ids"] = list(new_boundary_ids)
+
+        yield Finding(
+            rule_title=subject[:100] if subject else f"Email ID: {email_id[:50]}",
+            email=finding_email,
+            attachments=attachments if attachments else None,
+        )
 
     logger.info(f"Processed {emails_processed} emails for ES findings")
 
@@ -793,11 +830,43 @@ from .actions import (  # noqa: F401
     copy_email,
     delete_email,
     expand_dl,
-    get_email,
     move_email,
-    resolve_name,
     run_query,
+)
+
+# Register actions that use custom views
+from .actions.get_email import get_email, render_display_email
+
+
+app.register_action(
+    get_email,
+    description="Get an email from the server",
+    action_type="investigate",
+    view_handler=render_display_email,
+    view_template="display_email.html",
+)
+
+from .actions.resolve_name import render_display_resolve_names, resolve_name
+
+
+app.register_action(
+    resolve_name,
+    name="lookup email",
+    description="Resolve an Alias name or email address, into mailboxes",
+    action_type="investigate",
+    view_handler=render_display_resolve_names,
+    view_template="display_resolve_names.html",
+)
+
+from .actions.update_email import render_update_email, update_email
+
+
+app.register_action(
     update_email,
+    description="Update an email on the server",
+    action_type="generic",
+    view_handler=render_update_email,
+    view_template="update_email.html",
 )
 
 

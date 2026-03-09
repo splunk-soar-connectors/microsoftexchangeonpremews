@@ -1,12 +1,17 @@
 # Copyright (c) 2016-2026 Splunk Inc.
 
+from typing import TYPE_CHECKING
+
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput
 from soar_sdk.params import Param, Params
 
 from .. import ews_soap
-from ..app import Asset, app
 from ..helper import EWSHelper
+
+
+if TYPE_CHECKING:
+    from ..app import Asset
 
 
 class UpdateEmailParams(Params):
@@ -32,15 +37,29 @@ class UpdateEmailParams(Params):
 
 class UpdateEmailOutput(ActionOutput):
     new_change_key: str | None = None
+    email_id: str | None = None
+    t_Subject: str | None = None
+    t_Categories: list[str] | None = None
 
 
-@app.action(
-    description="Update an email on the server",
-    action_type="generic",
-    render_as="table",
-)
+def render_update_email(output: list[UpdateEmailOutput]) -> dict:
+    results = []
+    for item in output:
+        has_data = item.new_change_key is not None
+        categories = item.t_Categories if item.t_Categories else None
+        results.append(
+            {
+                "data": has_data,
+                "message_id": item.email_id,
+                "subject": item.t_Subject,
+                "categories": categories,
+            }
+        )
+    return {"results": results}
+
+
 def update_email(
-    params: UpdateEmailParams, soar: SOARClient, asset: Asset
+    params: UpdateEmailParams, soar: SOARClient, asset: "Asset"
 ) -> UpdateEmailOutput:
     helper = EWSHelper(asset)
 
@@ -98,5 +117,13 @@ def update_email(
         first_item = next(iter(items.values()), {})
         new_change_key = first_item.get("t:ItemId", {}).get("@ChangeKey")
 
+    updated_subject = subject if subject else message.get("t:Subject")
+    updated_categories = categories if categories else None
+
     soar.set_message("Email updated")
-    return UpdateEmailOutput(new_change_key=new_change_key)
+    return UpdateEmailOutput(
+        new_change_key=new_change_key,
+        email_id=email_id,
+        t_Subject=updated_subject,
+        t_Categories=updated_categories,
+    )

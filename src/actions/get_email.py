@@ -2,16 +2,22 @@
 
 import email
 import json
+import re
 from email.header import decode_header, make_header
+from typing import TYPE_CHECKING
 
+from bs4 import BeautifulSoup
 from requests.structures import CaseInsensitiveDict
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
 from soar_sdk.params import Param, Params
 
 from .. import ews_soap
-from ..app import APP_ID, Asset, app
 from ..helper import EWSHelper
+
+
+if TYPE_CHECKING:
+    from ..app import Asset
 
 
 class GetEmailParams(Params):
@@ -211,7 +217,7 @@ def _handle_email_from_raw_data(
     email_data: str,
     email_id: str,
     soar: SOARClient,
-    asset: Asset,
+    asset: "Asset",
     ingest_email: bool,
     target_container_id: int | None,
 ) -> GetEmailOutput:
@@ -230,6 +236,8 @@ def _handle_email_from_raw_data(
                 ProcessEmailContext,
             )
             from soar_sdk.shims.phantom.vault import VaultBase
+
+            from ..app import APP_ID
 
             context = ProcessEmailContext(
                 soar=soar,
@@ -307,12 +315,142 @@ def _handle_email_from_raw_data(
     )
 
 
-@app.action(
-    description="Get an email from the server",
-    action_type="investigate",
-    render_as="table",
-)
-def get_email(params: GetEmailParams, soar: SOARClient, asset: Asset) -> GetEmailOutput:
+def _clean_email_text(email_text):
+    if not email_text:
+        return email_text
+    email_text = re.sub(r"\r+", "\n", email_text)
+    email_text = re.sub(r"\n{3,}", "\n\n", email_text)
+    return email_text
+
+
+def _extract_email_from_json(json_str):
+    if not json_str:
+        return None
+    try:
+        data = json.loads(json_str) if isinstance(json_str, str) else json_str
+        mailbox = data.get("t:Mailbox", {})
+        return mailbox.get("t:EmailAddress")
+    except (json.JSONDecodeError, AttributeError):
+        return None
+
+
+def _extract_recipients_from_json(json_str):
+    if not json_str:
+        return None
+    try:
+        data = json.loads(json_str) if isinstance(json_str, str) else json_str
+        mailboxes = data.get("t:Mailbox", [])
+        if isinstance(mailboxes, dict):
+            mailboxes = [mailboxes]
+        emails = [m.get("t:EmailAddress") for m in mailboxes if m.get("t:EmailAddress")]
+        return ", ".join(emails) if emails else None
+    except (json.JSONDecodeError, AttributeError):
+        return None
+
+
+def render_display_email(output: list[GetEmailOutput]) -> dict:
+    results = []
+    for item in output:
+        has_headers = any(
+            getattr(item, field, None) is not None
+            for field in [
+                "CC",
+                "Content_Type",
+                "Date",
+                "Delivered_To",
+                "From",
+                "Message_ID",
+                "Received",
+                "Return_Path",
+                "Sender",
+                "Subject",
+                "To",
+            ]
+        )
+
+        is_from_container_or_vault = has_headers and item.t_From is None
+
+        if is_from_container_or_vault:
+            header_fields = [
+                ("CC", item.CC),
+                ("Content-Language", item.Content_Language),
+                ("Content-Type", item.Content_Type),
+                ("Date", item.Date),
+                ("Delivered-To", item.Delivered_To),
+                ("From", item.From),
+                ("Importance", item.Importance),
+                ("MIME-Version", item.MIME_Version),
+                ("Message-ID", item.Message_ID),
+                ("Received", item.Received),
+                ("Return-Path", item.Return_Path),
+                ("Sender", item.Sender),
+                ("Subject", item.Subject),
+                ("Thread-Index", item.Thread_Index),
+                ("Thread-Topic", item.Thread_Topic),
+                ("To", item.To),
+                ("X-Mailer", item.X_Mailer),
+                ("X-Priority", item.X_Priority),
+            ]
+            headers = {k: v for k, v in header_fields if v is not None}
+
+            email_id = item.t_ItemId.id if item.t_ItemId else None
+            results.append(
+                {
+                    "data": True,
+                    "source": "headers",
+                    "param_container_id": None,
+                    "param_vault_id": None,
+                    "email_id": email_id,
+                    "container_id": None,
+                    "ingest_email": False,
+                    "headers": headers,
+                    "message": None,
+                }
+            )
+        else:
+            from_email = _extract_email_from_json(item.t_From)
+            sender_email = _extract_email_from_json(item.t_Sender)
+            recipients = _extract_recipients_from_json(item.t_ToRecipients)
+
+            email_text = None
+            email_body = None
+            body = item.t_Body
+            if body:
+                try:
+                    soup = BeautifulSoup(body, "html.parser")
+                    email_text = _clean_email_text(soup.get_text())
+                except Exception:
+                    email_text = None
+                if not email_text:
+                    email_body = body
+
+            email_id = item.t_ItemId.id if item.t_ItemId else None
+            results.append(
+                {
+                    "data": True,
+                    "source": "server",
+                    "email_id": email_id,
+                    "subject": item.t_Subject,
+                    "from_email": from_email,
+                    "sender_email": sender_email,
+                    "recipients": recipients,
+                    "internet_message_id": item.t_InternetMessageId,
+                    "create_time": item.t_DateTimeCreated,
+                    "sent_time": item.t_DateTimeSent,
+                    "container_id": None,
+                    "ingest_email": False,
+                    "email_text": email_text,
+                    "email_body": email_body,
+                    "message": None,
+                }
+            )
+
+    return {"results": results}
+
+
+def get_email(
+    params: GetEmailParams, soar: SOARClient, asset: "Asset"
+) -> GetEmailOutput:
     if not params.id and not params.container_id and not params.vault_id:
         raise ValueError("At least one of id, container_id, or vault_id is required")
 
