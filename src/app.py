@@ -105,9 +105,10 @@ class Asset(BaseAsset):
         category=FieldCategory.CONNECTIVITY,
     )
     poll_user: str = AssetField(
-        required=False,
+        required=True,
         description="User Email Mailbox (Test Connectivity and Poll)",
-        category=FieldCategory.CONNECTIVITY,
+        default="Inbox",
+        category=FieldCategory.INGEST,
     )
     use_impersonation: bool = AssetField(
         required=False,
@@ -134,7 +135,6 @@ class Asset(BaseAsset):
         required=False,
         description="Mailbox folder is a public folder",
         default=False,
-        category=FieldCategory.INGEST,
     )
     first_run_max_emails: int = AssetField(
         required=True,
@@ -163,7 +163,7 @@ class Asset(BaseAsset):
         category=FieldCategory.INGEST,
     )
     ingest_time: str = AssetField(
-        required=False,
+        required=True,
         description="Sort mails by",
         default="updated time",
         value_list=["updated time", "created time"],
