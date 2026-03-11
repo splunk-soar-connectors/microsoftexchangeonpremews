@@ -337,7 +337,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **verify_server_cert** | optional | boolean | Verify server certificate |
 **username** | required | string | Username |
 **password** | required | password | Password |
-**poll_user** | optional | string | User Email Mailbox (Test Connectivity and Poll) |
+**poll_user** | required | string | User Email Mailbox (Test Connectivity and Poll) |
 **use_impersonation** | optional | boolean | Use Impersonation |
 **preprocess_script** | optional | file | Script with functions to preprocess containers and artifacts |
 **poll_folder** | required | string | Mailbox folder to be polled |
@@ -346,7 +346,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **max_containers** | required | numeric | Maximum emails for scheduled polling |
 **ingest_manner** | required | string | How to ingest |
 **container_severity** | optional | string | Container Severity |
-**ingest_time** | optional | string | Sort mails by |
+**ingest_time** | required | string | Sort mails by |
 **extract_attachments** | optional | boolean | Extract Attachments |
 **extract_urls** | optional | boolean | Extract URLs |
 **extract_ips** | optional | boolean | Extract IPs |
