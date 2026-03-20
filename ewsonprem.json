@@ -3137,7 +3137,7 @@
             },
             {
                 "module": "pyspnego",
-                "input_file": "wheels/py3/pyspnego-0.12.0-py3-none-any.whl"
+                "input_file": "wheels/py3/pyspnego-0.12.1-py3-none-any.whl"
             },
             {
                 "module": "requests_ntlm",
@@ -3169,7 +3169,7 @@
             },
             {
                 "module": "pyspnego",
-                "input_file": "wheels/py3/pyspnego-0.12.0-py3-none-any.whl"
+                "input_file": "wheels/py3/pyspnego-0.12.1-py3-none-any.whl"
             },
             {
                 "module": "requests_ntlm",

@@ -1,2 +1,2 @@
 **Unreleased**
-* - Sanitize file name before processing emails.
+* Sanitize file name before processing emails.
