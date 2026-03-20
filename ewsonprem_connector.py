@@ -1,6 +1,6 @@
 # File: ewsonprem_connector.py
 #
-# Copyright (c) 2016-2025 Splunk Inc.
+# Copyright (c) 2016-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -437,7 +437,7 @@ class EWSOnPremConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val, email_infos = self._get_email_infos_to_process(0, 1, action_result)
+        ret_val, _email_infos = self._get_email_infos_to_process(0, 1, action_result)
 
         # Process errors
         if phantom.is_fail(ret_val):
@@ -735,7 +735,7 @@ class EWSOnPremConnector(BaseConnector):
         email_id = None
         resp_data = {}
 
-        ret_val, resp_data, status_code = self.get_container_info(container_id)
+        ret_val, resp_data, _status_code = self.get_container_info(container_id)
 
         if phantom.is_fail(ret_val):
             return RetVal3(action_result.set_status(phantom.APP_ERROR, str(resp_data)), email_data, email_id)
@@ -757,7 +757,7 @@ class EWSOnPremConnector(BaseConnector):
         file_path = None
 
         try:
-            success, message, file_info = phantom_rules.vault_info(vault_id=vault_id)
+            _success, _message, file_info = phantom_rules.vault_info(vault_id=vault_id)
             if not file_info:
                 return RetVal3(action_result.set_status(phantom.APP_ERROR, EWSONPREM_ERR_VAULT_INFO), None, None)
             file_path = next(iter(file_info)).get("path")
@@ -1851,12 +1851,12 @@ class EWSOnPremConnector(BaseConnector):
         attach_meta_info_list = list()
         resp_json["emailGuid"] = str(uuid.uuid4())
 
-        ret_val, data = self._extract_ext_properties(resp_json)
+        _ret_val, data = self._extract_ext_properties(resp_json)
 
         if data:
             email_header_list.append(data)
 
-        ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
+        _ret_val, attach_email_headers, attach_meta_info = self._extract_ext_properties_from_attachments(resp_json)
 
         if attach_email_headers:
             email_header_list.extend(attach_email_headers)

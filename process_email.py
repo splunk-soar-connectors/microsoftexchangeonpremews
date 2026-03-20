@@ -1,6 +1,6 @@
 # File: process_email.py
 #
-# Copyright (c) 2016-2025 Splunk Inc.
+# Copyright (c) 2016-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -194,6 +194,38 @@ class ProcessEmail:
             url = url[: url.find(">")]
 
         return url.strip(r"\'|\"")
+
+    def _sanitize_filename(self, filename, max_bytes=255):
+        DEFAULT_FILENAME = "email_default.eml"
+        if max_bytes is None:
+            max_bytes = 255
+        # Replace backslashes and forward slashes with underscores.
+        sanitized = re.sub(r"[\\/]", "_", filename)
+
+        # Replace null bytes.
+        sanitized = sanitized.replace("\0", "")
+
+        # Replace whitespace with underscores.
+        sanitized = re.sub(r"\s+", "_", sanitized)
+
+        # Replace angle brackets and spaces.
+        sanitized = sanitized.replace("<", "").replace(">", "")
+
+        if not sanitized:
+            return DEFAULT_FILENAME
+
+        if len(sanitized.encode("utf-8")) <= max_bytes:
+            return sanitized
+
+        base, ext = os.path.splitext(sanitized)
+        max_base_bytes = max_bytes - len(ext.encode("utf-8"))
+        if max_base_bytes <= 0:
+            return ext[:max_bytes]
+
+        base_b = base.encode("utf-8")
+        sanitized = base_b[:max_base_bytes].decode("utf-8", "ignore") + ext
+
+        return sanitized
 
     def _extract_urls_domains(self, file_data, urls, domains, parent_id=None):
         if not self._config[PROC_EMAIL_JSON_EXTRACT_DOMAINS] and not self._config[PROC_EMAIL_JSON_EXTRACT_URLS]:
@@ -555,12 +587,6 @@ class ProcessEmail:
 
         return (phantom.APP_SUCCESS, False)
 
-    def remove_child_info(self, file_path):
-        if file_path.endswith("_True"):
-            return file_path.rstrip("_True")
-        else:
-            return file_path.rstrip("_False")
-
     def _handle_attachment(self, part, file_name, file_path):
         files = self._parsed_mail[PROC_EMAIL_JSON_FILES]
 
@@ -596,27 +622,8 @@ class ProcessEmail:
         try:
             with open(file_path, "wb") as f:
                 f.write(part_payload)
-        except OSError as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-            try:
-                if "File name too long" in error_msg:
-                    new_file_name = "ph_long_file_name_temp"
-                    file_path = "{}{}".format(
-                        self.remove_child_info(file_path).rstrip(file_name.replace("<", "").replace(">", "").replace(" ", "")), new_file_name
-                    )
-                    self._base_connector.debug_print(f"Original filename: {file_name}")
-                    self._base_connector.debug_print(f"Modified filename: {new_file_name}")
-                    with open(file_path, "wb") as long_file:
-                        long_file.write(part_payload)
-                else:
-                    self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_msg}")
-                    return
-            except Exception as e:
-                error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
-                self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_msg}")
-                return
         except Exception as e:
-            error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
+            _error_code, error_msg = self._base_connector._get_error_message_from_exception(e)
             self._base_connector.debug_print(f"Error occurred while adding file to Vault. Error Details: {error_msg}")
             return
 
@@ -647,15 +654,18 @@ class ProcessEmail:
 
             file_name = f"{name}{extension}"
         else:
-            file_name = self._sanitize_file_name(self._decode_uni_string(file_name, file_name))
+            file_name = self._decode_uni_string(file_name, file_name)
 
-        # Remove any chars that we don't want in the name
-        file_path = "{}/{}_{}_{}".format(tmp_dir, part_index, file_name.replace("<", "").replace(">", "").replace(" ", ""), child)
+        prefix = f"{part_index}_"
+        suffix = f"_{child}"
+        max_filename_bytes = 255 - len(prefix.encode("utf-8")) - len(suffix.encode("utf-8"))
+        file_name = self._sanitize_filename(file_name, max_bytes=max_filename_bytes)
+        file_path = f"{tmp_dir}/{prefix}{file_name}{suffix}"
 
         self._debug_print(f"file_path: {file_path}")
 
         # is the part representing the body of the email
-        status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
+        _status, process_further = self._handle_if_body(content_disp, content_id, content_type, part, bodies, file_path)
 
         if not process_further:
             return phantom.APP_SUCCESS
@@ -822,9 +832,6 @@ class ProcessEmail:
 
         return len(email_header_artifacts)
 
-    def _sanitize_file_name(self, file_name):
-        return re.sub("[,\"']", "", file_name)
-
     def _handle_mail_object(self, mail, email_id, rfc822_email, tmp_dir, start_time_epoch):
         self._parsed_mail = OrderedDict()
 
@@ -855,7 +862,8 @@ class ProcessEmail:
             extension = ".eml"
             file_name = self._parsed_mail[PROC_EMAIL_JSON_SUBJECT]
             file_name = f"{self._base_connector._decode_uni_string(file_name, file_name)}{extension}"
-            file_name = self._sanitize_file_name(file_name)
+            file_name = self._sanitize_filename(file_name)
+            self._base_connector.debug_print(f"file name after sanitize: {file_name}")
             file_path = f"{tmp_dir}/{file_name}"
             try:
                 with open(file_path, "wb") as f:
@@ -1253,7 +1261,7 @@ class ProcessEmail:
 
         self._debug_print("Saving artifacts")
         # save all the artifacts(Vault, IP, domain, etc.) in a single save_artifacts call
-        ret_val, message, ids = self._base_connector.save_artifacts(artifacts_list)
+        ret_val, message, _ids = self._base_connector.save_artifacts(artifacts_list)
         self._base_connector.debug_print(f"save_artifacts returns, value: {ret_val}, reason: {message}")
 
         if phantom.is_fail(ret_val):
@@ -1315,7 +1323,7 @@ class ProcessEmail:
 
     def _add_vault_hashes_to_dictionary(self, cef_artifact, vault_id, container_id):
         try:
-            success, message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
+            _success, _message, vault_info = phantom_rules.vault_info(vault_id=vault_id, container_id=container_id)
         except Exception:
             return phantom.APP_ERROR, "Could not retrieve vault file"
 
