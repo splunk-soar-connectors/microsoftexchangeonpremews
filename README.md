@@ -4,7 +4,7 @@ Publisher: Splunk <br>
 Connector Version: 3.13.6 <br>
 Product Vendor: Microsoft <br>
 Product Name: Exchange <br>
-Minimum Product Version: 6.4.0
+Minimum Product Version: 7.0.0
 
 This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation
 
