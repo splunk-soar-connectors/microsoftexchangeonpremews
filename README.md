@@ -337,7 +337,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **verify_server_cert** | optional | boolean | Verify server certificate |
 **username** | required | string | Username |
 **password** | required | password | Password |
-**poll_user** | required | string | User Email Mailbox (Test Connectivity and Poll) |
+**poll_user** | optional | string | User Email Mailbox (Test Connectivity and Poll) |
 **use_impersonation** | optional | boolean | Use Impersonation |
 **preprocess_script** | optional | file | Script with functions to preprocess containers and artifacts |
 **poll_folder** | required | string | Mailbox folder to be polled |
