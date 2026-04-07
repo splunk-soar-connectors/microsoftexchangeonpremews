@@ -14,6 +14,7 @@
 import email
 import hashlib
 import importlib.util
+import os
 import re
 from collections.abc import Callable, Generator, Iterator
 from datetime import UTC
@@ -75,6 +76,30 @@ def _load_preprocess_script(script: str) -> Callable[[dict[str, Any]], dict[str,
         raise ValueError("Custom script must define a 'preprocess_container' function")
 
     return module.preprocess_container
+
+
+_DEFAULT_FILENAME = "email_default.eml"
+
+
+def _sanitize_filename(filename: str, max_bytes: int = 255) -> str:
+    """Sanitize a filename to remove problematic characters and enforce length limits."""
+    sanitized = re.sub(r"[\\/]", "_", filename)
+    sanitized = sanitized.replace("\0", "")
+    sanitized = re.sub(r"\s+", "_", sanitized)
+    sanitized = sanitized.replace("<", "").replace(">", "")
+
+    if not sanitized:
+        return _DEFAULT_FILENAME
+
+    if len(sanitized.encode("utf-8")) <= max_bytes:
+        return sanitized
+
+    base, ext = os.path.splitext(sanitized)
+    max_base_bytes = max_bytes - len(ext.encode("utf-8"))
+    if max_base_bytes <= 0:
+        return ext[:max_bytes]
+
+    return base.encode("utf-8")[:max_base_bytes].decode("utf-8", "ignore") + ext
 
 
 APP_ID = "badc5252-4a82-4a6d-bc53-d1e503857124"
@@ -400,10 +425,11 @@ def _extract_iocs_and_attachments(
             if not att.content:
                 continue
             try:
+                safe_name = _sanitize_filename(att.filename)
                 file_hash = hashlib.sha256(att.content).hexdigest()
                 vault_info = soar.vault.add(
                     file_content=att.content,
-                    file_name=att.filename,
+                    file_name=safe_name,
                     container_id=None,
                 )
                 if vault_info:
@@ -415,7 +441,7 @@ def _extract_iocs_and_attachments(
                             "vaultId": vault_info.vault_id
                             if hasattr(vault_info, "vault_id")
                             else str(vault_info),
-                            "fileName": att.filename,
+                            "fileName": safe_name,
                             "fileSize": att.size,
                             "fileHashSha256": file_hash,
                         },
@@ -819,7 +845,7 @@ def _build_forwarded_finding(
 
     attachments: list[FindingAttachment] = [
         FindingAttachment(
-            file_name=inner_filename,
+            file_name=_sanitize_filename(inner_filename),
             data=inner_raw,
             is_raw_email=True,
         )
@@ -828,7 +854,7 @@ def _build_forwarded_finding(
         if att.content:
             attachments.append(
                 FindingAttachment(
-                    file_name=att.filename,
+                    file_name=_sanitize_filename(att.filename),
                     data=att.content,
                     is_raw_email=False,
                 )
@@ -865,7 +891,7 @@ def _build_direct_finding(
         if att.content:
             attachments.append(
                 FindingAttachment(
-                    file_name=att.filename,
+                    file_name=_sanitize_filename(att.filename),
                     data=att.content,
                     is_raw_email=False,
                 )
