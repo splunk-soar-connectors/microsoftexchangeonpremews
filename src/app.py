@@ -975,8 +975,9 @@ def on_es_poll(
     if last_time:
         restriction = ews_soap.xml_get_restriction(last_time, field_uri=field_uri)
 
+    fetch_count = max_emails + len(boundary_ids)
     input_xml = ews_soap.xml_get_email_ids(
-        poll_user, folder_id, order, 0, max_emails, restriction, field_uri
+        poll_user, folder_id, order, 0, fetch_count, restriction, field_uri
     )
 
     try:
@@ -1057,7 +1058,7 @@ def on_es_poll(
 
         emails_processed += 1
 
-        if not is_poll_now and latest_time:
+        if latest_time:
             state["es_last_time"] = latest_time
             state["es_boundary_ids"] = list(new_boundary_ids)
 
