@@ -79,6 +79,7 @@ class Mailbox(ActionOutput):
 
 class EmailResult(ActionOutput):
     t_Subject: str | None = OutputField(column_name="Subject")
+    sender_name: str | None = OutputField(column_name="Sender")
     t_DateTimeReceived: str | None = OutputField(column_name="Received Time")
     folder: str | None = OutputField(column_name="Folder", cef_types=["mail folder"])
     folder_path: str | None = OutputField(
@@ -86,6 +87,9 @@ class EmailResult(ActionOutput):
     )
     t_InternetMessageId: str | None = OutputField(
         column_name="Internet Message ID", cef_types=["internet message id"]
+    )
+    message_id: str | None = OutputField(
+        column_name="Message ID", cef_types=["exchange email id"]
     )
     t_ItemId: ItemId | None = None
     t_Sender: Mailbox | None = None
@@ -202,6 +206,8 @@ def run_query(
                         t_DateTimeReceived=item.get("t:DateTimeReceived"),
                         t_Subject=item.get("t:Subject"),
                         t_InternetMessageId=item.get("t:InternetMessageId"),
+                        sender_name=sender.t_Name,
+                        message_id=item_id.id,
                         t_ItemId=item_id,
                         t_Sender=sender,
                         t_From=from_mailbox,

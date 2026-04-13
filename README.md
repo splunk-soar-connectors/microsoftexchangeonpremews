@@ -571,10 +571,12 @@ action_result.parameter.range | string | | |
 action_result.parameter.ignore_subfolders | boolean | | |
 action_result.parameter.is_public_folder | boolean | | |
 action_result.data.\*.t_Subject | string | | |
+action_result.data.\*.sender_name | string | | |
 action_result.data.\*.t_DateTimeReceived | string | | |
 action_result.data.\*.folder | string | `mail folder` | |
 action_result.data.\*.folder_path | string | `mail folder path` | |
 action_result.data.\*.t_InternetMessageId | string | `internet message id` | |
+action_result.data.\*.message_id | string | `exchange email id` | |
 action_result.data.\*.t_ItemId.@Id | string | `exchange email id` | |
 action_result.data.\*.t_ItemId.@ChangeKey | string | | |
 action_result.data.\*.t_Sender.t_Name | string | `user name` | |

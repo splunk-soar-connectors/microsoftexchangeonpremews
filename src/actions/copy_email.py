@@ -83,7 +83,7 @@ def copy_email(
         first_item = next(iter(items.values()), {})
         new_email_id = first_item.get("t:ItemId", {}).get("@Id")
 
-    soar.set_message("Email copied")
+    soar.set_message("Email Copied")
     return CopyEmailOutput(
         user_email=params.email,
         folder=params.folder,

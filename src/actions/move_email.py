@@ -83,7 +83,7 @@ def move_email(
         first_item = next(iter(items.values()), {})
         new_email_id = first_item.get("t:ItemId", {}).get("@Id")
 
-    soar.set_message("Email moved")
+    soar.set_message("Email Moved")
     return MoveEmailOutput(
         user_email=params.email,
         folder=params.folder,
