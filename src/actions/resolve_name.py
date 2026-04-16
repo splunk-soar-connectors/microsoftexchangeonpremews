@@ -106,7 +106,18 @@ def resolve_name(
     helper = EWSHelper(asset)
 
     input_xml = ews_soap.xml_get_resolve_names(params.email)
-    resp_json = helper.make_rest_call(input_xml, helper.check_resolve_names_response)
+    try:
+        resp_json = helper.make_rest_call(
+            input_xml, helper.check_resolve_names_response
+        )
+    except Exception as e:
+        if "ErrorNameResolutionNoResults" in str(e):
+            soar.set_message(
+                "No email found. The input parameter might not be a valid alias or email."
+            )
+            soar.set_summary(ResolveNameSummary(total_entries=0))
+            return []
+        raise
 
     resolution_set = resp_json.get("m:ResolutionSet", {})
     resolutions = resolution_set.get("t:Resolution", [])

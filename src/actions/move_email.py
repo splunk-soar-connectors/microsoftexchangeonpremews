@@ -89,7 +89,5 @@ def move_email(
         folder=params.folder,
         source_email_id=params.id,
         new_email_id=new_email_id,
-        status_message="Email moved successfully"
-        if new_email_id
-        else "Email move completed",
+        status_message="Email Moved",
     )

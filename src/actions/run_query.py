@@ -6,6 +6,7 @@ from soar_sdk.params import Param, Params
 
 from .. import ews_soap
 from ..app import Asset, app
+from ..consts import EWSONPREM_MAX_END_OFFSET_VAL
 from ..helper import EWSHelper
 
 
@@ -100,6 +101,26 @@ class RunQuerySummary(ActionOutput):
     emails_matched: int = 0
 
 
+def _validate_range(email_range: str) -> None:
+    try:
+        mini, maxi = (int(x) for x in email_range.split("-"))
+    except Exception:
+        raise ValueError(
+            "Unable to parse the range. Please specify the range as min_offset-max_offset"
+        ) from None
+
+    if mini < 0 or maxi < 0:
+        raise ValueError("Invalid min or max offset value specified in range")
+
+    if mini > maxi:
+        raise ValueError("Invalid range value, min_offset greater than max_offset")
+
+    if maxi > EWSONPREM_MAX_END_OFFSET_VAL:
+        raise ValueError(
+            f"Invalid range value. The max_offset value cannot be greater than {EWSONPREM_MAX_END_OFFSET_VAL}"
+        )
+
+
 @app.action(description="Search emails", action_type="investigate", render_as="table")
 def run_query(
     params: RunQueryParams, soar: SOARClient, asset: Asset
@@ -108,6 +129,8 @@ def run_query(
 
     if asset.use_impersonation:
         helper.set_target_user(params.email)
+
+    _validate_range(params.range)
 
     if (
         not params.subject

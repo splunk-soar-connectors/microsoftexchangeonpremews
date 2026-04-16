@@ -763,6 +763,7 @@ action_result.parameter.subject | string | | |
 action_result.parameter.category | string | | |
 action_result.data.\*.new_change_key | string | | |
 action_result.data.\*.email_id | string | | |
+action_result.data.\*.subject | string | | |
 action_result.data.\*.t_Subject | string | | |
 action_result.data.\*.t_Categories.\* | string | | |
 summary.total_objects | numeric | | 1 |

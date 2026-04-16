@@ -89,7 +89,5 @@ def copy_email(
         folder=params.folder,
         source_email_id=params.id,
         new_email_id=new_email_id,
-        status_message="Email copied successfully"
-        if new_email_id
-        else "Email copy completed",
+        status_message="Email Copied",
     )

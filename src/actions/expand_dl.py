@@ -57,12 +57,17 @@ def list_addresses(
 
         input_xml = ews_soap.get_expand_dl(current_group)
 
+        is_initial_group = current_group == params.group
         try:
             resp_json = helper.make_rest_call(
                 input_xml, helper.check_expand_dl_response
             )
         except Exception as e:
             if "ErrorNameResolutionNoResults" in str(e):
+                if is_initial_group:
+                    raise ValueError(
+                        f"{e} The input parameter might not be a distribution list."
+                    ) from e
                 continue
             raise
 

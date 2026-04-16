@@ -38,8 +38,15 @@ class UpdateEmailParams(Params):
 class UpdateEmailOutput(ActionOutput):
     new_change_key: str | None = None
     email_id: str | None = None
+    subject: str | None = None
     t_Subject: str | None = None
     t_Categories: list[str] | None = None
+
+
+class UpdateEmailSummary(ActionOutput):
+    subject: str | None = None
+    create_time: str | None = None
+    sent_time: str | None = None
 
 
 def render_update_email(output: list[UpdateEmailOutput]) -> dict:
@@ -121,9 +128,17 @@ def update_email(
     updated_categories = categories if categories else None
 
     soar.set_message("Email updated")
+    soar.set_summary(
+        UpdateEmailSummary(
+            subject=updated_subject,
+            create_time=message.get("t:DateTimeCreated"),
+            sent_time=message.get("t:DateTimeSent"),
+        )
+    )
     return UpdateEmailOutput(
         new_change_key=new_change_key,
         email_id=email_id,
+        subject=updated_subject,
         t_Subject=updated_subject,
         t_Categories=updated_categories,
     )
