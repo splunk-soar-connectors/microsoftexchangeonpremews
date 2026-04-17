@@ -116,6 +116,18 @@ class EWSHelper:
         except Exception as e:
             raise Exception(f"Unable to parse response: {e}") from e
 
+        if isinstance(resp_message, list):
+            for item in resp_message:
+                if isinstance(item, dict):
+                    resp_class = item.get("@ResponseClass", "")
+                    if resp_class == "Error":
+                        code = item.get("m:ResponseCode", "Not Specified")
+                        msg = item.get("m:MessageText", "Not Specified")
+                        raise Exception(
+                            f"API failed. Status code: {code}. Message: {msg}"
+                        )
+            return resp_message
+
         if not isinstance(resp_message, dict):
             return resp_message
 
@@ -213,10 +225,7 @@ class EWSHelper:
     ) -> dict | None:
         input_xml = ews_soap.xml_get_children_info(user, folder_name, parent_folder_id)
 
-        try:
-            resp_json = self.make_rest_call(input_xml, self.check_findfolder_response)
-        except Exception:
-            return None
+        resp_json = self.make_rest_call(input_xml, self.check_findfolder_response)
 
         total_items = resp_json.get("m:RootFolder", {}).get("@TotalItemsInView", "0")
         if total_items == "0":
@@ -261,12 +270,7 @@ class EWSHelper:
                 user, parent_folder_id=parent_folder_id, query_range=curr_range
             )
 
-            try:
-                resp_json = self.make_rest_call(
-                    input_xml, self.check_findfolder_response
-                )
-            except Exception:
-                break
+            resp_json = self.make_rest_call(input_xml, self.check_findfolder_response)
 
             total_items = resp_json.get("m:RootFolder", {}).get(
                 "@TotalItemsInView", "0"
