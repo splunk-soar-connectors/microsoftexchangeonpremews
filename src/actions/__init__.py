@@ -5,6 +5,7 @@ from . import (
     delete_email,
     expand_dl,
     get_email,
+    make_request,
     move_email,
     resolve_name,
     run_query,
