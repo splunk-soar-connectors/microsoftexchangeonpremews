@@ -365,6 +365,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [on es poll](#action-on-es-poll) - Poll for new emails and create ES findings for each email. <br>
 [delete email](#action-delete-email) - Delete emails <br>
 [list addresses](#action-list-addresses) - Get the email addresses that make up a Distribution List <br>
+[make request](#action-make-request) - make request <br>
 [move email](#action-move-email) - Move an email to a folder <br>
 [run query](#action-run-query) - Search emails <br>
 [get email](#action-get-email) - Get an email from the server <br>
@@ -491,6 +492,45 @@ action_result.data.\*.email | string | `email` | |
 action_result.data.\*.user_name | string | | |
 action_result.data.\*.routing_type | string | | |
 action_result.data.\*.mailbox_type | string | | |
+summary.total_objects | numeric | | 1 |
+summary.total_objects_successful | numeric | | 1 |
+
+## action: 'make request'
+
+make request
+
+Type: **generic** <br>
+Read only: **False**
+
+'make request' action for the app. Used to handle arbitrary HTTP requests with the app's asset
+
+#### Action Parameters
+
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**http_method** | required | The HTTP method to use for the request. | string | |
+**endpoint** | optional | EWS endpoint to call, appended to the asset URL's host. Leave blank to call the asset URL as-is (e.g. 'EWS/Exchange.asmx'). Example: 'EWS/Exchange.asmx' or 'autodiscover/autodiscover.xml' | string | |
+**headers** | optional | The headers to send with the request (JSON object). An example is {'Content-Type': 'application/json'} | string | |
+**query_parameters** | optional | Parameters to append to the URL (JSON object or query string). An example is ?key=value&key2=value2 | string | |
+**body** | optional | The body to send with the request (JSON object). An example is {'key': 'value', 'key2': 'value2'} | string | |
+**timeout** | optional | The timeout for the request in seconds. | numeric | |
+**verify_ssl** | optional | Whether to verify the SSL certificate. Defaults to the asset's 'Verify server certificate' setting. | boolean | |
+
+#### Action Output
+
+DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
+--------- | ---- | -------- | --------------
+action_result.status | string | | success failure |
+action_result.message | string | | |
+action_result.parameter.http_method | string | | |
+action_result.parameter.endpoint | string | | |
+action_result.parameter.headers | string | | |
+action_result.parameter.query_parameters | string | | |
+action_result.parameter.body | string | | |
+action_result.parameter.timeout | numeric | | |
+action_result.parameter.verify_ssl | boolean | | |
+action_result.data.\*.status_code | numeric | | 200 |
+action_result.data.\*.response_body | string | | \<s:Envelope>...\</s:Envelope> |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 

@@ -1072,6 +1072,7 @@ from .actions import (  # noqa: F401
     copy_email,
     delete_email,
     expand_dl,
+    make_request,
     move_email,
     run_query,
 )
