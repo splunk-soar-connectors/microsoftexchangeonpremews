@@ -563,7 +563,7 @@ def on_poll(
         restriction = ews_soap.xml_get_restriction(
             last_time,
             field_uri=field_uri,
-            inclusive=True,
+            inclusive=bool(boundary_ids),
         )
 
     fetch_count = max_emails + len(boundary_ids)
