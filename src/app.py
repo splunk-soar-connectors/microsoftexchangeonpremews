@@ -278,6 +278,13 @@ app = App(
 )
 
 
+def _poll_order(ingest_manner: str, last_time: str | None) -> str:
+    """Resume a checkpointed window oldest-first so capped batches cannot skip mail."""
+    if ingest_manner == EWS_INGEST_LATEST_EMAILS and not last_time:
+        return "Descending"
+    return "Ascending"
+
+
 @app.test_connectivity()
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
     helper = EWSHelper(asset)
@@ -531,16 +538,16 @@ def on_poll(
     if is_poll_now:
         max_emails = params.container_count if params.container_count > 0 else 100
         last_time = None
+        boundary_ids: set[str] = set()
     else:
         is_first_run = state.get("first_run", True)
         max_emails = (
             asset.first_run_max_emails if is_first_run else asset.max_containers
         )
         last_time = state.get("last_time")
+        boundary_ids = set(state.get("boundary_ids", []))
 
-    order = (
-        "Descending" if asset.ingest_manner == EWS_INGEST_LATEST_EMAILS else "Ascending"
-    )
+    order = _poll_order(asset.ingest_manner, last_time)
     field_uri = (
         "DateTimeCreated" if asset.ingest_time == "created time" else "LastModifiedTime"
     )
@@ -553,10 +560,15 @@ def on_poll(
 
     restriction = None
     if last_time and not is_poll_now:
-        restriction = ews_soap.xml_get_restriction(last_time, field_uri=field_uri)
+        restriction = ews_soap.xml_get_restriction(
+            last_time,
+            field_uri=field_uri,
+            inclusive=bool(boundary_ids),
+        )
 
+    fetch_count = max_emails + len(boundary_ids)
     input_xml = ews_soap.xml_get_email_ids(
-        poll_user, folder_id, order, 0, max_emails, restriction, field_uri
+        poll_user, folder_id, order, 0, fetch_count, restriction, field_uri
     )
 
     try:
@@ -592,6 +604,9 @@ def on_poll(
 
     latest_time = last_time
     emails_processed = 0
+    # Preserve the checkpoint boundary until polling advances to a newer timestamp.
+    # Otherwise an empty/replayed page would forget the IDs and ingest them again.
+    new_boundary_ids: set[str] = set(boundary_ids)
 
     for email_info in email_ids:
         if emails_processed >= max_emails:
@@ -603,8 +618,15 @@ def on_poll(
             if field_uri == "LastModifiedTime"
             else email_info.get("created")
         )
+
+        if email_time == last_time and email_id in boundary_ids:
+            continue
+
         if email_time and (not latest_time or email_time > latest_time):
             latest_time = email_time
+            new_boundary_ids = set()
+        if email_time == latest_time:
+            new_boundary_ids.add(email_id)
 
         mime_content, email_data = _get_email_mime_content(
             helper, email_id, asset.version
@@ -693,6 +715,7 @@ def on_poll(
 
     if not is_poll_now and latest_time:
         state["last_time"] = latest_time
+        state["boundary_ids"] = list(new_boundary_ids)
         state["first_run"] = False
 
     logger.info(f"Processed {emails_processed} emails")
@@ -958,9 +981,7 @@ def on_es_poll(
     last_time = state.get("es_last_time")
     boundary_ids = set(state.get("es_boundary_ids", []))
 
-    order = (
-        "Descending" if asset.ingest_manner == EWS_INGEST_LATEST_EMAILS else "Ascending"
-    )
+    order = _poll_order(asset.ingest_manner, last_time)
     field_uri = (
         "DateTimeCreated" if asset.ingest_time == "created time" else "LastModifiedTime"
     )
@@ -973,7 +994,11 @@ def on_es_poll(
 
     restriction = None
     if last_time:
-        restriction = ews_soap.xml_get_restriction(last_time, field_uri=field_uri)
+        restriction = ews_soap.xml_get_restriction(
+            last_time,
+            field_uri=field_uri,
+            inclusive=bool(boundary_ids),
+        )
 
     fetch_count = max_emails + len(boundary_ids)
     input_xml = ews_soap.xml_get_email_ids(
@@ -1013,7 +1038,9 @@ def on_es_poll(
 
     latest_time = last_time
     emails_processed = 0
-    new_boundary_ids: set[str] = set()
+    # Preserve the checkpoint boundary until polling advances to a newer timestamp.
+    # Otherwise an empty/replayed page would forget the IDs and ingest them again.
+    new_boundary_ids: set[str] = set(boundary_ids)
 
     for email_info in email_ids:
         if emails_processed >= max_emails:

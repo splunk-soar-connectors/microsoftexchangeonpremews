@@ -39,12 +39,17 @@ def _encode_unicode(value: str) -> str:
 
 
 def xml_get_restriction(
-    greater_than_time=None, message_id=None, field_uri="LastModifiedTime"
+    greater_than_time=None,
+    message_id=None,
+    field_uri="LastModifiedTime",
+    *,
+    inclusive=False,
 ):
     filters = []
 
     if greater_than_time:
-        greater_than_time = T.IsGreaterThan(
+        comparison = T.IsGreaterThanOrEqualTo if inclusive else T.IsGreaterThan
+        greater_than_time = comparison(
             T.FieldURI({"FieldURI": f"item:{field_uri}"}),
             T.FieldURIOrConstant(T.Constant({"Value": greater_than_time})),
         )
