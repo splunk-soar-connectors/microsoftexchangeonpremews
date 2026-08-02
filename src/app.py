@@ -285,6 +285,17 @@ def _poll_order(ingest_manner: str, last_time: str | None) -> str:
     return "Ascending"
 
 
+def _order_email_ids(
+    email_ids: list[dict[str, str | None]], field_uri: str, order: str
+) -> list[dict[str, str | None]]:
+    """Restore the EWS timestamp order after XML-to-dict groups items by type."""
+    time_key = "created" if field_uri == "DateTimeCreated" else "last_modified"
+    missing_time = [item for item in email_ids if not item.get(time_key)]
+    timed = [item for item in email_ids if item.get(time_key)]
+    timed.sort(key=lambda item: str(item[time_key]), reverse=order == "Descending")
+    return missing_time + timed
+
+
 @app.test_connectivity()
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
     helper = EWSHelper(asset)
@@ -601,6 +612,8 @@ def on_poll(
                         "created": item.get("t:DateTimeCreated"),
                     }
                 )
+
+    email_ids = _order_email_ids(email_ids, field_uri, order)
 
     latest_time = last_time
     emails_processed = 0
@@ -1035,6 +1048,8 @@ def on_es_poll(
                         "created": item.get("t:DateTimeCreated"),
                     }
                 )
+
+    email_ids = _order_email_ids(email_ids, field_uri, order)
 
     latest_time = last_time
     emails_processed = 0
