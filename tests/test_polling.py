@@ -30,3 +30,35 @@ def test_resume_restriction_includes_checkpoint_boundary() -> None:
     )
 
     assert b"IsGreaterThanOrEqualTo" in etree.tostring(restriction)
+
+
+def test_mixed_item_types_are_restored_to_global_timestamp_order() -> None:
+    grouped_items = [
+        {"id": "new-message", "last_modified": "2026-07-18T03:00:00Z"},
+        {"id": "old-message", "last_modified": "2026-07-18T01:00:00Z"},
+        {"id": "middle-meeting", "last_modified": "2026-07-18T02:00:00Z"},
+    ]
+
+    ordered = ews_app._order_email_ids(grouped_items, "LastModifiedTime", "Ascending")
+
+    assert [item["id"] for item in ordered] == [
+        "old-message",
+        "middle-meeting",
+        "new-message",
+    ]
+
+
+def test_descending_initial_window_preserves_global_order() -> None:
+    grouped_items = [
+        {"id": "old-message", "created": "2026-07-18T01:00:00Z"},
+        {"id": "new-meeting", "created": "2026-07-18T03:00:00Z"},
+        {"id": "middle-message", "created": "2026-07-18T02:00:00Z"},
+    ]
+
+    ordered = ews_app._order_email_ids(grouped_items, "DateTimeCreated", "Descending")
+
+    assert [item["id"] for item in ordered] == [
+        "new-meeting",
+        "middle-message",
+        "old-message",
+    ]
