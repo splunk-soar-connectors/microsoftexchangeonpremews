@@ -37,6 +37,7 @@ class ExpandDLSummary(ActionOutput):
     description="Get the email addresses that make up a Distribution List",
     action_type="investigate",
     render_as="table",
+    read_only=True,
 )
 def list_addresses(
     params: ExpandDLParams, soar: SOARClient, asset: Asset

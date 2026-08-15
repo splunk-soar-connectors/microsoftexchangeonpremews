@@ -55,7 +55,10 @@ class CopyEmailOutput(ActionOutput):
 
 
 @app.action(
-    description="Copy an email to a folder", action_type="generic", render_as="table"
+    description="Copy an email to a folder",
+    action_type="generic",
+    render_as="table",
+    read_only=True,
 )
 def copy_email(
     params: CopyEmailParams, soar: SOARClient, asset: Asset

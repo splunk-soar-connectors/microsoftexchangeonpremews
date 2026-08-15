@@ -29,7 +29,12 @@ class DeleteEmailOutput(ActionOutput):
     message: str | None = OutputField(column_name="Status Message")
 
 
-@app.action(description="Delete emails", action_type="contain", render_as="table")
+@app.action(
+    description="Delete emails",
+    action_type="contain",
+    render_as="table",
+    read_only=True,
+)
 def delete_email(
     params: DeleteEmailParams, soar: SOARClient, asset: Asset
 ) -> DeleteEmailOutput:

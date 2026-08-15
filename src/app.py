@@ -1114,6 +1114,7 @@ app.register_action(
     action_type="investigate",
     view_handler=render_display_email,
     view_template="display_email.html",
+    read_only=True,
 )
 
 from .actions.resolve_name import render_display_resolve_names, resolve_name
@@ -1126,6 +1127,7 @@ app.register_action(
     action_type="investigate",
     view_handler=render_display_resolve_names,
     view_template="display_resolve_names.html",
+    read_only=True,
 )
 
 from .actions.update_email import render_update_email, update_email
@@ -1137,6 +1139,7 @@ app.register_action(
     action_type="generic",
     view_handler=render_update_email,
     view_template="update_email.html",
+    read_only=True,
 )
 
 

@@ -121,7 +121,12 @@ def _validate_range(email_range: str) -> None:
         )
 
 
-@app.action(description="Search emails", action_type="investigate", render_as="table")
+@app.action(
+    description="Search emails",
+    action_type="investigate",
+    render_as="table",
+    read_only=True,
+)
 def run_query(
     params: RunQueryParams, soar: SOARClient, asset: Asset
 ) -> list[EmailResult]:
