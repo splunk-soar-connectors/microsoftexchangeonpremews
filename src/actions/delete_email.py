@@ -33,7 +33,7 @@ class DeleteEmailOutput(ActionOutput):
     description="Delete emails",
     action_type="contain",
     render_as="table",
-    read_only=True,
+    read_only=False,
 )
 def delete_email(
     params: DeleteEmailParams, soar: SOARClient, asset: Asset

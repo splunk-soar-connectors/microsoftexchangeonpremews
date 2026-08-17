@@ -1139,7 +1139,7 @@ app.register_action(
     action_type="generic",
     view_handler=render_update_email,
     view_template="update_email.html",
-    read_only=True,
+    read_only=False,
 )
 
 
