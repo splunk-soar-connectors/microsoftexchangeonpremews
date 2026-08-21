@@ -444,7 +444,7 @@ No Output
 Delete emails
 
 Type: **contain** <br>
-Read only: **True**
+Read only: **False**
 
 #### Action Parameters
 
@@ -539,7 +539,7 @@ summary.total_objects_successful | numeric | | 1 |
 Move an email to a folder
 
 Type: **generic** <br>
-Read only: **True**
+Read only: **False**
 
 #### Action Parameters
 
@@ -780,7 +780,7 @@ summary.total_objects_successful | numeric | | 1 |
 Update an email on the server
 
 Type: **generic** <br>
-Read only: **True**
+Read only: **False**
 
 #### Action Parameters
 
@@ -814,7 +814,7 @@ summary.total_objects_successful | numeric | | 1 |
 Copy an email to a folder
 
 Type: **generic** <br>
-Read only: **True**
+Read only: **False**
 
 #### Action Parameters
 
