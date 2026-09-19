@@ -4,7 +4,7 @@ Publisher: Splunk <br>
 Connector Version: 4.1.6 <br>
 Product Vendor: Microsoft <br>
 Product Name: Exchange <br>
-Minimum Product Version: 7.0.0
+Minimum Product Version: 8.9.0
 
 This app performs email ingestion, investigative and containment actions on an on-premise Exchange installation
 
@@ -339,7 +339,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **password** | required | password | Password |
 **poll_user** | optional | string | User Email Mailbox (Test Connectivity and Poll) |
 **use_impersonation** | optional | boolean | Use Impersonation |
-**preprocess_script** | optional | file | Script with functions to preprocess containers and artifacts |
+**preprocess_script** | optional | python_script | Script with functions to preprocess containers and artifacts |
 **poll_folder** | required | string | Mailbox folder to be polled |
 **is_public_folder** | optional | boolean | Mailbox folder is a public folder |
 **first_run_max_emails** | required | numeric | Maximum emails to poll first time |

@@ -155,7 +155,7 @@ class Asset(BaseAsset):
         required=False,
         description="Script with functions to preprocess containers and artifacts",
         default="",
-        is_file=True,
+        is_python_script=True,
         category=FieldCategory.INGEST,
     )
     poll_folder: str = AssetField(
