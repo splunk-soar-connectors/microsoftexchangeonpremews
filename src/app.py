@@ -993,6 +993,8 @@ def on_es_poll(
 
     last_time = state.get("es_last_time")
     boundary_ids = set(state.get("es_boundary_ids", []))
+    pending_key = "es_pending_email_ids"
+    pending_ids = state.get(pending_key, []) if not is_poll_now else []
 
     order = _poll_order(asset.ingest_manner, last_time)
     field_uri = (
@@ -1019,7 +1021,11 @@ def on_es_poll(
     )
 
     try:
-        resp_json = helper.make_rest_call(input_xml, helper.check_find_response)
+        resp_json = (
+            {}
+            if pending_ids
+            else helper.make_rest_call(input_xml, helper.check_find_response)
+        )
     except Exception as e:
         logger.error(f"Error polling emails for ES: {e}")
         raise
@@ -1049,7 +1055,11 @@ def on_es_poll(
                     }
                 )
 
-    email_ids = _order_email_ids(email_ids, field_uri, order)
+    email_ids = (
+        list(pending_ids)
+        if pending_ids
+        else _order_email_ids(email_ids, field_uri, order)
+    )
 
     latest_time = last_time
     emails_processed = 0
@@ -1057,7 +1067,7 @@ def on_es_poll(
     # Otherwise an empty/replayed page would forget the IDs and ingest them again.
     new_boundary_ids: set[str] = set(boundary_ids)
 
-    for email_info in email_ids:
+    for position, email_info in enumerate(email_ids):
         if emails_processed >= max_emails:
             break
 
@@ -1081,30 +1091,38 @@ def on_es_poll(
             helper, email_id, asset.version
         )
 
-        if not mime_content:
-            emails_processed += 1
-            subject = email_data.get("subject") or f"Email {email_id[:30]}..."
-            yield Finding(rule_title=subject[:100])
-            continue
-
-        try:
-            outer_data = extract_email_data(
-                mime_content, email_id[:30], include_attachment_content=True
-            )
-        except Exception as e:
-            logger.warning(f"Failed to parse email content: {e}")
-            emails_processed += 1
-            subject = email_data.get("subject") or f"Email {email_id[:30]}..."
-            yield Finding(rule_title=subject[:100])
-            continue
+        subject = email_data.get("subject") or f"Email {email_id[:30]}..."
+        finding = Finding(rule_title=subject[:100])
+        if mime_content:
+            try:
+                outer_data = extract_email_data(
+                    mime_content, email_id[:30], include_attachment_content=True
+                )
+            except Exception as e:
+                logger.warning(f"Failed to parse email content: {e}")
+            else:
+                finding = _build_finding_from_email(
+                    email_id[:30], mime_content, outer_data
+                )
 
         emails_processed += 1
 
-        if latest_time:
-            state["es_last_time"] = latest_time
-            state["es_boundary_ids"] = list(new_boundary_ids)
+        if not is_poll_now:
+            if latest_time:
+                state["es_last_time"] = latest_time
+                state["es_boundary_ids"] = list(new_boundary_ids)
+            # A descending window can contain older IDs below this timestamp.
+            # Retain them before yielding so a failed SDK batch can be replayed.
+            remaining_ids = email_ids[position + 1 :]
+            if remaining_ids:
+                state[pending_key] = remaining_ids
+            else:
+                state.pop(pending_key, None)
 
-        yield _build_finding_from_email(email_id[:30], mime_content, outer_data)
+        yield finding
+
+    if not is_poll_now and emails_processed < max_emails:
+        state.pop(pending_key, None)
 
     logger.info(f"Processed {emails_processed} emails for ES findings")
 
