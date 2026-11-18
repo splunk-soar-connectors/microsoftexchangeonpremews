@@ -19,8 +19,10 @@ import re
 from collections.abc import Callable, Generator, Iterator
 from datetime import UTC
 from email.utils import getaddresses, parseaddr, parsedate_to_datetime
+from logging import DEBUG, Filter, LogRecord, getLogger as get_standard_logger
 from typing import Any
 
+from pydantic import ValidationError
 from soar_sdk.abstract import SOARClient
 from soar_sdk.app import App
 from soar_sdk.asset import AssetField, BaseAsset, FieldCategory
@@ -53,6 +55,154 @@ from .helper import EWSHelper
 
 
 logger = getLogger()
+
+
+class _EmailParserLogFilter(Filter):
+    """Keep released SDK parser debug events without echoing message data."""
+
+    def filter(self, record: LogRecord) -> bool:
+        source = record.pathname.replace("\\", "/")
+        parser_event = record.levelno == DEBUG and source.endswith(
+            (
+                "/soar_sdk/extras/email/utils.py",
+                "/soar_sdk/extras/email/email_data.py",
+            )
+        )
+        http_event = (
+            record.name == "httpx"
+            and isinstance(record.msg, str)
+            and record.msg.startswith("HTTP Request:")
+        )
+        if parser_event or http_event:
+            args = record.args
+            record.msg = (
+                "SDK email parser debug event; message details omitted"
+                if parser_event
+                else "HTTP request completed; URL omitted"
+            )
+            record.args = ()
+            if http_event and isinstance(args, tuple) and len(args) >= 4:
+                method, status = args[0], args[3]
+                if (
+                    isinstance(method, str)
+                    and method
+                    in {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+                    and type(status) is int
+                    and 100 <= status <= 599
+                ):
+                    record.msg = "%s request returned HTTP %s; URL omitted"
+                    record.args = (method, status)
+            record.exc_info = None
+            record.exc_text = None
+            record.stack_info = None
+        return True
+
+
+logger.addFilter(_EmailParserLogFilter())
+get_standard_logger("httpx").addFilter(_EmailParserLogFilter())
+
+
+def _email_failure_reason(error: Exception) -> str:
+    """Describe a failure using only allowlisted metadata, never exception text."""
+    kind = type(error).__name__
+    status = next(
+        (
+            value
+            for value in (
+                getattr(error, "status_code", None),
+                getattr(getattr(error, "response", None), "status_code", None),
+                getattr(getattr(error, "resp", None), "status", None),
+            )
+            if type(value) is int and 100 <= value <= 599
+        ),
+        None,
+    )
+    if status is None:
+        # Graph wraps HTTP failures in ActionFailure. Read only its fixed status
+        # prefix; never include the response body or remainder of the message.
+        match = re.match(
+            r"(?:API Error|Error|Empty response with status) ([1-5][0-9]{2})(?::|$)",
+            str(error),
+        )
+        if match:
+            status = int(match[1])
+    if status is not None:
+        reason = {
+            400: "invalid_request",
+            401: "authentication",
+            403: "permission_denied",
+            404: "not_found",
+            410: "gone",
+            413: "payload_too_large",
+            422: "invalid_data",
+            429: "rate_limited",
+        }.get(status, "service_unavailable" if status >= 500 else "http_error")
+        return f"HTTP {status} {reason} ({kind})"
+    if isinstance(error, ValidationError):
+        issue = error.errors(
+            include_input=False, include_context=False, include_url=False
+        )[0]
+        field = next(iter(issue["loc"]), "payload")
+        if field not in {
+            "rule_title",
+            "email",
+            "attachments",
+            "headers",
+            "urls",
+            "raw_email_link",
+            "file_name",
+            "data",
+            "severity",
+            "urgency",
+            "finding_source",
+            "security_domain",
+        }:
+            field = "payload"
+        rule = issue["type"]
+        if rule not in {
+            "missing",
+            "string_type",
+            "string_too_long",
+            "string_too_short",
+            "int_parsing",
+            "bool_parsing",
+            "url_parsing",
+            "list_type",
+            "dict_type",
+            "value_error",
+            "bytes_type",
+            "literal_error",
+            "extra_forbidden",
+        }:
+            rule = "invalid_value"
+        return f"validation field={field} rule={rule}"
+    if kind in {
+        "TimeoutError",
+        "Timeout",
+        "ReadTimeout",
+        "ConnectTimeout",
+        "WriteTimeout",
+        "PoolTimeout",
+    }:
+        reason = "timeout"
+    elif kind in {"SSLError", "SSLCertVerificationError", "CertificateError"}:
+        reason = "tls_error"
+    elif isinstance(error, ConnectionError) or kind in {
+        "ConnectError",
+        "gaierror",
+        "IMAP4.abort",
+        "abort",
+    }:
+        reason = "connection_failed"
+    elif isinstance(error, UnicodeError) or type(error).__module__ == "binascii":
+        reason = "invalid_encoding"
+    elif kind == "JSONDecodeError":
+        reason = "invalid_json"
+    elif isinstance(error, (ValueError, TypeError)):
+        reason = "invalid_data"
+    else:
+        reason = "processing_failed"
+    return f"{reason} ({kind})"
 
 
 def _load_preprocess_script(script: str) -> Callable[[dict[str, Any]], dict[str, Any]]:
@@ -485,7 +635,11 @@ def _get_email_mime_content(
     try:
         resp_json = helper.make_rest_call(input_xml, helper.check_getitem_response)
     except Exception as e:
-        logger.warning(f"Failed to get email content for {email_id}: {e}")
+        logger.warning(
+            "Failed to get email %s at fetch: %s; using fallback",
+            email_id,
+            _email_failure_reason(e),
+        )
         return None, {}
 
     if isinstance(resp_json, list):
@@ -958,8 +1112,7 @@ def _build_finding_from_email(
                 email_id, content, filename, outer_data, inner_data
             )
         logger.warning(
-            "Failed to parse forwarded attachment %s, treating as normal email",
-            filename,
+            "Forwarded email attachment could not be parsed; using outer email",
         )
 
     return _build_direct_finding(email_id, raw_email, outer_data)
@@ -993,6 +1146,8 @@ def on_es_poll(
 
     last_time = state.get("es_last_time")
     boundary_ids = set(state.get("es_boundary_ids", []))
+    pending_key = "es_pending_email_ids"
+    pending_ids = state.get(pending_key, []) if not is_poll_now else []
 
     order = _poll_order(asset.ingest_manner, last_time)
     field_uri = (
@@ -1019,9 +1174,13 @@ def on_es_poll(
     )
 
     try:
-        resp_json = helper.make_rest_call(input_xml, helper.check_find_response)
+        resp_json = (
+            {}
+            if pending_ids
+            else helper.make_rest_call(input_xml, helper.check_find_response)
+        )
     except Exception as e:
-        logger.error(f"Error polling emails for ES: {e}")
+        logger.error("ES polling failed at list: %s", _email_failure_reason(e))
         raise
 
     root_folder = resp_json.get("m:RootFolder", {})
@@ -1049,7 +1208,11 @@ def on_es_poll(
                     }
                 )
 
-    email_ids = _order_email_ids(email_ids, field_uri, order)
+    email_ids = (
+        list(pending_ids)
+        if pending_ids
+        else _order_email_ids(email_ids, field_uri, order)
+    )
 
     latest_time = last_time
     emails_processed = 0
@@ -1057,7 +1220,7 @@ def on_es_poll(
     # Otherwise an empty/replayed page would forget the IDs and ingest them again.
     new_boundary_ids: set[str] = set(boundary_ids)
 
-    for email_info in email_ids:
+    for position, email_info in enumerate(email_ids):
         if emails_processed >= max_emails:
             break
 
@@ -1077,34 +1240,59 @@ def on_es_poll(
         if email_time == latest_time:
             new_boundary_ids.add(email_id)
 
-        mime_content, email_data = _get_email_mime_content(
-            helper, email_id, asset.version
-        )
-
-        if not mime_content:
-            emails_processed += 1
-            subject = email_data.get("subject") or f"Email {email_id[:30]}..."
-            yield Finding(rule_title=subject[:100])
-            continue
-
+        finding = None
+        stage = "fetch"
         try:
-            outer_data = extract_email_data(
-                mime_content, email_id[:30], include_attachment_content=True
+            mime_content, email_data = _get_email_mime_content(
+                helper, email_id, asset.version
             )
-        except Exception as e:
-            logger.warning(f"Failed to parse email content: {e}")
-            emails_processed += 1
+
+            stage = "build"
             subject = email_data.get("subject") or f"Email {email_id[:30]}..."
-            yield Finding(rule_title=subject[:100])
-            continue
+            finding = Finding(rule_title=subject[:100])
+            if mime_content:
+                try:
+                    outer_data = extract_email_data(
+                        mime_content, email_id[:30], include_attachment_content=True
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "Failed to parse email %s at parse: %s; using fallback",
+                        email_id,
+                        _email_failure_reason(e),
+                    )
+                else:
+                    finding = _build_finding_from_email(
+                        email_id[:30], mime_content, outer_data
+                    )
+        except Exception as error:
+            finding = None
+            logger.warning(
+                "Skipping ES email %s at %s: %s",
+                email_id,
+                stage,
+                _email_failure_reason(error),
+            )
 
         emails_processed += 1
 
-        if latest_time:
-            state["es_last_time"] = latest_time
-            state["es_boundary_ids"] = list(new_boundary_ids)
+        if not is_poll_now:
+            if latest_time:
+                state["es_last_time"] = latest_time
+                state["es_boundary_ids"] = list(new_boundary_ids)
+            # A descending window can contain older IDs below this timestamp.
+            # Retain unread IDs before yielding so source failures cannot lose them.
+            remaining_ids = email_ids[position + 1 :]
+            if remaining_ids:
+                state[pending_key] = remaining_ids
+            else:
+                state.pop(pending_key, None)
 
-        yield _build_finding_from_email(email_id[:30], mime_content, outer_data)
+        if finding is not None:
+            yield finding
+
+    if not is_poll_now and emails_processed < max_emails:
+        state.pop(pending_key, None)
 
     logger.info(f"Processed {emails_processed} emails for ES findings")
 
