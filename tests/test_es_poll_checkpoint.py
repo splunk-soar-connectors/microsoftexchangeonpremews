@@ -86,20 +86,20 @@ def runtime(monkeypatch, mocker):
 
 
 @pytest.mark.parametrize("manner", ["oldest first", "latest first"])
-def test_failed_batch_replays_without_repeating_successful_batches(runtime, manner):
+def test_failed_email_is_skipped_without_replaying_processed_mail(runtime, manner):
     context = runtime
     context.asset.ingest_manner = manner
     expected = expected_order(context)
     context.failed = expected[2]
     assert module.on_es_poll(OnESPollParams())
-    assert context.sent == expected[:4] + [expected[2]] * 2
+    assert context.sent == expected[:4] + [expected[2]] * 2 + expected[4:]
     result = module.app.actions_manager.add_result.call_args.args[0]
     assert result.get_summary()["failed"] == 1
     assert not context.asset.ingest_state.in_transaction
     context.failed = None
     context.sent.clear()
     assert module.on_es_poll(OnESPollParams())
-    assert context.sent == expected[2:]
+    assert context.sent == []
     assert not context.asset.ingest_state.in_transaction
 
 
@@ -117,7 +117,7 @@ def test_equal_timestamps_retain_previously_checkpointed_ids(runtime):
     context.failed = None
     context.sent.clear()
     assert module.on_es_poll(OnESPollParams())
-    assert context.sent == expected[2:]
+    assert context.sent == []
     context.sent.clear()
     assert module.on_es_poll(OnESPollParams())
     assert context.sent == []
@@ -191,7 +191,7 @@ def test_fallback_findings_stage_progress_before_yield(runtime, mocker, kind):
     runtime.failed = None
     runtime.sent.clear()
     assert module.on_es_poll(OnESPollParams())
-    assert runtime.sent == expected[2:]
+    assert runtime.sent == []
 
 
 def test_latest_first_pending_window_survives_new_mail_arrival(runtime):
@@ -210,10 +210,10 @@ def test_latest_first_pending_window_survives_new_mail_arrival(runtime):
     context.failed = None
     context.sent.clear()
     assert module.on_es_poll(OnESPollParams())
-    assert context.sent == expected[2:]
+    assert context.sent == ["mail-7"]
     context.sent.clear()
     assert module.on_es_poll(OnESPollParams())
-    assert context.sent == ["mail-7"]
+    assert context.sent == []
 
 
 def test_manual_poll_preserves_scheduled_checkpoint(runtime):
@@ -243,3 +243,62 @@ def test_already_processed_pending_ids_do_not_block_new_mail(runtime):
     assert "es_pending_email_ids" not in state
     assert module.on_es_poll(OnESPollParams())
     assert runtime.sent == [f"mail-{i}" for i in range(2, 7)]
+
+
+@pytest.mark.parametrize("manner", ["oldest first", "latest first"])
+@pytest.mark.parametrize("bad_number", [1, 3, 6])
+@pytest.mark.parametrize("kind", ["fetch", "build"])
+def test_individual_message_failure_advances_persisted_checkpoint(
+    runtime, mocker, manner, bad_number, kind, capsys
+):
+    context = runtime
+    context.asset.ingest_manner = manner
+    bad_id = f"mail-{bad_number}"
+    private_error = "private-message-body-never-log"
+    name = "_get_email_mime_content" if kind == "fetch" else "_build_finding_from_email"
+    original = getattr(module, name)
+
+    def process(*args, **kwargs):
+        identifier = args[1] if kind == "fetch" else args[0]
+        if identifier == bad_id:
+            raise ValueError(private_error)
+        return original(*args, **kwargs)
+
+    mocker.patch.object(module, name, side_effect=process)
+    expected = [
+        identifier for identifier in expected_order(context) if identifier != bad_id
+    ]
+    assert module.on_es_poll(OnESPollParams())
+    assert context.sent == expected
+    logs = capsys.readouterr().out
+    assert "Skipping" in logs
+    assert private_error not in logs
+    context.asset._ingest_state = AssetState(
+        module.app.actions_manager, "ingest", "1", encrypted=False
+    )
+    context.sent.clear()
+    assert module.on_es_poll(OnESPollParams())
+    assert context.sent == []
+
+
+def test_all_finding_build_failures_are_checkpointed(runtime, mocker):
+    context = runtime
+    mocker.patch.object(
+        module,
+        "_build_finding_from_email",
+        side_effect=ValueError("Synthetic validation failure"),
+    )
+    assert module.on_es_poll(OnESPollParams())
+    assert context.sent == []
+    assert context.asset.ingest_state.get("es_last_time")
+    assert module.on_es_poll(OnESPollParams())
+    assert context.sent == []
+
+
+def test_mailbox_listing_failure_does_not_advance_checkpoint(runtime):
+    module.EWSHelper.return_value.make_rest_call.side_effect = RuntimeError(
+        "Synthetic listing failure"
+    )
+    before = runtime.asset.ingest_state.get_all()
+    assert not module.on_es_poll(OnESPollParams())
+    assert runtime.asset.ingest_state.get_all() == before
