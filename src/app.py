@@ -52,6 +52,7 @@ from soar_sdk.params import OnESPollParams, OnPollParams
 from . import ews_soap
 from .consts import EWS_INGEST_LATEST_EMAILS
 from .helper import EWSHelper
+from .poll_errors import MailPollError, diagnose_es_poll
 
 
 logger = getLogger()
@@ -1119,6 +1120,7 @@ def _build_finding_from_email(
 
 
 @app.on_es_poll()
+@diagnose_es_poll
 def on_es_poll(
     params: OnESPollParams, soar: SOARClient, asset: Asset
 ) -> Generator[Finding, int | None]:
@@ -1127,7 +1129,7 @@ def on_es_poll(
 
     poll_user = asset.poll_user or asset.username
     if not poll_user:
-        raise ValueError("Polling user email not specified, cannot continue")
+        raise MailPollError("mailbox")
 
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
@@ -1158,6 +1160,8 @@ def on_es_poll(
         poll_user, asset.poll_folder, asset.is_public_folder
     )
     if not folder_id:
+        if asset.poll_folder:
+            raise MailPollError("mailbox")
         folder_id = "inbox"
 
     restriction = None

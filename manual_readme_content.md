@@ -315,3 +315,11 @@ Server. Below are the default ports used by Splunk SOAR.
 With this release, we are removing the asset parameter 'unify_cef_fields', and the CC and BCC CEF
 fields will be in uppercase only. In order to avoid confusion, playbooks that use these CEF fields
 in lowercase should be updated to uppercase.
+
+## ES Polling Setup Diagnostics
+
+With Splunk SOAR SDK 7.2.4 or newer, setup failures report
+`reason=authentication` for rejected credentials or authorization, and
+`reason=mailbox` for a missing or inaccessible mailbox/folder. The run remains
+failed even if no findings were produced. Server response bodies, credentials,
+and mailbox names are omitted. Network failures are not labeled as bad credentials.
