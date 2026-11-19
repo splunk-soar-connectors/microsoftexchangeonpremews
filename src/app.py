@@ -26,6 +26,7 @@ from pydantic import ValidationError
 from soar_sdk.abstract import SOARClient
 from soar_sdk.app import App
 from soar_sdk.asset import AssetField, BaseAsset, FieldCategory
+from soar_sdk.exceptions import PollingError
 from soar_sdk.extras.email.email_data import (
     EmailData,
     extract_domains_from_urls,
@@ -48,11 +49,12 @@ from soar_sdk.models.finding import (
     FindingEmailReporter,
 )
 from soar_sdk.params import OnESPollParams, OnPollParams
+from soar_sdk.polling import diagnose_es_poll
 
 from . import ews_soap
 from .consts import EWS_INGEST_LATEST_EMAILS
 from .helper import EWSHelper
-from .poll_errors import MailPollError, diagnose_es_poll
+from .poll_errors import _setup_reason
 
 
 logger = getLogger()
@@ -1120,7 +1122,7 @@ def _build_finding_from_email(
 
 
 @app.on_es_poll()
-@diagnose_es_poll
+@diagnose_es_poll(_setup_reason)
 def on_es_poll(
     params: OnESPollParams, soar: SOARClient, asset: Asset
 ) -> Generator[Finding, int | None]:
@@ -1129,7 +1131,7 @@ def on_es_poll(
 
     poll_user = asset.poll_user or asset.username
     if not poll_user:
-        raise MailPollError("mailbox")
+        raise PollingError("mailbox")
 
     if asset.use_impersonation:
         helper.set_target_user(poll_user)
@@ -1161,7 +1163,7 @@ def on_es_poll(
     )
     if not folder_id:
         if asset.poll_folder:
-            raise MailPollError("mailbox")
+            raise PollingError("mailbox")
         folder_id = "inbox"
 
     restriction = None
