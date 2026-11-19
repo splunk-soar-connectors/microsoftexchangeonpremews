@@ -302,3 +302,34 @@ def test_mailbox_listing_failure_does_not_advance_checkpoint(runtime):
     before = runtime.asset.ingest_state.get_all()
     assert not module.on_es_poll(OnESPollParams())
     assert runtime.asset.ingest_state.get_all() == before
+
+
+@pytest.mark.parametrize(
+    "status, reason",
+    [(401, "authentication"), (403, "authentication"), (404, "mailbox")],
+)
+def test_initial_setup_failure_reports_safe_reason(runtime, status, reason):
+    error = RuntimeError("private-password private-mailbox private-response")
+    error.status_code = status
+    module.EWSHelper.return_value.get_folder_id.side_effect = error
+    assert not module.on_es_poll(OnESPollParams())
+    output = module.app.actions_manager.add_result.call_args.args[0]
+    summary = output.get_summary()
+    assert summary["polling_failed"] is True
+    assert summary["created"] == summary["failed"] == 0
+    assert "private-password" not in repr(vars(output))
+    assert summary["polling_errors"][0]["reason"] == reason
+    assert f"reason={reason}" in output.get_message()
+
+
+def test_missing_configured_folder_is_a_safe_mailbox_failure(runtime):
+    runtime.asset.poll_folder = "private-missing-folder"
+    module.EWSHelper.return_value.get_folder_id.return_value = None
+    assert not module.on_es_poll(OnESPollParams())
+    output = module.app.actions_manager.add_result.call_args.args[0]
+    summary = output.get_summary()
+    assert summary["polling_failed"] is True
+    assert summary["created"] == summary["failed"] == 0
+    assert not runtime.sent
+    assert "private-missing" not in repr(vars(output))
+    assert summary["polling_errors"][0]["reason"] == "mailbox"

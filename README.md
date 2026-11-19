@@ -326,6 +326,14 @@ With this release, we are removing the asset parameter 'unify_cef_fields', and t
 fields will be in uppercase only. In order to avoid confusion, playbooks that use these CEF fields
 in lowercase should be updated to uppercase.
 
+## ES Polling Setup Diagnostics
+
+With Splunk SOAR SDK 7.3.0 or newer, setup failures report
+`reason=authentication` for rejected credentials or authorization, and
+`reason=mailbox` for a missing or inaccessible mailbox/folder. The run remains
+failed even if no findings were produced. Server response bodies, credentials,
+and mailbox names are omitted. Network failures are not labeled as bad credentials.
+
 ### Configuration variables
 
 This table lists the configuration variables required to operate Microsoft Exchange On-Premise EWS. These variables are specified when configuring a Exchange asset in Splunk SOAR.
