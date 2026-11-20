@@ -1,15 +1,24 @@
 # Copyright (c) 2016-2026 Splunk Inc.
 
+import base64
+import binascii
 import email
+import hashlib
 import json
 import re
 from email.header import decode_header, make_header
 from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup
+from httpx import HTTPStatusError
 from requests.structures import CaseInsensitiveDict
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.exceptions import ActionFailure, SoarAPIError
+from soar_sdk.extras.email.email_data import (
+    extract_email_attachments,
+    extract_email_body,
+)
 from soar_sdk.params import Param, Params
 
 from .. import ews_soap
@@ -21,22 +30,23 @@ if TYPE_CHECKING:
 
 
 class GetEmailParams(Params):
-    id: str = Param(
+    id: str | None = Param(
         description="Message ID to get",
         required=False,
+        primary=True,
         cef_types=["exchange email id"],
     )
-    email: str = Param(
+    email: str | None = Param(
         description="Email of the mailbox owner (used during impersonation)",
         required=False,
         cef_types=["email"],
     )
-    container_id: int = Param(
+    container_id: int | None = Param(
         description="Container ID to get email data from",
         required=False,
         cef_types=["phantom container id"],
     )
-    vault_id: str = Param(
+    vault_id: str | None = Param(
         description="Vault ID to get email from",
         required=False,
         cef_types=["vault id"],
@@ -184,22 +194,19 @@ def _add_decoded_headers(headers: CaseInsensitiveDict) -> dict:
     return result
 
 
-def _get_email_from_container(soar: SOARClient, container_id: int) -> tuple[str, str]:
+def _get_email_from_container(soar: SOARClient, container_id: int) -> tuple[bytes, str]:
     """Get raw email data from a container."""
-    resp = soar.get(f"/rest/container/{container_id}")
-    if not resp:
-        raise ValueError(f"Container {container_id} not found")
-
-    raw_email = resp.get("data", {}).get("raw_email")
-    email_id = resp.get("source_data_identifier", str(container_id))
+    container = soar.get(f"/rest/container/{container_id}").json()
+    raw_email = (container.get("data") or {}).get("raw_email")
+    email_id = container.get("source_data_identifier") or str(container_id)
 
     if not raw_email:
         raise ValueError("Raw email data not found in container")
 
-    return raw_email, email_id
+    return raw_email.encode("utf-8"), email_id
 
 
-def _get_email_from_vault(soar: SOARClient, vault_id: str) -> tuple[str, str]:
+def _get_email_from_vault(soar: SOARClient, vault_id: str) -> tuple[bytes, str]:
     """Get raw email data from a vault file."""
     attachments = soar.vault.get_attachment(vault_id=vault_id)
     if not attachments:
@@ -207,75 +214,180 @@ def _get_email_from_vault(soar: SOARClient, vault_id: str) -> tuple[str, str]:
 
     attachment = attachments[0]
     with attachment.open("rb") as f:
-        email_bytes = f.read()
-    email_data = email_bytes.decode("utf-8", errors="replace")
+        return f.read(), vault_id
 
-    return email_data, vault_id
+
+def _existing_record_id(error: SoarAPIError, key: str) -> int | None:
+    # The SOAR REST API reports existing records as HTTP errors.
+    cause = error.__cause__
+    if not isinstance(cause, HTTPStatusError) or cause.response.status_code != 400:
+        return None
+
+    try:
+        payload = cause.response.json()
+    except ValueError:
+        return None
+    record_id = payload.get(key) if isinstance(payload, dict) else None
+    return record_id if isinstance(record_id, int) else None
+
+
+def _ingest_email(
+    soar: SOARClient,
+    asset: "Asset",
+    raw_email: bytes,
+    mail: email.message.Message,
+    email_id: str,
+    email_id_type: str,
+    target_container_id: int | None,
+) -> int:
+    from ..app import _extract_email_iocs, _sanitize_filename
+
+    headers = _get_email_headers_from_mail(mail)
+    subject = _decode_email_header(headers.get("Subject")) or "Email"
+    cef = {
+        "emailId": email_id,
+        "emailHeaders": _add_decoded_headers(headers),
+        "emailSubject": subject,
+        "fromEmail": headers.get("From"),
+        "toEmail": headers.get("To"),
+        "internetMessageId": headers.get("Message-ID"),
+    }
+    if asset.add_body_to_header_artifacts:
+        body = extract_email_body(mail)
+        cef["emailBody"] = body.plain_text or body.html
+
+    artifacts = [
+        {
+            "name": "Email Artifact",
+            "label": "email",
+            "cef": {key: value for key, value in cef.items() if value is not None},
+            "cef_types": {
+                "emailId": [email_id_type],
+                "fromEmail": ["email"],
+                "toEmail": ["email"],
+                "internetMessageId": ["internet message id"],
+            },
+        }
+    ]
+    artifacts.extend(
+        artifact.model_dump(exclude_none=True)
+        for artifact in _extract_email_iocs(mail, asset)
+    )
+
+    existing_container = target_container_id is not None
+    run_automation = True
+    raw_text = (
+        raw_email.decode("utf-8", errors="replace")
+        if asset.save_raw_email_to_container
+        else None
+    )
+    if target_container_id is None:
+        container = {
+            "name": subject[:100],
+            "severity": asset.container_severity,
+            "source_data_identifier": email_id,
+        }
+        if raw_text is not None:
+            container["data"] = {"raw_email": raw_text}
+        try:
+            target_container_id = soar.container.create(container)
+        except SoarAPIError as error:
+            target_container_id = _existing_record_id(error, "existing_container_id")
+            if target_container_id is None:
+                raise
+            existing_container = True
+            run_automation = asset.automation_on_duplicate
+
+    if existing_container and raw_text is not None:
+        endpoint = f"/rest/container/{target_container_id}"
+        data = soar.get(endpoint).json().get("data") or {}
+        if data.get("raw_email") != raw_text:
+            result = soar.post(
+                endpoint, json={"data": {**data, "raw_email": raw_text}}
+            ).json()
+            if result.get("failed"):
+                raise ActionFailure("Could not save the raw email to the container")
+
+    files = []
+    if asset.extract_root_email_as_vault:
+        files.append((_sanitize_filename(f"{subject}.eml"), raw_email))
+    if asset.extract_attachments:
+        files.extend(
+            (_sanitize_filename(attachment.filename), attachment.content)
+            for attachment in extract_email_attachments(mail, include_content=True)
+            if attachment.content is not None
+        )
+
+    for filename, content in files:
+        vault_id = soar.vault.create_attachment(target_container_id, content, filename)
+        artifacts.append(
+            {
+                "name": "Vault Artifact",
+                "label": "vault",
+                "cef": {
+                    "vaultId": vault_id,
+                    "fileName": filename,
+                    "fileSize": len(content),
+                    "fileHashSha256": hashlib.sha256(content).hexdigest(),
+                },
+                "cef_types": {
+                    "vaultId": ["vault id"],
+                    "fileName": ["file name"],
+                    "fileHashSha256": ["sha256"],
+                },
+            }
+        )
+
+    for index, artifact in enumerate(artifacts):
+        identifier = json.dumps(
+            [email_id, artifact["name"], artifact["cef"]], sort_keys=True
+        )
+        try:
+            soar.artifact.create(
+                {
+                    **artifact,
+                    "container_id": target_container_id,
+                    "severity": asset.container_severity,
+                    "source_data_identifier": hashlib.sha256(
+                        identifier.encode()
+                    ).hexdigest(),
+                    "run_automation": run_automation and index == len(artifacts) - 1,
+                }
+            )
+        except SoarAPIError as error:
+            if _existing_record_id(error, "existing_artifact_id") is None:
+                raise
+    return target_container_id
 
 
 def _handle_email_from_raw_data(
-    email_data: str,
+    email_data: bytes,
     email_id: str,
+    email_id_type: str,
     soar: SOARClient,
     asset: "Asset",
     ingest_email: bool,
     target_container_id: int | None,
 ) -> GetEmailOutput:
     """Process raw email data and return output."""
-    mail = email.message_from_string(email_data)
+    mail = email.message_from_bytes(email_data)
     headers = _get_email_headers_from_mail(mail)
     headers_dict = _add_decoded_headers(headers)
 
     subject = headers_dict.get("decodedSubject") or headers.get("Subject")
     date = headers.get("Date")
 
+    ingested_container_id = None
     if ingest_email:
-        try:
-            from soar_sdk.extras.email.processor import (
-                EmailProcessor,
-                ProcessEmailContext,
-            )
-            from soar_sdk.shims.phantom.vault import VaultBase
-
-            from ..app import APP_ID
-
-            context = ProcessEmailContext(
-                soar=soar,
-                vault=VaultBase(soar),
-                app_id=APP_ID,
-                folder_name="exchange_emails",
-                is_hex=True,
-            )
-
-            config = {
-                "extract_attachments": getattr(asset, "extract_attachments", True),
-                "extract_urls": getattr(asset, "extract_urls", True),
-                "extract_ips": getattr(asset, "extract_ips", True),
-                "extract_domains": getattr(asset, "extract_domains", True),
-                "extract_hashes": getattr(asset, "extract_hashes", True),
-            }
-
-            processor = EmailProcessor(context, config)
-            import time
-
-            processor.process_email(
-                base_connector=None,
-                rfc822_email=email_data,
-                email_id=email_id,
-                config=config,
-                epoch=time.time(),
-                container_id=target_container_id,
-            )
-        except ImportError:
-            pass
-        except Exception:
-            pass
+        ingested_container_id = _ingest_email(
+            soar, asset, email_data, mail, email_id, email_id_type, target_container_id
+        )
 
     summary = GetEmailSummary(
         subject=subject,
         create_time=date,
         sent_time=date,
-        container_id=target_container_id,
+        container_id=ingested_container_id,
     )
 
     soar.set_message(f"Successfully fetched email headers. Subject: {subject}")
@@ -348,27 +460,14 @@ def _extract_recipients_from_json(json_str):
         return None
 
 
-def render_display_email(output: list[GetEmailOutput]) -> dict:
+def render_display_email(
+    output: list[GetEmailOutput],
+    params: list[GetEmailParams],
+    summary: list[GetEmailSummary],
+) -> dict:
     results = []
-    for item in output:
-        has_headers = any(
-            getattr(item, field, None) is not None
-            for field in [
-                "CC",
-                "Content_Type",
-                "Date",
-                "Delivered_To",
-                "From",
-                "Message_ID",
-                "Received",
-                "Return_Path",
-                "Sender",
-                "Subject",
-                "To",
-            ]
-        )
-
-        is_from_container_or_vault = has_headers and item.t_From is None
+    for item, inputs, result_summary in zip(output, params, summary, strict=True):
+        is_from_container_or_vault = bool(inputs.container_id or inputs.vault_id)
 
         if is_from_container_or_vault:
             header_fields = [
@@ -398,11 +497,11 @@ def render_display_email(output: list[GetEmailOutput]) -> dict:
                 {
                     "data": True,
                     "source": "headers",
-                    "param_container_id": None,
-                    "param_vault_id": None,
+                    "param_container_id": inputs.container_id,
+                    "param_vault_id": inputs.vault_id,
                     "email_id": email_id,
-                    "container_id": None,
-                    "ingest_email": False,
+                    "container_id": result_summary.container_id,
+                    "ingest_email": inputs.ingest_email,
                     "headers": headers,
                     "message": None,
                 }
@@ -437,8 +536,8 @@ def render_display_email(output: list[GetEmailOutput]) -> dict:
                     "internet_message_id": item.t_InternetMessageId,
                     "create_time": item.t_DateTimeCreated,
                     "sent_time": item.t_DateTimeSent,
-                    "container_id": None,
-                    "ingest_email": False,
+                    "container_id": result_summary.container_id,
+                    "ingest_email": inputs.ingest_email,
                     "email_text": email_text,
                     "email_body": email_body,
                     "message": None,
@@ -455,19 +554,33 @@ def get_email(
         raise ValueError("At least one of id, container_id, or vault_id is required")
 
     target_container_id = None
-    if params.use_current_container:
+    if params.ingest_email and params.use_current_container:
         target_container_id = soar.get_executing_container_id()
+        if not target_container_id:
+            raise ActionFailure("No current container is available for email ingestion")
 
     if params.container_id:
         email_data, email_id = _get_email_from_container(soar, params.container_id)
         return _handle_email_from_raw_data(
-            email_data, email_id, soar, asset, params.ingest_email, target_container_id
+            email_data,
+            email_id,
+            "exchange email id",
+            soar,
+            asset,
+            params.ingest_email,
+            target_container_id,
         )
 
     if params.vault_id:
         email_data, email_id = _get_email_from_vault(soar, params.vault_id)
         return _handle_email_from_raw_data(
-            email_data, email_id, soar, asset, params.ingest_email, target_container_id
+            email_data,
+            email_id,
+            "vault id",
+            soar,
+            asset,
+            params.ingest_email,
+            target_container_id,
         )
 
     helper = EWSHelper(asset)
@@ -477,6 +590,7 @@ def get_email(
             raise ValueError("Email is required when impersonation is enabled")
         helper.set_target_user(params.email)
 
+    assert params.id is not None
     input_xml = ews_soap.xml_get_emails_data([params.id], asset.version)
     resp_json = helper.make_rest_call(input_xml, helper.check_getitem_response)
 
@@ -513,8 +627,10 @@ def get_email(
 
     mime_content_obj = message.get("t:MimeContent", {})
     mime_content = (
-        mime_content_obj.get("#text", "") if isinstance(mime_content_obj, dict) else ""
-    )
+        mime_content_obj.get("#text")
+        if isinstance(mime_content_obj, dict)
+        else mime_content_obj
+    ) or ""
 
     body_obj = message.get("t:Body", {})
     body = body_obj.get("#text", "") if isinstance(body_obj, dict) else ""
@@ -538,10 +654,31 @@ def get_email(
     email_id = item_id.get("@Id") if isinstance(item_id, dict) else None
     change_key = item_id.get("@ChangeKey") if isinstance(item_id, dict) else None
 
+    ingested_container_id = None
+    if params.ingest_email:
+        try:
+            raw_email = base64.b64decode("".join(mime_content.split()), validate=True)
+        except (binascii.Error, ValueError) as error:
+            raise ActionFailure(
+                "Exchange returned invalid email MIME content"
+            ) from error
+        if not raw_email:
+            raise ActionFailure("Exchange returned no email MIME content to ingest")
+        ingested_container_id = _ingest_email(
+            soar,
+            asset,
+            raw_email,
+            email.message_from_bytes(raw_email),
+            email_id or params.id,
+            "exchange email id",
+            target_container_id,
+        )
+
     summary = GetEmailSummary(
         subject=subject,
         create_time=create_time,
         sent_time=sent_time,
+        container_id=ingested_container_id,
     )
 
     soar.set_message(
