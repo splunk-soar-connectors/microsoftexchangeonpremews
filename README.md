@@ -738,6 +738,10 @@ action_result.data.\*.t_ConflictingMeetingCount | string | | |
 action_result.data.\*.t_AssociatedCalendarItemId | string | | |
 action_result.data.\*.t_ExtendedProperty | string | | |
 action_result.data.\*.t_ResponseObjects | string | | |
+action_result.summary.subject | string | | |
+action_result.summary.create_time | string | | |
+action_result.summary.sent_time | string | | |
+action_result.summary.container_id | numeric | | |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 

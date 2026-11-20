@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Fix Get Email ingestion by Exchange Message ID and restore the contextual action and ingestion status in its widget.

@@ -499,19 +499,9 @@ def _extract_hashes_from_text(text: str) -> dict[str, list[str]]:
     return {"md5": md5, "sha1": sha1, "sha256": sha256}
 
 
-def _extract_iocs_and_attachments(
-    mime_content: str,
-    email_id: str,
-    asset: Asset,
-    soar: SOARClient,
+def _extract_email_iocs(
+    mail: email.message.Message, asset: Asset
 ) -> Iterator[Artifact]:
-    """Extract IOCs and attachments from email MIME content."""
-    try:
-        mail = email.message_from_string(mime_content)
-    except Exception as e:
-        logger.warning(f"Failed to parse MIME content for {email_id}: {e}")
-        return
-
     body = extract_email_body(mail)
     body_text = (body.plain_text or "") + (body.html or "")
 
@@ -589,6 +579,22 @@ def _extract_iocs_and_attachments(
                 cef={"emailAddress": addr},
                 cef_types={"emailAddress": ["email"]},
             )
+
+
+def _extract_iocs_and_attachments(
+    mime_content: str,
+    email_id: str,
+    asset: Asset,
+    soar: SOARClient,
+) -> Iterator[Artifact]:
+    """Extract IOCs and attachments from email MIME content."""
+    try:
+        mail = email.message_from_string(mime_content)
+    except Exception as e:
+        logger.warning(f"Failed to parse MIME content for {email_id}: {e}")
+        return
+
+    yield from _extract_email_iocs(mail, asset)
 
     if asset.extract_attachments:
         attachments = extract_email_attachments(mail, include_content=True)
@@ -1314,7 +1320,7 @@ from .actions import (  # noqa: F401
 )
 
 # Register actions that use custom views
-from .actions.get_email import get_email, render_display_email
+from .actions.get_email import GetEmailSummary, get_email, render_display_email
 
 
 app.register_action(
@@ -1323,6 +1329,7 @@ app.register_action(
     action_type="investigate",
     view_handler=render_display_email,
     view_template="display_email.html",
+    summary_type=GetEmailSummary,
     read_only=True,
 )
 
