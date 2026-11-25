@@ -5,7 +5,7 @@ from email.message import EmailMessage
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-import httpx
+import httpx2
 import pytest
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionResult
@@ -53,8 +53,8 @@ def soar():
     soar = Mock(spec=SOARClient)
     soar.get_executing_container_id.return_value = 42
     soar.container.create.return_value = 93
-    soar.get.return_value = httpx.Response(200, json={"data": {"existing": "value"}})
-    soar.post.return_value = httpx.Response(200, json={"success": True})
+    soar.get.return_value = httpx2.Response(200, json={"data": {"existing": "value"}})
+    soar.post.return_value = httpx2.Response(200, json={"success": True})
     soar.vault.create_attachment.side_effect = ["vault-root", "vault-attachment"]
     return soar
 
@@ -172,7 +172,7 @@ def test_saved_email_processing_failure_is_reported(
     source, tmp_path, message, soar, asset
 ):
     if source == "container":
-        soar.get.return_value = httpx.Response(
+        soar.get.return_value = httpx2.Response(
             200,
             json={
                 "data": {"raw_email": message.decode()},
@@ -209,10 +209,10 @@ def test_requested_ingestion_requires_valid_mime(exchange, soar, asset, mime, er
 
 
 def soar_write_error(payload):
-    request = httpx.Request("POST", "https://soar.example.test/rest/artifact")
-    response = httpx.Response(400, request=request, json=payload)
+    request = httpx2.Request("POST", "https://soar.example.test/rest/artifact")
+    response = httpx2.Response(400, request=request, json=payload)
     error = SoarAPIError("SOAR write failed")
-    error.__cause__ = httpx.HTTPStatusError(
+    error.__cause__ = httpx2.HTTPStatusError(
         "Bad Request", request=request, response=response
     )
     return error

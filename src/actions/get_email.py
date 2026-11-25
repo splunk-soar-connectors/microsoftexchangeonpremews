@@ -10,7 +10,7 @@ from email.header import decode_header, make_header
 from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup
-from httpx import HTTPStatusError
+from httpx2 import HTTPStatusError
 from requests.structures import CaseInsensitiveDict
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
